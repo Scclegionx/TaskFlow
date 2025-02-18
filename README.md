@@ -3,14 +3,14 @@
 Cài đặt và chạy frontend
 Để chạy trên các nền tảng khác nhau, sử dụng các lệnh dưới đây:
 
-Android:
+- Android:
 
 npm run android
 
-iOS:
+- iOS:
 
 npm run ios
 
-Web:
+- Web:
 
 npm run web

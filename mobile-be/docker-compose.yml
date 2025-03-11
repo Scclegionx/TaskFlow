@@ -1,0 +1,22 @@
+services:
+  mysql_taskflowdb:
+    image: mysql:8
+    container_name: mysql_taskflowdb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: taskflowdb
+    ports:
+      - "3306:3306"
+
+#  mobile-be:
+#    build: .
+#    container_name: mobile-be
+#    depends_on:
+#      - mysql_taskflowdb
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/mysql_taskflowdb
+#      SPRING_DATASOURCE_USERNAME: root
+#      SPRING_DATASOURCE_PASSWORD: root

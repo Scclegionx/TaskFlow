@@ -5,6 +5,7 @@ import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/users")
@@ -17,12 +18,12 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getUsers() {
+    public List<User> getUsers() throws ExecutionException, InterruptedException {
         return userRepository.findAll();
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
+    public User createUser(@RequestBody User user) throws ExecutionException, InterruptedException {
         return userRepository.save(user);
     }
 }

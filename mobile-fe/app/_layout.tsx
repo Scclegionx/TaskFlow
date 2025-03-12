@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useRouter, useSegments } from 'expo-router';
@@ -35,20 +36,27 @@ export default function RootLayout() {
       return;
     }
 
-    const username = localStorage.getItem('username');
-    const exp = localStorage.getItem('exp');
+    // const username = localStorage.getItem('username');
+    // const exp = localStorage.getItem('exp');
 
-    if (!username || !exp) {
-      router.replace('/login');
-      return;
-    }
+    const checkAuth = async () => {
+      const username = await AsyncStorage.getItem('username');
+      const exp = await AsyncStorage.getItem('exp');
 
-    const isExpired = parseInt(exp) * 1000 < Date.now();
-    if (isExpired) {
-      localStorage.removeItem('username');
-      localStorage.removeItem('exp');
-      router.replace('/login');
-    }
+      if (!username || !exp) {
+        router.replace('/login');
+        return;
+      }
+
+      const isExpired = parseInt(exp) * 1000 < Date.now();
+      if (isExpired) {
+        await AsyncStorage.removeItem('username');
+        await AsyncStorage.removeItem('exp');
+        router.replace('/login');
+      }
+    };
+
+    checkAuth();
   }, [segments]);
 
   if (!loaded) {

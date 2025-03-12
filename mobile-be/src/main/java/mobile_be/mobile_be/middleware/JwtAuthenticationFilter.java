@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
+        String authorizationHeader = request.getHeader("Authorization");
         String token = null;
 
         if (request.getCookies() != null) {
@@ -49,6 +49,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     break;
                 }
             }
+        }
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            token = authorizationHeader.substring(7); // Cắt bỏ "Bearer "
         }
 
         if (token != null && blacklistRepository.findByToken(token).isPresent()) {

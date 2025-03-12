@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import {View, TextInput, Button, Alert, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import { register } from '@/hooks/useAuthApi';
 import { useRouter } from 'expo-router';
 
@@ -32,13 +32,17 @@ const RegisterScreen = () => {
             <TextInput placeholder="Password" value={password} secureTextEntry onChangeText={setPassword} style={styles.input} />
             <TextInput placeholder="Confirm Password" value={confirmPassword} secureTextEntry onChangeText={setConfirmPassword} style={styles.input} />
             <Button title="Register" onPress={handleRegister} />
+            <TouchableOpacity onPress={() => router.push('/register')}>
+                <Text style={styles.linkText}>Already have an account? Login now</Text>
+            </TouchableOpacity>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-    input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 8 }
+    input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 8 },
+    linkText: { marginTop: 10, color: 'blue', textAlign: 'center' }
 });
 
 export default RegisterScreen;

@@ -10,25 +10,25 @@ const LoginScreen = () => {
     const [password, setPassword] = useState('');
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Validation', 'Email and password are required');
-            return;
-        }
+        // if (!email || !password) {
+        //     Alert.alert('Validation', 'Email and password are required');
+        //     return;
+        // }
 
         try {
-            const response = await login(email, password);
-            const token = response.token;
-            const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT
+            // const response = await login(email, password);
+            // const token = response.token;
+            // const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT
 
-            console.log(token);
-            console.log(payload);
+            // console.log(token);
+            // console.log(payload);
 
-            await AsyncStorage.setItem('token', token);
-            await AsyncStorage.setItem('username', payload.username);
-            await AsyncStorage.setItem('exp', payload.exp.toString());
-            await AsyncStorage.setItem('email', payload.sub);
-            Alert.alert('Successful!', 'Logged in!');
-            router.push('/');
+            // await AsyncStorage.setItem('token', token);
+            // await AsyncStorage.setItem('username', payload.username);
+            // await AsyncStorage.setItem('exp', payload.exp.toString());
+            // await AsyncStorage.setItem('email', payload.sub);
+            // Alert.alert('Successful!', 'Logged in!');
+            router.push('/project');
         } catch (error: any) {
             Alert.alert('Error', error.response?.data || 'Failed to login');
         }

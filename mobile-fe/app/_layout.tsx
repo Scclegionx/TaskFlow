@@ -40,20 +40,20 @@ export default function RootLayout() {
     // const exp = localStorage.getItem('exp');
 
     const checkAuth = async () => {
-      const username = await AsyncStorage.getItem('username');
-      const exp = await AsyncStorage.getItem('exp');
+      // const username = await AsyncStorage.getItem('username');
+      // const exp = await AsyncStorage.getItem('exp');
 
-      if (!username || !exp) {
-        router.replace('/login');
-        return;
-      }
+      // if (!username || !exp) {
+      //   router.replace('/login');
+      //   return;
+      // }
 
-      const isExpired = parseInt(exp) * 1000 < Date.now();
-      if (isExpired) {
-        await AsyncStorage.removeItem('username');
-        await AsyncStorage.removeItem('exp');
-        router.replace('/login');
-      }
+      // const isExpired = parseInt(exp) * 1000 < Date.now();
+      // if (isExpired) {
+      //   await AsyncStorage.removeItem('username');
+      //   await AsyncStorage.removeItem('exp');
+      //   router.replace('/login');
+      // }
     };
 
     checkAuth();
@@ -65,7 +65,7 @@ export default function RootLayout() {
 
   return (
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
+        <Stack screenOptions={{ headerShown: false }} >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>

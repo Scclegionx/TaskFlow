@@ -7,18 +7,22 @@ import { OpaqueColorValue, StyleProp, ViewStyle } from 'react-native';
 
 // Add your SFSymbol to MaterialIcons mappings here.
 const MAPPING = {
-  // See MaterialIcons here: https://icons.expo.fyi
-  // See SF Symbols in the SF Symbols app on Mac.
+  // Icon mappings
   'house.fill': 'home',
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'folder.fill': 'folder', // Thêm icon folder
+  'calendar': 'calendar-today', // Thêm icon calendar
+  'bubble.left.and.bubble.right.fill': 'chat', // Thêm icon tin nhắn
+  'person.crop.circle': 'person', // Thêm icon thông tin cá nhân
 } as Partial<
-  Record<
-    import('expo-symbols').SymbolViewProps['name'],
-    React.ComponentProps<typeof MaterialIcons>['name']
-  >
+    Record<
+        import('expo-symbols').SymbolViewProps['name'],
+        React.ComponentProps<typeof MaterialIcons>['name']
+    >
 >;
+
 
 export type IconSymbolName = keyof typeof MAPPING;
 

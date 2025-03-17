@@ -83,12 +83,17 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
         String token = null;
+        String authorizationHeader = request.getHeader("Authorization");
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
                 if ("token".equals(cookie.getName())) {
                     token = cookie.getValue();
                 }
             }
+        }
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            token = authorizationHeader.substring(7); // Cắt bỏ "Bearer "
         }
 
         if (token != null) {

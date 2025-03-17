@@ -3,7 +3,10 @@ package mobile_be.mobile_be.Model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+
 import java.util.Set;
+
 
 @Entity
 @Table(name = "users")
@@ -17,6 +20,7 @@ public class User {
     private String name;
     private String email;
     private String password;
+    private  String fullName;
     private boolean isActive;
 
     @ManyToMany(fetch = FetchType.EAGER)

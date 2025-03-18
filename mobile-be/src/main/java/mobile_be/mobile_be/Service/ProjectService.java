@@ -12,8 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,5 +56,19 @@ public class ProjectService {
         }
 
         return savedProject;
+    }
+
+    public Map<String, Integer> getNumberProjectAndTask() {
+        List<Object[]> result = projectRepository.getNumberProjectAndTask();
+
+        if (!result.isEmpty()) {
+            Object[] row = result.get(0);
+            Map<String, Integer> totals = new HashMap<>();
+            totals.put("projects", ((Number) row[0]).intValue());
+            totals.put("tasks", ((Number) row[1]).intValue());
+            totals.put("users", ((Number) row[2]).intValue());
+            return totals;
+        }
+        return Collections.emptyMap();
     }
 }

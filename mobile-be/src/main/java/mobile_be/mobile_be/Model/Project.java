@@ -27,4 +27,6 @@ public class Project {
 
     @OneToMany(mappedBy = "project")
     private Set<ProjectMember> projectMembers;
+
+    private Integer status;
 }

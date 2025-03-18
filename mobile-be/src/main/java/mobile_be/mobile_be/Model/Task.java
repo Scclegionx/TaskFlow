@@ -1,9 +1,11 @@
 package mobile_be.mobile_be.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Entity
 @Table(name = "tasks")
 @Getter
@@ -31,10 +33,7 @@ public class Task {
 
     private LocalDateTime deadline;
 
-    @Enumerated(EnumType.STRING)
-    private TaskStatus status = TaskStatus.PENDING;
+    private Integer status;
+
 }
 
-enum TaskStatus {
-    PENDING, IN_PROGRESS, COMPLETED
-}

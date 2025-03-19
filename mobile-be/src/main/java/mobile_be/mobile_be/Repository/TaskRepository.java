@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
-    List<Task> findByDeadlineBetween(LocalDateTime start, LocalDateTime end);
+    List<Task> findByToDateBetween(LocalDateTime start, LocalDateTime end);
 
 
     @Query(value = "SELECT status, COUNT(*) as count FROM tasks WHERE status IN (1, 2, 3, 4) GROUP BY status", nativeQuery = true)

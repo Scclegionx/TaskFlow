@@ -51,14 +51,17 @@ public class TaskService {
 
     public Task createTask(TaskRequest taskRequest) {
         Task task = new Task();
-        User user = userRepository.findById(taskRequest.getAssignedTo()).orElse(null);
+        List<User> user = userRepository.findAllById(taskRequest.getAssignedTo());
         Project project = projectRepository.findById(taskRequest.getProjectId()).orElse(null);
         task.setTitle(taskRequest.getTitle());
         task.setProject(project);
         task.setDescription(taskRequest.getDescription());
-        task.setDeadline(taskRequest.getDeadline());
+        task.setToDate(taskRequest.getToDate());
+        task.setFromDate(taskRequest.getFromDate());
         task.setStatus(taskRequest.getStatus());
-//        task.setAssignedTo(user);
+        task.setAssignees(user);
+        // doan nay sua lai thanh  user tu token hien tai
+        task.setCreatedBy(taskRequest.getCreatedBy());
         taskRepository.save(task);
         return task;
     }
@@ -69,4 +72,6 @@ public class TaskService {
         log.info("List task: {}", listTask.get(0).getTitle());
         return listTask;
     }
+
+
 }

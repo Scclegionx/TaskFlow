@@ -12,4 +12,6 @@ public class ProjectResponseDTO {
     private Integer status;
     private Date fromDate;
     private Date toDate;
+    // tien do, lay so nguyen cho de ve bieu do
+    private Integer progress;
 }

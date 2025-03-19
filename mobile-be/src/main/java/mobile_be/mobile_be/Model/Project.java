@@ -2,6 +2,8 @@ package mobile_be.mobile_be.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -29,4 +31,13 @@ public class Project {
     private Set<ProjectMember> projectMembers;
 
     private Integer status;
+
+    // tgian tao du an
+    private Date createdAt;
+
+    // ngay bat dau
+    private Date fromDate;
+
+    // ngay ket thuc
+    private Date toDate;
 }

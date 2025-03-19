@@ -58,7 +58,7 @@ public class TaskService {
         task.setDescription(taskRequest.getDescription());
         task.setDeadline(taskRequest.getDeadline());
         task.setStatus(taskRequest.getStatus());
-        task.setAssignedTo(user);
+//        task.setAssignedTo(user);
         taskRepository.save(task);
         return task;
     }

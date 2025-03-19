@@ -30,15 +30,15 @@ public class TaskReminderService {
         List<Task> tasks = taskRepository.findByDeadlineBetween(now, sixHoursLater);
 
         for (Task task : tasks) {
-            if (task.getAssignedTo() != null) {
+            if (task.getAssignees() != null) {
                 String title = "Task Reminder: " + task.getTitle();
                 String message = "Nhiệm vụ của bạn '" + task.getTitle() + "' sẽ đến hạn vào lúc " + task.getDeadline();
                 Notice notice = new Notice(title, message);
                 noticeRepository.save(notice);
-                Integer userId = task.getAssignedTo().getId(); 
-                Integer noticeId = notice.getId(); 
+                Integer userId = task.getAssignees().get(0).getId();
+                Integer noticeId = notice.getId();
 
-                User user = task.getAssignedTo();
+                User user = task.getAssignees().get(0);
                 UserNoticeId userNoticeId = new UserNoticeId(userId, noticeId);
                 UserNotice userNotice = new UserNotice(userNoticeId, user, notice, false);
                 userNoticeRepository.save(userNotice);

@@ -27,5 +27,15 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getNumberProjectAndTask());
     }
 
+    // api lay ra so luong du an theo trang thai
+    @GetMapping("/get-number-project-by-status")
+    public ResponseEntity<Map<String, Integer>> getNumberProjectByStatus() {
+        return ResponseEntity.ok(projectService.getNumberProjectByStatus());
+    }
 
+    // api lay ra danh sach cac du an
+    @GetMapping("/get-all-project")
+    public ResponseEntity<?> getAllProject() {
+        return ResponseEntity.ok(projectService.getAllProject());
+    }
 }

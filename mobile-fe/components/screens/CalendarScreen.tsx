@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {View, Text, StyleSheet, ScrollView, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal} from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
-import { getSchedulesByDate, getHighlightedDates } from '@/hooks/useScheduleApi';
+import {getSchedulesByDate, getHighlightedDates, deleteSchedule} from '@/hooks/useScheduleApi';
 import { useRouter} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
@@ -23,14 +23,25 @@ const CalendarScreen = () => {
     const [schedules, setSchedules] = useState([]);
     const [highlightedDates, setHighlightedDates] = useState({});
     const today = new Date().toISOString().split('T')[0];
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedSchedule, setSelectedSchedule] = useState(null);
     const router = useRouter();
 
     useFocusEffect(
         React.useCallback(() => {
             fetchHighlightedDates();
-            return () => {};
-        }, [])
+            if (selectedDate) {
+                fetchSchedules(selectedDate);
+            }
+
+            return () => {
+                setSchedules([]);
+                setModalVisible(false);
+            };
+        }, [selectedDate])
     );
+
+
 
     useEffect(() => {
         fetchHighlightedDates();
@@ -79,6 +90,38 @@ const CalendarScreen = () => {
         }
     };
 
+    const handleLongPress = (schedule) => {
+        setSelectedSchedule(schedule);
+        setModalVisible(true);
+    };
+
+    const handleDelete = async () => {
+        if (!selectedSchedule) return;
+        try {
+            await deleteSchedule(selectedSchedule.id);
+            Alert.alert("Thành công", "Lịch trình đã được xóa!");
+            fetchSchedules(selectedDate);
+            fetchHighlightedDates();
+        } catch (error) {
+            console.error("Lỗi khi xóa lịch trình:", error);
+            Alert.alert("Lỗi", "Không thể xóa lịch trình, vui lòng thử lại!");
+        } finally {
+            setModalVisible(false);
+        }
+    };
+
+    const onEdit = () => {
+        if (!selectedSchedule) return;
+        router.push(`/editSchedule?id=${selectedSchedule?.id}`)
+        setModalVisible(false);
+    };
+
+    const onDelete = () => {
+        handleDelete();
+    };
+
+
+
     // Danh sách công việc mẫu
     const tasks = [
         { id: '1', title: 'Làm việc', time: '16:00 - 18:30' },
@@ -126,20 +169,47 @@ const CalendarScreen = () => {
             <View style={styles.listContainer}>
                 {schedules.length > 0 ? (
                     schedules.map((item) => (
-                        <View key={item.id} style={styles.itemCard}>
+                        <TouchableOpacity key={item.id}
+                                          onPress={() => router.push(`/detailSchedule?id=${item.id}`)}
+                                          onLongPress={() => handleLongPress(item)}
+                                          style={styles.itemCard}
+                        >
                             <Text style={styles.itemTitle}>{item.title}</Text>
                             <Text style={styles.itemTime}>
-                                {formatTime(item.startTime)} - {formatTime(item.endTime)}
+                                {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
                             </Text>
                             <Text style={[styles.priorityText, { color: getPriorityColor(item.priority) }]}>
                                 {item.priority}
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                     ))
                 ) : (
                     <Text>Không có lịch trình</Text>
                 )}
             </View>
+
+            <Modal transparent visible={modalVisible} animationType="fade">
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Chọn thao tác</Text>
+
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity style={[styles.modalButton, styles.editButton]} onPress={onEdit}>
+                                <Text style={styles.buttonText}>✏️ Sửa</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.modalButton, styles.deleteButton]} onPress={onDelete}>
+                                <Text style={styles.buttonText}>🗑️ Xóa</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.buttonText}>❌ Hủy</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
 
             {/* Tiêu đề Công việc */}
             <Text style={styles.sectionTitle}>✅ Công việc cho {selectedDate || 'hôm nay'}</Text>
@@ -215,7 +285,55 @@ const styles = StyleSheet.create({
         marginLeft: 60,
         marginTop: 10,
     },
-
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Nền mờ
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 15, // Bo góc mềm mại
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5, // Đổ bóng trên Android
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 15,
+    },
+    modalButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+        minWidth: 90,
+        alignItems: 'center',
+    },
+    editButton: {
+        backgroundColor: '#4CAF50', // Màu xanh lá cho nút "Sửa"
+    },
+    deleteButton: {
+        backgroundColor: '#FF5252', // Màu đỏ cho nút "Xóa"
+    },
+    cancelButton: {
+        backgroundColor: '#757575', // Màu xám cho nút "Hủy"
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
 
 export default CalendarScreen;

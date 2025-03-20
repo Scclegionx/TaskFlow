@@ -28,3 +28,30 @@ export const createSchedule = async (schedule: { title: string; startTime: strin
     });
     return response.data;
 };
+
+export const updateSchedule = async (id: number, schedule: any) => {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.put(`${API_URL_SCHEDULES_URL}/${id}`, schedule, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    return response.data;
+};
+
+export const deleteSchedule = async (id: number) => {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.delete(`${API_URL_SCHEDULES_URL}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+};
+
+export const getScheduleById = async (id: number) => {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.get(`${API_URL_SCHEDULES_URL}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+};

@@ -1,11 +1,13 @@
 package mobile_be.mobile_be.Repository;
 
+import lombok.NonNull;
 import mobile_be.mobile_be.Model.Schedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
@@ -32,4 +34,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     GROUP BY DATE(s.startTime)
     """)
     List<Object[]> findHighlightedDates();
+    Optional<Schedule> findById(Long id);
+    void deleteById(@NonNull Long id);
 }

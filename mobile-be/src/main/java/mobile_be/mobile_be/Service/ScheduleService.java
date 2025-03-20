@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class ScheduleService {
@@ -45,4 +46,27 @@ public class ScheduleService {
             default -> "highlighted";
         };
     }
+    public Optional<Schedule> updateSchedule(Long id, Schedule updatedSchedule) {
+        return scheduleRepository.findById(id).map(schedule -> {
+            schedule.setTitle(updatedSchedule.getTitle());
+            schedule.setStartTime(updatedSchedule.getStartTime());
+            schedule.setEndTime(updatedSchedule.getEndTime());
+            schedule.setPriority(updatedSchedule.getPriority());
+
+            return scheduleRepository.save(schedule);
+        });
+    }
+
+    public boolean deleteSchedule(Long id) {
+        if (scheduleRepository.existsById(id)) {
+            scheduleRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    public Optional<Schedule> getScheduleById(Long id) {
+        return scheduleRepository.findById(id);
+    }
+
 }

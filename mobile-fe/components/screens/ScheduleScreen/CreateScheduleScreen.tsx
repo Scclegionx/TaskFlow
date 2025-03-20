@@ -20,7 +20,7 @@ const CreateScheduleScreen = () => {
 
     const priorityMapping = {
         LOW: 'Thấp',
-        NORMAL: 'Trung Bình',
+        NORMAL: 'Bình thường',
         HIGH: 'Cao'
     };
 

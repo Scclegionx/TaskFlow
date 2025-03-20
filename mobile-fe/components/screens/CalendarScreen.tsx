@@ -90,6 +90,16 @@ const CalendarScreen = () => {
         }
     };
 
+    const getPriorityLabel = (priority) => {
+        switch (priority) {
+            case 'HIGH': return 'Cao';
+            case 'NORMAL': return 'Bình thường';
+            case 'LOW': return 'Thấp';
+            default: return 'Không xác định';
+        }
+    };
+
+
     const handleLongPress = (schedule) => {
         setSelectedSchedule(schedule);
         setModalVisible(true);
@@ -112,7 +122,7 @@ const CalendarScreen = () => {
 
     const onEdit = () => {
         if (!selectedSchedule) return;
-        router.push(`/editSchedule?id=${selectedSchedule?.id}`)
+        router.push(`/Schedule/editSchedule?id=${selectedSchedule?.id}`)
         setModalVisible(false);
     };
 
@@ -162,7 +172,7 @@ const CalendarScreen = () => {
             {/* Tiêu đề lịch trình */}
             <Text style={styles.sectionTitleContainer}>
                 <Text style={styles.sectionTitle}>📅 Lịch trình cho {selectedDate || 'hôm nay'}</Text>
-                <TouchableOpacity onPress={() => router.push("/createSchedule")}>
+                <TouchableOpacity onPress={() => router.push("/Schedule/createSchedule")}>
                     <Ionicons name="add-circle-outline" size={26} color="#FF5733" style={styles.createIcon} />
                 </TouchableOpacity>
             </Text>
@@ -170,7 +180,7 @@ const CalendarScreen = () => {
                 {schedules.length > 0 ? (
                     schedules.map((item) => (
                         <TouchableOpacity key={item.id}
-                                          onPress={() => router.push(`/detailSchedule?id=${item.id}`)}
+                                          onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
                                           onLongPress={() => handleLongPress(item)}
                                           style={styles.itemCard}
                         >
@@ -179,7 +189,7 @@ const CalendarScreen = () => {
                                 {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
                             </Text>
                             <Text style={[styles.priorityText, { color: getPriorityColor(item.priority) }]}>
-                                {item.priority}
+                                {getPriorityLabel(item.priority)}
                             </Text>
                         </TouchableOpacity>
                     ))

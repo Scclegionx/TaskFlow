@@ -5,6 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { getScheduleById, deleteSchedule } from '@/hooks/useScheduleApi';
 import moment from 'moment';
 
+const PRIORITY_LABELS: Record<string, string> = {
+    'LOW': 'Thấp 🟢',
+    'NORMAL': 'Bình thường 🟡',
+    'HIGH': 'Cao 🔴'
+};
+
 const ScheduleDetailScreen = () => {
     const router = useRouter();
     const { id } = useLocalSearchParams();
@@ -49,6 +55,7 @@ const ScheduleDetailScreen = () => {
     const durationHours = Math.floor(durationMinutes / 60);
     const remainingMinutes = durationMinutes % 60;
     const formattedDuration = `${durationHours} giờ ${remainingMinutes} phút`;
+    const priorityLabel = PRIORITY_LABELS[schedule.priority] || 'Không xác định';
 
     return (
         <View style={styles.container}>
@@ -69,6 +76,7 @@ const ScheduleDetailScreen = () => {
                 <Text style={styles.detail}>📅 Ngày bắt đầu: {formattedDate}</Text>
                 <Text style={styles.detail}>🕒 Giờ bắt đầu: {formattedTime}</Text>
                 <Text style={styles.detail}>⏳ Thời lượng: {formattedDuration}</Text>
+                <Text style={styles.detail}>🚀 Độ ưu tiên: {priorityLabel}</Text>
             </View>
         </View>
     );

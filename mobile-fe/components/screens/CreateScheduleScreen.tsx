@@ -56,6 +56,11 @@ const CreateScheduleScreen = () => {
             const mergedStartTime = mergeDateAndTime(date, startTime);
             const mergedEndTime = mergeDateAndTime(date, endTime);
 
+            if (mergedStartTime >= mergedEndTime) {
+                Alert.alert("Lỗi", "Thời gian bắt đầu phải trước thời gian kết thúc!");
+                return;
+            }
+
             const scheduleData = {
                 title,
                 startTime: convertToLocalISO(mergedStartTime),

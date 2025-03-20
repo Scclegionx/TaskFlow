@@ -51,6 +51,18 @@ const EditScheduleScreen = () => {
             Alert.alert("Lỗi", "Vui lòng nhập tiêu đề!");
             return;
         }
+
+        const mergedStartTime = new Date(date);
+        mergedStartTime.setHours(startTime.getHours(), startTime.getMinutes());
+
+        const mergedEndTime = new Date(date);
+        mergedEndTime.setHours(endTime.getHours(), endTime.getMinutes());
+
+        if (mergedStartTime >= mergedEndTime) {
+            Alert.alert("Lỗi", "Thời gian bắt đầu phải trước thời gian kết thúc!");
+            return;
+        }
+
         setLoading(true);
         try {
             const updatedData = {

@@ -1,20 +1,82 @@
-import React from "react";
+import React , { useEffect, useState }from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+type ApiResponse = {
+    projects: number;
+    tasks: number;
+    users: number;
+  } | null;
+
 
 const HomeScreen = () => {
+
+    const [data, setData] = useState<ApiResponse>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const authToken = await AsyncStorage.getItem("token"); // Lấy token từ bộ nhớ
+    
+            console.log("Token:", authToken);
+
+            if (!authToken) {
+                console.error("No token found! Please log in.");
+                return;
+            }
+    
+            try {
+                const response = await fetch("http://localhost:8080/api/projects/get-number-project-task-member", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${authToken}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+    
+                if (response.status === 401) {
+                    console.error("Unauthorized! Token might be expired.");
+                    return;
+                }
+    
+                const json = await response.json();
+                setData(json);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setLoading(false); // **Cập nhật trạng thái loading**
+            }
+        };
+    
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                {/* <ActivityIndicator size="large" color="#1E90FF" /> */}
+                <Text>Đang tải dữ liệu...</Text>
+            </View>
+        );
+    }
+
+    if (!data) {
+        return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
+    }
+
     return (
         <ScrollView style={styles.container}>
             {/* Task Summary */}
             <View style={styles.taskSummary}>
                 <TouchableOpacity style={[styles.taskBox, styles.blueBox]}>
-                    <Text style={styles.taskText}>Dự án (20)</Text>
+                    <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.taskBox, styles.grayBox]}>
-                    <Text style={styles.taskText}>Công việc (10)</Text>
+                    <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0}) </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.taskBox, styles.redBox]}>
-                    <Text style={styles.taskText}>Nhắc nhở (19)</Text>
+                    <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
                 </TouchableOpacity>
             </View>
 
@@ -22,8 +84,8 @@ const HomeScreen = () => {
             <Text style={styles.chartTitle}>Công việc</Text>
             <BarChart
                 data={{
-                    labels: ["Đang xử lý", "Hoàn thành", "Từ chối"],
-                    datasets: [{ data: [400, 700, 450] }],
+                    labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn"],
+                    datasets: [{ data: [400, 700, 450, 200] }],
                 }}
                 width={350}
                 height={220}
@@ -101,6 +163,7 @@ const styles = StyleSheet.create({
     legendItem: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
     legendColor: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
     legendText: { fontSize: 14, color: "#333" },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
 
 export default HomeScreen;

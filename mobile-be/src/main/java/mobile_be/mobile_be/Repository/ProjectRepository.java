@@ -3,10 +3,15 @@ package mobile_be.mobile_be.Repository;
 import mobile_be.mobile_be.Model.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.EntityGraph;
+import java.util.Optional;
 
 import java.util.List;
 
 public interface ProjectRepository extends JpaRepository<Project, Integer> {
+
+        @EntityGraph(attributePaths = {"projectMembers.user"}) 
+        Optional<Project> findById(Integer id);
 
 
     @Query(value = "SELECT " +

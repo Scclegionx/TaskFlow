@@ -35,13 +35,14 @@ public class NotificationService {
                         .title(notice.getNotice().getTitle())
                         .message(notice.getNotice().getMessage())
                         .isRead(notice.isRead())
+                        .slug(notice.getNotice().getSlug())
                         .createdAt(notice.getNotice().getCreatedAt())
                         .build())
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void sendNotification(Integer userId, String message) {
+    public void sendNotification(Integer userId, String message,String slug) {
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return;
 
@@ -50,6 +51,7 @@ public class NotificationService {
         notice.setTitle("Thông báo công việc");
         notice.setMessage(message);
         notice.setCreatedAt(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
+        notice.setSlug(slug);
         notice = noticeRepository.save(notice);
         UserNoticeId userNoticeId = new UserNoticeId(user.getId(), notice.getId());
 

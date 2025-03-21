@@ -1,4 +1,5 @@
 package mobile_be.mobile_be.Model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,5 +23,6 @@ public class Permission {
     private String description;
 
     @ManyToMany(mappedBy = "permissions")
+    @JsonIgnore
     private Set<Role> roles;
 }

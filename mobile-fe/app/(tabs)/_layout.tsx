@@ -59,6 +59,7 @@ export default function TabLayout() {
                 name="profile"
                 options={{
                     title: 'Thông tin',
+                    headerShown: false,
                     tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.crop.circle" color={color} />,
                 }}
             />

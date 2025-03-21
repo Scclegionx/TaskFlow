@@ -12,5 +12,6 @@ public class NotificationResponse {
     private String title;
     private String message;
     private boolean isRead;
+    private String slug;
     private Instant createdAt;
 }

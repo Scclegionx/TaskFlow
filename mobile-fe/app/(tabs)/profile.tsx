@@ -58,7 +58,7 @@ const ProfileItem = ({ icon, label }: { icon: string; label: string }) => (
 );
 
 const styles = StyleSheet.create({
-    profileContainer: { alignItems: 'center', padding: 16 },
+    profileContainer: { alignItems: 'center', padding: 16 , marginTop:40},
     profileAvatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#e5e7eb', marginBottom: 16 },
     profileInfo: { width: '100%', maxWidth: 400 },
     profileItem: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#fff', padding: 12, borderRadius: 12, marginBottom: 8 },

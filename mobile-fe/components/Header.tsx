@@ -1,8 +1,10 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import { View, Text, TextInput, StyleSheet,TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 const Header = () => {
+    const router = useRouter();
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -10,7 +12,9 @@ const Header = () => {
                 <Text style={styles.title}>phamtu</Text>
                 <View style={styles.headerIcons}>
                     <Ionicons name="mail-outline" size={24} color="black" style={styles.icon} />
-                    <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
+                    <TouchableOpacity onPress={() => router.push("/notifications")}>
+                        <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
+                    </TouchableOpacity>
                     <Ionicons name="menu" size={28} color="black" />
                 </View>
             </View>
@@ -25,7 +29,7 @@ const Header = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { padding: 20, backgroundColor: "#fff" },
+    container: { padding: 40, backgroundColor: "#fff" },
     header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
     title: { fontSize: 24, fontWeight: "bold", color: "#222" },
     headerIcons: { flexDirection: "row", alignItems: "center" },

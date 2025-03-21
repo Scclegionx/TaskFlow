@@ -2,20 +2,24 @@ package mobile_be.mobile_be.Controller;
 
 import lombok.RequiredArgsConstructor;
 import mobile_be.mobile_be.DTO.CreateProjectRequest;
+import mobile_be.mobile_be.DTO.response.ProjectResponseDTO;
 import mobile_be.mobile_be.Model.Project;
 import mobile_be.mobile_be.Service.ProjectService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.Map;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
 public class ProjectController {
     private final ProjectService projectService;
 
-    @PostMapping
+    @PostMapping("/create-project")
     public ResponseEntity<Project> createProject(@RequestBody CreateProjectRequest request) {
         Project project = projectService.createProject(request);
         return ResponseEntity.ok(project);
@@ -38,4 +42,10 @@ public class ProjectController {
     public ResponseEntity<?> getAllProject() {
         return ResponseEntity.ok(projectService.getAllProject());
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjectResponseDTO> getProjectById(@PathVariable Integer id) {
+        return ResponseEntity.ok(projectService.getProjectById(id));
+    }
+
+
 }

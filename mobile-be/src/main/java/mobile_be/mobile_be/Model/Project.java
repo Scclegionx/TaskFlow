@@ -2,6 +2,7 @@ package mobile_be.mobile_be.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Date;
 import java.util.Set;
@@ -40,4 +41,9 @@ public class Project {
 
     // ngay ket thuc
     private Date toDate;
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    @JsonIgnore 
+    private Set<Task> tasks;
+
+    
 }

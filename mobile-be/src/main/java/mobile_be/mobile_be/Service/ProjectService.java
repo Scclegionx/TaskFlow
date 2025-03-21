@@ -11,10 +11,12 @@ import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.ProjectMemberRepository;
 import mobile_be.mobile_be.Repository.ProjectRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
+import mobile_be.mobile_be.Exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,11 +58,12 @@ public class ProjectService {
                 .collect(Collectors.toSet());
 
         projectMemberRepository.saveAll(members);
+        String slug = "/projects"+"/"+project.getId();
 
         // Gửi thông báo cho tất cả thành viên mới
         for (User member : members.stream().map(ProjectMember::getUser).collect(Collectors.toList())) {
             notificationService.sendNotification(member.getId(),
-                    "Bạn đã được thêm vào dự án: " + savedProject.getName());
+                    "Bạn đã được thêm vào dự án: " + savedProject.getName(),slug);
         }
 
         return savedProject;
@@ -100,6 +103,16 @@ public class ProjectService {
         return projectMapper.toDtoList(projects);
 
     }
+    @Transactional
+    public ProjectResponseDTO getProjectById(Integer id) {
+        Project project = projectRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+        
+        ProjectResponseDTO dto = projectMapper.toDTO(project);
+        dto.setMembers(projectMapper.mapProjectMembers(new ArrayList<>(project.getProjectMembers())));
+        dto.setTasks(projectMapper.mapTasks(new ArrayList<>(project.getTasks()))); 
 
+        return dto;
+    }
 
 }

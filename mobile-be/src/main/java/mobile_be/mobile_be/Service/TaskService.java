@@ -18,6 +18,8 @@ import java.util.Map;
 @Service
 @Slf4j
 public class TaskService {
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private TaskRepository taskRepository;
@@ -60,6 +62,8 @@ public class TaskService {
         task.setStatus(taskRequest.getStatus());
 //        task.setAssignedTo(user);
         taskRepository.save(task);
+        String slug = "/tasks/" + task.getId();
+        notificationService.sendNotification(user.getId(),"test tasks",slug);
         return task;
     }
 

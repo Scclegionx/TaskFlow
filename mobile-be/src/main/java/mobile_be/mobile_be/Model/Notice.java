@@ -22,13 +22,15 @@ public class Notice {
 
     private String title;
     private String message;
+    private String slug;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt = Instant.now();
 
-    public Notice(String title, String message) {
+    public Notice(String title, String message,String slug) {
         this.title = title;
         this.message = message;
         this.createdAt = Instant.now();
+        this.slug = slug;
     }
 }

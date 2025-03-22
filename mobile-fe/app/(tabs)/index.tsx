@@ -41,7 +41,7 @@ const HomeScreen = () => {
     // bieu do tron     du an
     const [projectStatusData, setProjectStatusData] = useState<ProjectStatusData>(null);
 
-    
+    const [showCategoryFilter, setShowCategoryFilter] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -133,8 +133,37 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
+            
+
             {/* Bar Chart */}
             <Text style={styles.chartTitle}>Công việc</Text>
+                    
+               {/* Bộ lọc */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity 
+          style={styles.filterButton} 
+          onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+        >
+          <Text style={styles.filterText}>Phân loại</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.filterButton}>
+          <Text style={styles.filterText}>Thời gian</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
+      {showCategoryFilter && (
+        <View style={styles.dropdown}>
+          <TouchableOpacity style={styles.dropdownItem}>
+            <Text>Giao</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.dropdownItem}>
+            <Text>Được giao</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+        
             <BarChart
                 data={{
                     labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn"],
@@ -225,6 +254,44 @@ const styles = StyleSheet.create({
     legendColor: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
     legendText: { fontSize: 14, color: "#333" },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+    filterContainer: {
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        marginBottom: 15,
+      },
+      
+      filterButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 8,
+        marginRight: 10,
+        backgroundColor: "#f9f9f9",
+      },
+      
+      filterText: {
+        fontSize: 14,
+        color: "#333",
+      },
+
+      dropdown: {
+        backgroundColor: "#fff",
+        padding: 10,
+        borderRadius: 5,
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 5,
+        elevation: 3, 
+      },
+      dropdownItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ddd",
+      },
+      
 });
 
 export default HomeScreen;

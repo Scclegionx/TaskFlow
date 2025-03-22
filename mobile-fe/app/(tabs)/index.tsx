@@ -3,6 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-nati
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
+// 3 cai tren cung cua home
 type ApiResponse = {
     projects: number;
     tasks: number;
@@ -10,10 +12,36 @@ type ApiResponse = {
   } | null;
 
 
+  // bieu do cot trong home
+  type TaskStatusData = {
+    IN_PROGRESS: number;
+    CANCELLED: number;
+    COMPLETED: number;
+    OVERDUE: number;
+} | null;
+
+// bieu do tron trong home
+type ProjectStatusData = {
+    total: number;
+    overdue: number;
+    processing: number;
+    finished: number;
+} | null;
+
 const HomeScreen = () => {
 
+    //  du an , cong viec , nhan su
     const [data, setData] = useState<ApiResponse>(null);
+
+    // bieu do cot cong viec
+    const [taskData, setTaskData] = useState<TaskStatusData>(null);
+    // loading
     const [loading, setLoading] = useState(true);
+ 
+    // bieu do tron     du an
+    const [projectStatusData, setProjectStatusData] = useState<ProjectStatusData>(null);
+
+    
 
     useEffect(() => {
         const fetchData = async () => {
@@ -27,27 +55,51 @@ const HomeScreen = () => {
             }
     
             try {
-                const response = await fetch("http://localhost:8080/api/projects/get-number-project-task-member", {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${authToken}`,
-                        "Content-Type": "application/json"
-                    }
-                });
-    
-                if (response.status === 401) {
-                    console.error("Unauthorized! Token might be expired.");
-                    return;
+                // lan lượt  3 cai tren cung, task , du an
+                const [projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
+                    fetch("http://localhost:8080/api/projects/get-number-project-task-member", {
+                        method: "GET",
+                        headers: {
+                            "Authorization": `Bearer ${authToken}`,
+                            "Content-Type": "application/json"
+                        }
+                    }),
+                    fetch("http://localhost:8080/api/tasks/get-task-count-by-status", {
+                        method: "GET",
+                        headers: {
+                            "Authorization": `Bearer ${authToken}`,
+                            "Content-Type": "application/json"
+                        }
+                    }),
+                    fetch("http://localhost:8080/api/projects/get-number-project-by-status", {
+                        method: "GET",
+                        headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
+                    }),
+                ]);
+
+                if (projectResponse.ok) {
+                    setData(await projectResponse.json());
+                } else {
+                    console.error("Failed to fetch project data.");
                 }
-    
-                const json = await response.json();
-                setData(json);
+
+                if (taskResponse.ok) {
+                    setTaskData(await taskResponse.json());
+                } else {
+                    console.error("Failed to fetch task data.");
+                }
+
+                if (projectStatusResponse.ok) setProjectStatusData(await projectStatusResponse.json());
+                else console.error("Failed to fetch project status data.");
+
+
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
-                setLoading(false); // **Cập nhật trạng thái loading**
+                setLoading(false);
             }
         };
+
     
         fetchData();
     }, []);
@@ -61,7 +113,8 @@ const HomeScreen = () => {
         );
     }
 
-    if (!data) {
+    // doan check nay can thiet de khong null
+    if (!data || !taskData || !projectStatusData ) {
         return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
     }
 
@@ -85,7 +138,14 @@ const HomeScreen = () => {
             <BarChart
                 data={{
                     labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn"],
-                    datasets: [{ data: [400, 700, 450, 200] }],
+                    datasets: [{
+                        data: [
+                            taskData.IN_PROGRESS || 0,
+                            taskData.COMPLETED || 0,
+                            taskData.CANCELLED || 0,
+                            taskData.OVERDUE || 0
+                        ]
+                    }]
                 }}
                 width={350}
                 height={220}
@@ -93,6 +153,7 @@ const HomeScreen = () => {
                 chartConfig={chartConfig}
                 style={styles.chart}
                 yAxisSuffix=""
+                showValuesOnTopOfBars={true} // Hiển thị giá trị trên đầu cột
             />
 
             {/* Pie Chart (Donut) */}
@@ -100,10 +161,10 @@ const HomeScreen = () => {
             <View style={styles.pieWrapper}>
                 <View style={styles.pieContainer}>
                     <PieChart
-                        data={[
-                            { name: "Hoàn thành", population: 28, color: "#4285F4", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Đang xử lý", population: 12, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Quá hạn", population: 6, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
+                          data={[
+                            { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#4285F4", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
                         ]}
                         width={400}
                         height={250}
@@ -116,7 +177,7 @@ const HomeScreen = () => {
                     {/* Vòng tròn trắng ở giữa */}
                     <View style={styles.innerCircle}>
                         <Text style={styles.innerCircleText}>Tổng số</Text>
-                        <Text style={styles.innerCircleNumber}>46</Text>
+                        <Text style={styles.innerCircleNumber}>{projectStatusData.total}</Text>
                     </View>
                 </View>
             </View>

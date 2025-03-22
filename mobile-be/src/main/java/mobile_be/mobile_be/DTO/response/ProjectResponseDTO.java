@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 public class ProjectResponseDTO {
+    private Integer id;
     private String name;
     private String description;
     private String createdBy;

@@ -67,7 +67,8 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="notifications" options={{ title: "Thông báo" }} />
+          {/* <Stack.Screen name="notifications" options={{ title: "Thông báo" }} /> */}
+          <Stack.Screen name="projectdetail" options={{ title: "Chi tiết Project" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

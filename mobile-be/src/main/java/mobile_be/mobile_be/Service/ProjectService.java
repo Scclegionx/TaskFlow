@@ -97,11 +97,25 @@ public class ProjectService {
         return Collections.emptyMap();
     }
 
+    @Transactional
     public List<ProjectResponseDTO> getAllProject() {
         List<Project> projects = projectRepository.findAll();
-        log.info("ket qua nhan duoc" + projects.get(0).getName());
-        return projectMapper.toDtoList(projects);
 
+        return projects.stream()
+                .map(project -> {
+                    ProjectResponseDTO dto = new ProjectResponseDTO();
+                    dto.setId(project.getId());
+                    dto.setName(project.getName());
+                    dto.setDescription(project.getDescription());
+                    dto.setCreatedBy(project.getCreatedBy() != null ? project.getCreatedBy().getName() : null);
+                    dto.setStatus(project.getStatus());
+                    dto.setFromDate(project.getFromDate());
+                    dto.setToDate(project.getToDate());
+                    dto.setMembers(null); // Không lấy members
+                    dto.setTasks(null);   // Không lấy tasks
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
     @Transactional
     public ProjectResponseDTO getProjectById(Integer id) {

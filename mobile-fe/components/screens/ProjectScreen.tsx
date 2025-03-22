@@ -1,39 +1,95 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
+import React from "react";
+import { View, Text, FlatList, ActivityIndicator,TouchableOpacity } from "react-native";
+import { useNavigation } from "expo-router";
+import { useEffect, useState } from "react";
+import ProjectItem from "../ProjectItem";
+import { styles } from "../../assets/styles/projectStyles";
+import { API_URL_project } from "@/constants/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
-const projects = [
-    { id: '1', title: 'IT Project', status: 'Overdue', progress: 60, color: '#FF4D67' },
-    { id: '2', title: 'Business Project', status: 'In Progress', progress: 60, color: '#00AEEF' },
-    { id: '3', title: 'Internal Project', status: 'Completed', progress: 60, color: '#4CAF50' },
-];
+interface IProject {
+        id: number;
+        name: string;
+        description: string;
+        createdBy: string;
+        status?: string | null;
+        fromDate?: Date | null;
+        toDate?: Date | null;
+        members?: any;
+        tasks?: any;
+}
 
-const ProjectsScreen = () => {
+export default function ProjectsScreen() {
+    const router = useRouter();
+    const navigation = useNavigation();
+    const [projects, setProjects] = useState<IProject[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadProjects = async () => {
+        try {
+            const token = await AsyncStorage.getItem("token");
+            if (!token) {
+                console.warn("Không tìm thấy token, yêu cầu đăng nhập!");
+                return;
+            }
+
+            const response = await fetch(`${API_URL_project}/get-all-project`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Không thể lấy dữ liệu dự án!");
+            }
+
+            const data: any[] = await response.json();
+            const formattedData: IProject[] = data.map((item) => ({
+                id: item.id,
+                name: item.name,
+                description: item.description,
+                createdBy: item.createdBy,
+                status: item.status || "Đang xử lý",
+                fromDate: item.fromDate ? new Date(item.fromDate) : null,
+                toDate: item.toDate ? new Date(item.toDate) : null,
+                members: item.members,
+                tasks: item.tasks,
+            }));
+
+            setProjects(formattedData);
+        } catch (error) {
+            console.error("Lỗi khi lấy dữ liệu dự án:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        navigation.setOptions({ title: "Dự án" });
+        loadProjects();
+    }, []);
+
+    if (loading) {
+        return <ActivityIndicator size="large" color="#007bff" />;
+    }
+
     return (
         <View style={styles.container}>
+            <Text style={styles.header}>Danh sách dự án</Text>
+
             <FlatList
                 data={projects}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    <View style={styles.card}>
-                        <Text style={styles.title}>{item.title}</Text>
-                        <Text style={[styles.status, { color: item.color }]}>{item.status}</Text>
-                        <View style={styles.progressBarContainer}>
-                            <View style={[styles.progressBar, { width: `${item.progress}%` }]} />
-                        </View>
-                    </View>
+                <TouchableOpacity
+                    onPress={() => router.push({ pathname: "/projectdetail", params: { project: JSON.stringify(item) } })}>
+                    <ProjectItem project={item} />
+                </TouchableOpacity>
                 )}
             />
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: '#F5F5F5' },
-    card: { backgroundColor: '#FFF', padding: 15, marginVertical: 10, borderRadius: 10 },
-    title: { fontSize: 18, fontWeight: 'bold' },
-    status: { fontSize: 14, marginVertical: 5 },
-    progressBarContainer: { height: 6, backgroundColor: '#DDD', borderRadius: 3, marginTop: 5 },
-    progressBar: { height: 6, backgroundColor: '#007BFF', borderRadius: 3 },
-});
-
-export default ProjectsScreen;

@@ -2,10 +2,21 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/taskflowdb
     username: root
-    password: 12345678
+    password: 123456
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
     open-in-view: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: pvt1213.phamvantu@gmail.com
+    password: movnbpvotcidvrym
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

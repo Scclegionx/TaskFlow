@@ -1,6 +1,5 @@
 package mobile_be.mobile_be.Service;
 
-import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.NotificationResponse;
 import mobile_be.mobile_be.Model.Notice;
 import mobile_be.mobile_be.Model.User;
@@ -10,9 +9,6 @@ import mobile_be.mobile_be.Repository.NoticeRepository;
 import mobile_be.mobile_be.Repository.UserNoticeRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,15 +19,11 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class NotificationService {
 
     private final NoticeRepository noticeRepository;
     private final UserNoticeRepository userNoticeRepository;
     private final UserRepository userRepository;
-
-    @Autowired
-    private JavaMailSender mailSender;
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getUserNotifications(Integer userId) {
@@ -68,16 +60,5 @@ public class NotificationService {
         userNotice.setRead(false);
 
         userNoticeRepository.save(userNotice);
-    }
-
-    public void sendEmail(String to, String subject, String text) {
-        log.info("Sending email to: " + to);
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        message.setFrom("your-email@gmail.com");
-
-        mailSender.send(message);
     }
 }

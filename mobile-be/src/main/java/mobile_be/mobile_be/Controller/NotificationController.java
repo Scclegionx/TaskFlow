@@ -33,13 +33,4 @@ public class NotificationController {
         List<NotificationResponse> notifications = notificationService.getUserNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
-
-
-    // api test gui email
-    @GetMapping("/send-email")
-    public String sendEmail(@RequestParam String to, @RequestParam String subject, @RequestParam String text) {
-        log.info("Sending email to {}", to);
-        notificationService.sendEmail(to, subject, text);
-        return "Email sent successfully!";
-    }
 }

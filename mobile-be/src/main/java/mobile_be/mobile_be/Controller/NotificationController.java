@@ -1,7 +1,6 @@
-package mobile_be.mobile_be.Controller;
+package mobile_be.mobile_be.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.NotificationResponse;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.UserRepository;
@@ -16,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-@Slf4j
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -32,14 +30,5 @@ public class NotificationController {
 
         List<NotificationResponse> notifications = notificationService.getUserNotifications(userId);
         return ResponseEntity.ok(notifications);
-    }
-
-
-    // api test gui email
-    @GetMapping("/send-email")
-    public String sendEmail(@RequestParam String to, @RequestParam String subject, @RequestParam String text) {
-        log.info("Sending email to {}", to);
-        notificationService.sendEmail(to, subject, text);
-        return "Email sent successfully!";
     }
 }

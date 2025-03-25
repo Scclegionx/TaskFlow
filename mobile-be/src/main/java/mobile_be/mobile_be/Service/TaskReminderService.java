@@ -27,12 +27,12 @@ public class TaskReminderService {
         LocalDateTime sixHoursLater = now.plusHours(6);
 
         // Lấy danh sách các task có deadline trong vòng 6 giờ
-        List<Task> tasks = taskRepository.findByDeadlineBetween(now, sixHoursLater);
+        List<Task> tasks = taskRepository.findByToDateBetween(now, sixHoursLater);
 
         for (Task task : tasks) {
             if (task.getAssignees() != null) {
                 String title = "Task Reminder: " + task.getTitle();
-                String message = "Nhiệm vụ của bạn '" + task.getTitle() + "' sẽ đến hạn vào lúc " + task.getDeadline();
+                String message = "Nhiệm vụ của bạn '" + task.getTitle() + "' sẽ đến hạn vào lúc " + task.getToDate();
                 String slug = "/tasks"+"/"+task.getId();
                 Notice notice = new Notice(title, message,slug);
                 noticeRepository.save(notice);

@@ -3,6 +3,8 @@ package mobile_be.mobile_be.Model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "messages")
@@ -16,15 +18,15 @@ public class Message {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "sender_id")
-    private User sender;
+    @JoinColumn(name = "chat_id")
+    private Chat chat;
 
-    @ManyToOne
-    @JoinColumn(name = "receiver_id")
-    private User receiver;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    private LocalDateTime sentAt = LocalDateTime.now();
+    private LocalDateTime timeStamp;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
 }

@@ -24,4 +24,12 @@ public class Schedule {
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Priority priority;
+
+    public enum Priority {
+        LOW, NORMAL, HIGH
+    }
 }

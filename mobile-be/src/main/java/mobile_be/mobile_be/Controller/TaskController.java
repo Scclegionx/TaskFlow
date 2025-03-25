@@ -20,16 +20,22 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
 
-    // api lay ra so luong cong viec theo tung trang thai
+    // api lay ra so luong cong viec theo tung trang thai\
+    // dung cho man hinh home va cong viec
     @GetMapping("/get-task-count-by-status")
     public ResponseEntity<Map<String, Integer>> getTaskCountByStatus() {
         return ResponseEntity.ok(taskService.getTaskCountByStatus());
     }
 
-    // tao task
+    // tao task ( ai lam thi sua lai)
     @PostMapping("/create-task")
     public ResponseEntity<?> createTask(@RequestBody TaskRequest taskRequest) {
         Task task = taskService.createTask(taskRequest);
-        return ResponseEntity.ok(task);
+        return ResponseEntity.ok("Task created successfully");
     }
+
+    // api lay ra tat ca cac cong viec
+    // da co ben project controller
+
+
 }

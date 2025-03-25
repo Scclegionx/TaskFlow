@@ -22,6 +22,8 @@ public class Task {
     @JoinColumn(name = "project_id")
     private Project project;
 
+    // nguoi tao task
+    private Integer createdBy;
     // tao bang trung gian cho task va user
     @ManyToMany
     @JoinTable(
@@ -37,9 +39,15 @@ public class Task {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private LocalDateTime deadline;
+    // sua lai thanh from , to cho ro rang thay vi de minh deadline
+    private LocalDateTime fromDate;
+
+    private LocalDateTime toDate;
 
     private Integer status;
+
+    private LocalDateTime createdAt;
+
 
 }
 

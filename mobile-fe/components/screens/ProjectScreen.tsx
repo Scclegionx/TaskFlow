@@ -34,7 +34,7 @@ export default function ProjectsScreen() {
                 return;
             }
 
-            const response = await fetch(`${API_URL_project}/get-all-project`, {
+            const response = await fetch(`${API_URL_project}/get-project`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`,

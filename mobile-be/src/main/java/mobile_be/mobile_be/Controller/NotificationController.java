@@ -1,6 +1,7 @@
-package mobile_be.mobile_be.controller;
+package mobile_be.mobile_be.Controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.NotificationResponse;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.UserRepository;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationController {
 
     private final NotificationService notificationService;

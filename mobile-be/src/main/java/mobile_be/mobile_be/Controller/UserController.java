@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -60,6 +63,9 @@ public class UserController {
         userDTO.setId(user.getId());
         userDTO.setName(user.getName());
         userDTO.setEmail(user.getEmail());
+        userDTO.setGender(user.getGender());
+        userDTO.setPhoneNumber(user.getPhoneNumber());
+        userDTO.setDateOfBirth(user.getDateOfBirth());
         userDTO.setActive(user.isActive());
         userDTO.setRoles(user.getRoles().stream()
                 .map(role -> role.getName())  // Chỉ lấy tên của vai trò
@@ -84,24 +90,49 @@ public class UserController {
 
     return ResponseEntity.ok(new UserDTO(user));
 }
-@PutMapping("/profile/name")
-    public ResponseEntity<UserDTO> updateName(@AuthenticationPrincipal UserDetails userDetails,
-                                 @RequestBody Map<String, String> request) {
+@PutMapping("/profile/update")
+    public ResponseEntity<UserDTO> updateProfile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> request) {
 
-    if (userDetails == null) {
-        throw new RuntimeException("Người dùng chưa xác thực");
-    }
+        if (userDetails == null) {
+            throw new RuntimeException("Người dùng chưa xác thực");
+        }
 
-    User user = userRepository.findByEmail(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-    if (request.containsKey("name")) {
-        user.setName(request.get("name"));
+        if (request.containsKey("name")) {
+            user.setName(request.get("name"));
+        }
+
+        if (request.containsKey("phoneNumber")) {
+            user.setPhoneNumber(request.get("phoneNumber"));
+        }
+
+        if (request.containsKey("dateOfBirth")) {
+            try {
+                LocalDate dateOfBirth = LocalDate.parse(request.get("dateOfBirth"));
+                user.setDateOfBirth(dateOfBirth);
+            } catch (DateTimeParseException e) {
+                throw new RuntimeException("Ngày sinh không hợp lệ (Định dạng YYYY-MM-DD)");
+            }
+        }
+
+        // Cập nhật giới tính (0 = Nữ, 1 = Nam)
+        if (request.containsKey("gender")) {
+            int genderValue = Integer.parseInt(request.get("gender"));
+            if (genderValue != 0 && genderValue != 1) {
+                throw new RuntimeException("Giới tính không hợp lệ (0 = Nữ, 1 = Nam)");
+            }
+            user.setGender(genderValue);
+        }
+
         userRepository.save(user);
+        
+        return ResponseEntity.ok(new UserDTO(user));
     }
 
-    return ResponseEntity.ok(new UserDTO(user));
-}
 @PutMapping("/profile/password")
 public ResponseEntity<String> updatePassword(@AuthenticationPrincipal UserDetails userDetails,
                                              @RequestBody Map<String, String> request) {

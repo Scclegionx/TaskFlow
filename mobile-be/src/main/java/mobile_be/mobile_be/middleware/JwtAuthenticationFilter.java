@@ -35,12 +35,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (request.getServletPath().equals("/api/auth/login") ||
                 request.getServletPath().equals("/api/auth/register") ||
-                request.getServletPath().equals("/api/auth/forgot-password")) {
+                request.getServletPath().equals("/api/auth/forgot-password")
+                ) {
             filterChain.doFilter(request, response);
             return;
         }
+
+
         String authorizationHeader = request.getHeader("Authorization");
-        String token = null;
+        String token = request.getParameter("token"); // Lấy token từ query string
+        System.out.println("Token tu param: " + token);
+        if (token == null) {
+            // Kiểm tra trong Cookie
+            if (request.getCookies() != null) {
+                for (var cookie : request.getCookies()) {
+                    if (cookie.getName().equals("token")) {
+                        token = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+
+// Nếu không có trong query hoặc cookie, kiểm tra trong header
+        if (token == null && authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            token = authorizationHeader.substring(7);
+            System.out.println("Token tu header: " + token);
+        }
+
 
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {

@@ -2,6 +2,7 @@ import React , { useEffect, useState }from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@/constants/api";
 
 
 // 3 cai tren cung cua home
@@ -57,21 +58,21 @@ const HomeScreen = () => {
             try {
                 // lan lượt  3 cai tren cung, task , du an
                 const [projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
-                    fetch("http://localhost:8080/api/projects/get-number-project-task-member", {
+                    fetch(`${API_BASE_URL}/projects/get-number-project-task-member`, {
                         method: "GET",
                         headers: {
                             "Authorization": `Bearer ${authToken}`,
                             "Content-Type": "application/json"
                         }
                     }),
-                    fetch("http://localhost:8080/api/tasks/get-task-count-by-status", {
+                    fetch(`${API_BASE_URL}/tasks/get-task-count-by-status`, {
                         method: "GET",
                         headers: {
                             "Authorization": `Bearer ${authToken}`,
                             "Content-Type": "application/json"
                         }
                     }),
-                    fetch("http://localhost:8080/api/projects/get-number-project-by-status", {
+                    fetch(`${API_BASE_URL}/projects/get-number-project-by-status`, {
                         method: "GET",
                         headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
                     }),

@@ -12,6 +12,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,9 +21,8 @@ public class Message {
     @ManyToOne
     @JoinColumn(name = "chat_id")
     private Chat chat;
-
+    @Column(name = "content", columnDefinition = "TEXT") // ✅ Hỗ trợ văn bản dài
     private String content;
-
     private LocalDateTime timeStamp;
 
     @ManyToOne

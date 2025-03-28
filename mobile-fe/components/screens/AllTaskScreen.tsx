@@ -7,29 +7,16 @@ import { useNavigation } from "@react-navigation/native";
 import Header from "../Header";
 import { FontAwesome } from '@expo/vector-icons';
 import { Avatar, Card, IconButton } from "react-native-paper";
+import { API_BASE_URL } from "@/constants/api";
 
+
+// interface này task nhá
 interface Task {
     id: string;
     title: string;
     toDate?: string; // Optional if it can be undefined
     date: string; // Add this property
   }
-
-// 3 cai tren cung cua home
-type ApiResponse = {
-    projects: number;
-    tasks: number;
-    users: number;
-  } | null;
-
-
-  // bieu do cot trong home
-  type TaskStatusData = {
-    IN_PROGRESS: number;
-    CANCELLED: number;
-    COMPLETED: number;
-    OVERDUE: number;
-} | null;
 
 // bieu do tron trong home
 type ProjectStatusData = {
@@ -39,12 +26,6 @@ type ProjectStatusData = {
     finished: number;
 } | null;
 
-// const tasks = [
-//     { id: '1', title: 'Thiết kế hệ thống', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=1' },
-//     { id: '2', title: 'Viết tài liệu', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=2' },
-//     { id: '3', title: 'Lập trình', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=3' },
-//     { id: '4', title: 'Chăm sóc khách hàng', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=4' },
-//   ];
 
 
 const AllTaskScreen = () => {
@@ -57,12 +38,8 @@ const AllTaskScreen = () => {
     useLayoutEffect(() => {
         navigation.setOptions({ title: "Tất cả công việc" }); // Cập nhật tiêu đề
       }, [navigation]);
-    
-    //  du an , cong viec , nhan su
-    const [data, setData] = useState<ApiResponse>(null);
 
-    // bieu do cot cong viec
-    const [taskData, setTaskData] = useState<TaskStatusData>(null);
+
     // loading
     const [loading, setLoading] = useState(true);
  
@@ -84,10 +61,10 @@ const AllTaskScreen = () => {
             }
     
             try {
-                // lan lượt  3 cai tren cung, task , du an
-                const [taskRes, projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
+                // danh sach task , bieu doi tron
+                const [taskRes, projectStatusResponse] = await Promise.all([
 
-                    fetch("http://localhost:8080/api/projects/get-all-task-in-project", {
+                    fetch(`${API_BASE_URL}/projects/get-all-task-in-project`, {
                         method: "GET",
                         headers: {
                           "Authorization": `Bearer ${authToken}`,
@@ -95,21 +72,8 @@ const AllTaskScreen = () => {
                         }
                       }),
 
-                    fetch("http://localhost:8080/api/projects/get-number-project-task-member", {
-                        method: "GET",
-                        headers: {
-                            "Authorization": `Bearer ${authToken}`,
-                            "Content-Type": "application/json"
-                        }
-                    }),
-                    fetch("http://localhost:8080/api/tasks/get-task-count-by-status", {
-                        method: "GET",
-                        headers: {
-                            "Authorization": `Bearer ${authToken}`,
-                            "Content-Type": "application/json"
-                        }
-                    }),
-                    fetch("http://localhost:8080/api/projects/get-number-project-by-status", {
+    
+                    fetch(`${API_BASE_URL}/projects/get-number-project-by-status`, {
                         method: "GET",
                         headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
                     }),
@@ -130,19 +94,7 @@ const AllTaskScreen = () => {
           } else {
             console.error("Lỗi lấy danh sách công việc.");
           }
-
-
-                if (projectResponse.ok) {
-                    setData(await projectResponse.json());
-                } else {
-                    console.error("Failed to fetch project data.");
-                }
-
-                if (taskResponse.ok) {
-                    setTaskData(await taskResponse.json());
-                } else {
-                    console.error("Failed to fetch task data.");
-                }
+        
 
                 if (projectStatusResponse.ok) setProjectStatusData(await projectStatusResponse.json());
                 else console.error("Failed to fetch project status data.");
@@ -169,7 +121,7 @@ const AllTaskScreen = () => {
     }
 
     // doan check nay can thiet de khong null
-    if (!data || !taskData || !projectStatusData ) {
+    if (  !projectStatusData ) {
         return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
     }
 
@@ -208,6 +160,11 @@ const AllTaskScreen = () => {
                     </View>
                 </View>
             </View>
+
+
+
+
+            // danh sách công việc
 
             <View style={{ padding: 20, backgroundColor: '#F8F8F8', flex: 1 }}>
       <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>

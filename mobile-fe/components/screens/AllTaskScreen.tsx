@@ -164,7 +164,7 @@ const AllTaskScreen = () => {
 
 
 
-            // danh sách công việc
+             {/* danh sách công việc */}
 
             <View style={{ padding: 20, backgroundColor: '#F8F8F8', flex: 1 }}>
       <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>

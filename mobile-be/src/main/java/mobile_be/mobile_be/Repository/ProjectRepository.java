@@ -64,6 +64,8 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
 
 
 
+// sử dung "in" truy van thi chi lay cac phan tu khac nhau
+
     @Query(value = "SELECT * FROM users u WHERE u.id IN " +
             "(SELECT user_id FROM project_members WHERE" +
             " :projectId is null or project_id = :projectId)", nativeQuery = true)

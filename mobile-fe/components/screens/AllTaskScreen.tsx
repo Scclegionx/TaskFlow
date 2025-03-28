@@ -1,5 +1,5 @@
 import React , { useEffect, useState }from "react";
-import { View, Text, ScrollView, FlatList,TouchableOpacity,Image, StyleSheet } from "react-native";
+import { View, Text, ScrollView, FlatList,TouchableOpacity,Image, StyleSheet ,ActivityIndicator } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLayoutEffect } from "react";
@@ -7,6 +7,13 @@ import { useNavigation } from "@react-navigation/native";
 import Header from "../Header";
 import { FontAwesome } from '@expo/vector-icons';
 import { Avatar, Card, IconButton } from "react-native-paper";
+
+interface Task {
+    id: string;
+    title: string;
+    toDate?: string; // Optional if it can be undefined
+    date: string; // Add this property
+  }
 
 // 3 cai tren cung cua home
 type ApiResponse = {
@@ -32,16 +39,20 @@ type ProjectStatusData = {
     finished: number;
 } | null;
 
-const tasks = [
-    { id: '1', title: 'Thiết kế hệ thống', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=1' },
-    { id: '2', title: 'Viết tài liệu', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=2' },
-    { id: '3', title: 'Lập trình', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=3' },
-    { id: '4', title: 'Chăm sóc khách hàng', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=4' },
-  ];
+// const tasks = [
+//     { id: '1', title: 'Thiết kế hệ thống', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=1' },
+//     { id: '2', title: 'Viết tài liệu', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=2' },
+//     { id: '3', title: 'Lập trình', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=3' },
+//     { id: '4', title: 'Chăm sóc khách hàng', date: '20/2/2025', avatar: 'https://i.pravatar.cc/50?img=4' },
+//   ];
 
 
 const AllTaskScreen = () => {
     const navigation = useNavigation();
+
+
+    // danh sách task
+    const [tasks, setTasks] = useState<Task[]>([]);
 
     useLayoutEffect(() => {
         navigation.setOptions({ title: "Tất cả công việc" }); // Cập nhật tiêu đề
@@ -74,7 +85,16 @@ const AllTaskScreen = () => {
     
             try {
                 // lan lượt  3 cai tren cung, task , du an
-                const [projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
+                const [taskRes, projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
+
+                    fetch("http://localhost:8080/api/projects/get-all-task-in-project", {
+                        method: "GET",
+                        headers: {
+                          "Authorization": `Bearer ${authToken}`,
+                          "Content-Type": "application/json"
+                        }
+                      }),
+
                     fetch("http://localhost:8080/api/projects/get-number-project-task-member", {
                         method: "GET",
                         headers: {
@@ -94,6 +114,23 @@ const AllTaskScreen = () => {
                         headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
                     }),
                 ]);
+
+
+                
+
+                // Xử lý dữ liệu công việc (tasks)
+        if (taskRes.ok) {
+           const taskData: Task[] = await taskRes.json();
+           setTasks(taskData.map((task, index) => ({
+            id: task.id || String(index),
+            title: task.title,
+            date: task.toDate || "Không có ngày"
+           
+          })));
+          } else {
+            console.error("Lỗi lấy danh sách công việc.");
+          }
+
 
                 if (projectResponse.ok) {
                     setData(await projectResponse.json());
@@ -185,7 +222,7 @@ const AllTaskScreen = () => {
                 <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5 }}>{item.title}</Text>
                 <Text style={{ fontSize: 12, color: '#666' }}>📅 {item.date}</Text>
               </View>
-              <Avatar.Image size={40} source={{ uri: item.avatar }} />
+              {/* <Avatar.Image size={40} source={{ uri: item.avatar }} /> */}
               <IconButton icon="star-outline" size={24} />
             </Card.Content>
           </Card>

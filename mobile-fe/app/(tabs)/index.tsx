@@ -2,6 +2,8 @@ import React , { useEffect, useState }from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 
 // 3 cai tren cung cua home
@@ -30,6 +32,8 @@ type ProjectStatusData = {
 
 const HomeScreen = () => {
 
+    const router = useRouter();
+    
     //  du an , cong viec , nhan su
     const [data, setData] = useState<ApiResponse>(null);
 
@@ -125,7 +129,11 @@ const HomeScreen = () => {
                 <TouchableOpacity style={[styles.taskBox, styles.blueBox]}>
                     <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.taskBox, styles.grayBox]}>
+                {/* <TouchableOpacity style={[styles.taskBox, styles.grayBox]}> */}
+                <TouchableOpacity
+        style={[styles.taskBox, styles.grayBox]}
+        onPress={() => router.push("/allTask")}
+      >
                     <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0}) </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.taskBox, styles.redBox]}>

@@ -22,7 +22,7 @@ mvn clean install
 
 1. Chạy Expo với cache clear:
 
-expo start --clear
+npx expo start --clear
 
 
 2. Sau khi FE chạy thành công, copy đoạn IP xuất hiện dưới phần log chạy (thường dạng `exp://<ip>:<port>`).

@@ -1,15 +1,27 @@
-import React from "react";
+import React ,{ useEffect, useState }from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput, StyleSheet,TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 const Header = () => {
     const router = useRouter();
+    const [user, setUser] = useState({ name: '', email: '', avatar: '' });
+
+    useEffect(() => {
+        const loadUser = async () => {
+            const name = await AsyncStorage.getItem('username');
+            const email = await AsyncStorage.getItem('email');
+            const avatar = await AsyncStorage.getItem('avatar') || '';  // Lấy avatar từ AsyncStorage
+            if (name && email) setUser({ name, email, avatar });
+        };
+        loadUser();
+    }, []);
     return (
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.title}>phamtu</Text>
+                <Text style={styles.title}>{user.name}</Text>
                 <View style={styles.headerIcons}>
                     <Ionicons name="mail-outline" size={24} color="black" style={styles.icon} />
                     <TouchableOpacity onPress={() => router.push("/notifications")}>

@@ -4,12 +4,16 @@ import lombok.Data;
 import mobile_be.mobile_be.Model.User;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 @Data
 public class UserDTO {
     private Integer id;
     private String name;
     private String email;
+    private Integer gender;
+    private String phoneNumber;
+    private LocalDate dateOfBirth;
     private boolean active;
     private Set<String> roles;
 

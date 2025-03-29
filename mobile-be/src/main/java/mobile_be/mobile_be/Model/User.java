@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.Set;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -16,6 +17,9 @@ public class User {
 
     private String name;
     private String email;
+    private Integer gender;
+    private String phoneNumber;
+    private LocalDate dateOfBirth;
     private String password;
     private boolean isActive;
     private String avatar;

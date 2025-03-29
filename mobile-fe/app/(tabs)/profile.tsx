@@ -51,7 +51,7 @@ const Profile = () => {
             let formData = new FormData();
             formData.append('avatar', blob, 'avatar.jpg');
             console.log(formData);    
-            const res = await axios.post(`http://192.168.1.22:8080/api/users/change-avatar`, formData, {
+            const res = await axios.post(`http://172.11.20.253:8080/api/users/change-avatar`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     Authorization: `Bearer ${token}`,
@@ -80,7 +80,7 @@ const Profile = () => {
 
     return (
         <View style={styles.profileContainer}>
-            <TouchableOpacity onPress={pickImage}>
+            <TouchableOpacity onPress={pickImage} style={styles.profileCard}>
                 {user.avatar ? (
                     <Image source={{ uri: user.avatar }} style={styles.profileAvatar} />
                 ) : (
@@ -88,15 +88,15 @@ const Profile = () => {
                         <Text>🖼️</Text>
                     </View>
                 )}
+                <Text style={styles.profileName}>{user.name}</Text>
             </TouchableOpacity>
 
             <View style={styles.profileInfo}>
-                <ProfileItem icon="👤" label={user.name} />
-                <ProfileItem icon="📧" label={user.email} />
-                <ProfileItem icon="🔒" label="Mật khẩu" />
+                <ProfileItem icon="👤" label="Thông tin cá nhân" onPress={() => router.push('/account-info')} />
+                <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
+                <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
                 <ProfileItem icon="📝" label="Nhiệm vụ của tôi" />
-                <ProfileItem icon="🔒" label="Quyền riêng tư" />
-                <ProfileItem icon="⚙️" label="Cài đặt" />
+                <ProfileItem icon="👤" label="Quyền Admin" />
             </View>
 
             <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -106,22 +106,111 @@ const Profile = () => {
     );
 };
 
-const ProfileItem = ({ icon, label }: { icon: string; label: string }) => (
-    <View style={styles.profileItem}>
+const ProfileItem = ({ icon, label, onPress }: { icon: string; label: string, onPress?: () => void }) => (
+    <TouchableOpacity onPress={onPress} style={styles.profileItem} activeOpacity={0.6}>
         <Text style={styles.profileItemLabel}>{icon} {label}</Text>
         <Text style={styles.profileItemEdit}>✏️</Text>
-    </View>
+    </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-    profileContainer: { alignItems: 'center', padding: 16 },
-    profileAvatar: { width: 96, height: 96, borderRadius: 48 },
+    // profileAvatar: { width: 96, height: 96, borderRadius: 48 },
     profileAvatarPlaceholder: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' },
-    profileInfo: { width: '100%', maxWidth: 400 },
-    profileItem: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#fff', padding: 12, borderRadius: 12, marginBottom: 8 },
-    profileItemLabel: { color: '#ef4444' },
-    logoutButton: { backgroundColor: '#3b82f6', padding: 8, borderRadius: 16, alignItems: 'center', width: '100%', maxWidth: 400, marginTop: 16 },
-    logoutText: { color: '#fff', fontWeight: 'bold' }
+    profileContainer: { 
+        flex: 1, 
+        alignItems: 'center', 
+        backgroundColor: "#F9FAFB", 
+        padding: 20, 
+        marginTop: 40 
+    },
+    profileCard: {
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        width: '100%',
+        maxWidth: 400,
+        marginBottom: 20,
+    },
+    profileAvatar: { 
+        width: 100, 
+        height: 100, 
+        borderRadius: 50, 
+        backgroundColor: '#3B82F6', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+    },
+    avatarText: {
+        color: '#fff',
+        fontSize: 36,
+        fontWeight: 'bold'
+    },
+    profileName: { 
+        fontSize: 20, 
+        fontWeight: 'bold', 
+        color: '#333', 
+        marginTop: 10 
+    },
+    profileEmail: { 
+        fontSize: 16, 
+        color: '#666', 
+        marginTop: 5 
+    },
+    profileInfo: { 
+        width: '100%', 
+        maxWidth: 400, 
+        // backgroundColor: '#fff', 
+        borderRadius: 12, 
+        // padding: 10, 
+        // shadowColor: '#000',
+        // shadowOffset: { width: 0, height: 2 },
+        // shadowOpacity: 0.05,
+        // shadowRadius: 3,
+        // elevation: 2,
+    },
+    profileItem: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        backgroundColor: '#fff', 
+        padding: 14,  
+        borderRadius: 12, 
+        marginBottom: 8, 
+        borderWidth: 2, 
+        borderColor: "#e5e7eb",  
+        // shadowColor: "#000",  
+        // shadowOffset: { width: 0, height: 2 }, 
+        // shadowOpacity: 0.1, 
+        // shadowRadius: 4, 
+        // elevation: 3,
+    },
+    
+    profileItemLabel: { 
+        fontSize: 16, 
+        color: '#333' 
+    },
+    profileItemEdit: { 
+        fontSize: 16, 
+        color: '#666' 
+    },
+    logoutButton: { 
+        backgroundColor: '#EF4444', 
+        padding: 12, 
+        borderRadius: 16, 
+        alignItems: 'center', 
+        width: '100%', 
+        maxWidth: 400, 
+        marginTop: 20 
+    },
+    logoutText: { 
+        color: '#fff', 
+        fontSize: 16, 
+        fontWeight: 'bold' 
+    }
 });
 
 export default Profile;

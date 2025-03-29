@@ -100,7 +100,7 @@ const Profile = () => {
 
   return (
     <View style={styles.profileContainer}>
-      <TouchableOpacity onPress={pickImage}>
+      <TouchableOpacity onPress={pickImage} style={styles.profileCard}>
         {user.avatar ? (
           <Image source={{ uri: user.avatar }} style={styles.profileAvatar} />
         ) : (

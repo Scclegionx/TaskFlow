@@ -70,7 +70,7 @@ public class AuthController {
                 .collect(Collectors.toSet());
 
         // Tạo JWT với thông tin id, email, roles
-        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), roles, user.getName());
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), roles, user.getName(), user.getAvatar());
 
         response.addHeader("Set-Cookie", "token=" + token + "; HttpOnly; Secure; Path=/");
 

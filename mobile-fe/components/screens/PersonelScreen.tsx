@@ -6,6 +6,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLayoutEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@/constants/api";
+import { StyleSheet } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 
 
 interface UserProfile {
@@ -30,105 +32,103 @@ const PersonelScreen = () => {
   const [filteredData, setFilteredData] = useState<{ name: string; email: string }[]>([]); // Dữ liệu sau khi lọc
   const [loading, setLoading] = useState(true);
 
+
+  const [searchText, setSearchText] = useState("");
+
+
   // profile để hiển thị ảnh
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   // Lấy danh sách user từ API
+
   useEffect(() => {
-
-
-    const fetchProfile = async () => {
+    fetchProfile(); // Chỉ gọi API lấy profile khi component mount
+  }, []);
+  
+  const fetchProfile = async () => {
+    try {
       const authToken = await AsyncStorage.getItem("token");
       if (!authToken) {
         console.error("Không tìm thấy token! Vui lòng đăng nhập.");
         return;
       }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/users/profile`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Lỗi khi lấy dữ liệu người dùng");
-        }
-
-        const data: UserProfile = await response.json(); // Ép kiểu dữ liệu
-        setProfile(data);
-      } catch (error) {
-        console.error("Lỗi:", error);
-      } finally {
-        setLoading(false);
+  
+      const response = await fetch(`${API_BASE_URL}/users/profile`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (response.ok) {
+        const profileData: UserProfile = await response.json();
+        setProfile(profileData);
+      } else {
+        console.error("Lỗi khi lấy dữ liệu người dùng.");
       }
-    };
-
-    fetchProfile();
-
-
-    const fetchMembers = async () => {
-      setLoading(true);
-      try {
-        const authToken = await AsyncStorage.getItem("token"); // Lấy token từ AsyncStorage
-
-        if (!authToken) {
-          console.error("Không tìm thấy token! Vui lòng đăng nhập.");
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/projects/get-all-member-in-project`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Lỗi HTTP! Mã lỗi: ${response.status}`);
-        }
-
-        const result = await response.json();
-        setData(result); // Lưu toàn bộ dữ liệu
-        setFilteredData(result); // Mặc định hiển thị tất cả
-      } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu:", error);
-      } finally {
+    } catch (error) {
+      console.error("Lỗi khi gọi API profile:", error);
+    }
+  };
+  
+  const fetchMembers = async (searchText: string) => {
+    setLoading(true);
+  
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) {
+        console.error("Không tìm thấy token! Vui lòng đăng nhập.");
         setLoading(false);
+        return;
       }
-    };
-
-    fetchMembers();
-  }, []);
-
-  // Hàm tìm kiếm
-const handleSearch = (text: string) => {
-  setSearch(text);
-  if (text) {
-    setFilteredData(data.filter((item) => item.name.toLowerCase().includes(text.toLowerCase())));
-  } else {
-    setFilteredData(data);
-  }
-};
+  
+      let membersUrl = `${API_BASE_URL}/projects/get-all-member-in-project`;
+      if (searchText.trim()) {
+        membersUrl += `?textSearch=${encodeURIComponent(searchText)}`;
+      }
+  
+      const response = await fetch(membersUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (response.ok) {
+        const membersData = await response.json();
+        setData(membersData);
+        setFilteredData(membersData);
+      } else {
+        console.error("Lỗi khi lấy danh sách thành viên.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API danh sách thành viên:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSearch = () => {
+    fetchMembers(searchText);
+  };
 
   return (
     <View style={{ padding: 16, backgroundColor: "#F8F9FA", flex: 1 }}>
-      {/* Ô tìm kiếm */}
-      <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#E9ECEF", borderRadius: 10, paddingHorizontal: 10 }}>
-      <Avatar.Image size={30} source={{ uri: profile?.avatar || "" }} />
-        <TextInput
-          style={{ flex: 1, height: 40, marginLeft: 10 }}
-          placeholder="Tìm kiếm"
-          value={search}
-          onChangeText={handleSearch}
-        />
-        <Icon name="search" size={20} color="gray" />
-      </View>
 
+            {/* 🔍 Thanh tìm kiếm */}
+            <View style={styles.searchContainer}>
+                                <TextInput
+                                    style={styles.searchInput}
+                                    placeholder="Nhập từ khóa tìm kiếm..."
+                                    value={searchText}
+                                    onChangeText={setSearchText}
+                                />
+                                 <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+                                    <FontAwesome name="search" size={20} color="white" />
+                                </TouchableOpacity>
+                            </View>
       {/* Kiểm tra nếu đang load dữ liệu */}
       {loading ? (
         <ActivityIndicator size="large" color="blue" style={{ marginTop: 20 }} />
@@ -166,4 +166,30 @@ const handleSearch = (text: string) => {
   );
 };
 
+
+const styles = StyleSheet.create({
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#f1f1f1"
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginRight: 10
+  },
+  searchButton: {
+    // backgroundColor: "#007BFF",
+    backgroundColor: "#D3D3D3",
+    padding: 10,
+    borderRadius: 8
+  },
+
+});
 export default PersonelScreen;

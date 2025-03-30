@@ -173,8 +173,8 @@ public class ProjectService {
     }
 
     @Transactional
-    public List<UserResponseDTO> getAllMemberInProject(Integer projectId) {
-        List<User> results = projectRepository.getAllMemberInProject(projectId);
+    public List<UserResponseDTO> getAllMemberInProject(Integer projectId, String textSearch) {
+        List<User> results = projectRepository.getAllMemberInProject(projectId, textSearch);
         return results.stream().map(user -> {
                             UserResponseDTO dto = userMapper.toDTO(user);
                            return dto;

@@ -6,6 +6,8 @@ import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
 
+import Icon from "react-native-vector-icons/FontAwesome"; // Import icon
+
 
 // 3 cai tren cung cua home
 type ApiResponse = {
@@ -160,13 +162,16 @@ const HomeScreen = () => {
             <View style={styles.taskSummary}>
                 <TouchableOpacity style={[styles.taskBox, styles.blueBox]}>
                     <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
+                    <Icon name="folder" size={24} color="#fff" />  
                 </TouchableOpacity>
                 {/* <TouchableOpacity style={[styles.taskBox, styles.grayBox]}> */}
                 <TouchableOpacity style={[styles.taskBox, styles.grayBox]}  onPress={() => router.push("/allTask")} > 
                     <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0}) </Text>
+                    <Icon name="tasks" size={24} color="#fff" />  
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.taskBox, styles.redBox]}    onPress={() => router.push("/personel")}>
                     <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
+                    <Icon name="users" size={24} color="#fff" />  
                 </TouchableOpacity>
             </View>
 
@@ -327,20 +332,44 @@ const HomeScreen = () => {
     );
 };
 
+// const chartConfig = {
+//     backgroundGradientFrom: "#fff",
+//     backgroundGradientTo: "#fff",
+//     decimalPlaces: 0,
+//     color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+// };
+
 const chartConfig = {
     backgroundGradientFrom: "#fff",
     backgroundGradientTo: "#fff",
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+    decimalPlaces: 0, 
+    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Màu chữ
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    fillShadowGradientFrom: "#3762D0", // Màu xanh dương
+    fillShadowGradientFromOpacity: 1, // Độ đậm của màu bắt đầu
+    fillShadowGradientTo: "#3762D0", // Giữ nguyên màu
+    fillShadowGradientToOpacity: 1, // Độ đậm màu kết thúc
+    barPercentage: 1, // Điều chỉnh độ rộng cột (có thể thay đổi)
+    style: {
+        borderRadius: 16
+    }
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff", padding: 20 },
     taskSummary: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
-    taskBox: { padding: 15, borderRadius: 10, flex: 1, marginRight: 10, alignItems: "center" },
-    blueBox: { backgroundColor: "#1E90FF" },
-    grayBox: { backgroundColor: "#6C757D" },
-    redBox: { backgroundColor: "#DC4C64" },
+    // taskBox: { padding: 15, borderRadius: 10, flex: 1, marginRight: 10, alignItems: "center" },
+    taskBox: {
+        width: 171.67,  // Đặt chiều rộng
+        height: 94,     // Đặt chiều cao
+        justifyContent: "center",  
+        alignItems: "center",
+        borderRadius: 10, 
+        margin: 5,
+    },
+    blueBox: { backgroundColor: "#4B7BE5" },
+    grayBox: { backgroundColor: "#778190" },
+    redBox: { backgroundColor: "#D06537" },
     taskText: { color: "white", fontWeight: "bold", textAlign: "center" },
     chartTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
     chart: { marginBottom: 20 },

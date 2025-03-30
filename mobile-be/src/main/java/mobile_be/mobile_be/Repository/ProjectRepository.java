@@ -145,7 +145,9 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
 
     @Query(value = "SELECT * FROM users u WHERE u.id IN " +
             "(SELECT user_id FROM project_members WHERE" +
-            " :projectId is null or project_id = :projectId)", nativeQuery = true)
-    List<User> getAllMemberInProject(Integer projectId);
+            " :projectId is null or project_id = :projectId) " +
+            "AND (:textSearch IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :textSearch, '%')))",
+            nativeQuery = true)
+    List<User> getAllMemberInProject(Integer projectId, String textSearch);
 
 }

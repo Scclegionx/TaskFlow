@@ -15,18 +15,24 @@ interface Task {
     id: string;
     title: string;
     toDate?: string; // Optional if it can be undefined
-    date: string; // Add this property
+    date: string; // Add this property;
+    status: number
   }
 
-// bieu do tron trong home
-type ProjectStatusData = {
-    total: number;
-    overdue: number;
-    processing: number;
-    finished: number;
+ // bieu do cot trong home
+ type TaskStatusData = {
+  IN_PROGRESS: number;
+  CANCELLED: number;
+  COMPLETED: number;
+  OVERDUE: number;
 } | null;
 
 
+
+interface TaskStatus {
+  IN_PROGRESS?: number;
+  COMPLETED?: number;
+}
 
 const AllTaskScreen = () => {
     const navigation = useNavigation();
@@ -44,14 +50,20 @@ const AllTaskScreen = () => {
     const [loading, setLoading] = useState(true);
  
     // bieu do tron     du an
-    const [projectStatusData, setProjectStatusData] = useState<ProjectStatusData>(null);
+    const [numberTaskStatusData, setNumberTaskStatusData] = useState<TaskStatusData>(null);
 
     const [showCategoryFilter, setShowCategoryFilter] = useState(false);
 
-    useEffect(() => {
+    const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null); // Lưu trạng thái lấy từ API
+
+    const [taskType, setTaskType] = useState<number | null>(null);// Lưu loại công việc
+
+    
         
-        const fetchData = async () => {
+        const fetchData = async (taskType: number | null = null) => {
             const authToken = await AsyncStorage.getItem("token"); // Lấy token từ bộ nhớ
+
+            const userId = await AsyncStorage.getItem("userId");  //  Lấy userId từ AsyncStorage
     
             console.log("Token:", authToken);
 
@@ -59,12 +71,25 @@ const AllTaskScreen = () => {
                 console.error("No token found! Please log in.");
                 return;
             }
+
+
+            // api lay danh sach task
+            let tasktUrl = `${API_BASE_URL}/projects/get-all-task-in-project?userId=${userId}`;
+            if (taskType !== null) {
+                tasktUrl += `&type=${taskType}`;
+            }
+
+            // api lay so luong task ơ bieu do tron
+            let numberTasktUrl = `${API_BASE_URL}/tasks/get-task-count-by-status?userId=${userId}`;
+            if (taskType !== null) {
+              numberTasktUrl += `&type=${taskType}`;
+            }
     
             try {
                 // danh sach task , bieu doi tron
-                const [taskRes, projectStatusResponse] = await Promise.all([
+                const [taskRes, numberTaskStatusResponse ,taskStatusResponse] = await Promise.all([
 
-                    fetch(`${API_BASE_URL}/projects/get-all-task-in-project`, {
+                    fetch(tasktUrl, {
                         method: "GET",
                         headers: {
                           "Authorization": `Bearer ${authToken}`,
@@ -73,10 +98,18 @@ const AllTaskScreen = () => {
                       }),
 
     
-                    fetch(`${API_BASE_URL}/projects/get-number-project-by-status`, {
+                    fetch(numberTasktUrl, {
                         method: "GET",
                         headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
                     }),
+
+                    fetch(`${API_BASE_URL}/tasks/get-status-all-tasks`, {
+                      method: "GET",
+                      headers: {
+                          "Authorization": `Bearer ${authToken}`,
+                          "Content-Type": "application/json"
+                      }
+                  })
                 ]);
 
 
@@ -88,15 +121,19 @@ const AllTaskScreen = () => {
            setTasks(taskData.map((task, index) => ({
             id: task.id || String(index),
             title: task.title,
-            date: task.toDate || "Không có ngày"
+            date: task.toDate || "Không có ngày hết hạn" ,
+            status : task.status
            
           })));
           } else {
             console.error("Lỗi lấy danh sách công việc.");
           }
         
+          const taskStatusData = await taskStatusResponse.json();
+          setTaskStatus(taskStatusData); // Lưu kết quả API vào state
 
-                if (projectStatusResponse.ok) setProjectStatusData(await projectStatusResponse.json());
+
+                if (numberTaskStatusResponse.ok) setNumberTaskStatusData(await numberTaskStatusResponse.json());
                 else console.error("Failed to fetch project status data.");
 
 
@@ -107,9 +144,18 @@ const AllTaskScreen = () => {
             }
         };
 
-    
-        fetchData();
-    }, []);
+                
+                // Gọi API khi component mount lần đầu
+                useEffect(() => {
+                  fetchData();
+              }, []);
+
+              // Gọi API lại mỗi khi taskType thay đổi
+              useEffect(() => {
+                  if (taskType !== null ) {
+                      fetchData(taskType);
+                  }
+              }, [taskType]);
 
     if (loading) {
         return (
@@ -121,29 +167,43 @@ const AllTaskScreen = () => {
     }
 
     // doan check nay can thiet de khong null
-    if (  !projectStatusData ) {
+    if (  !numberTaskStatusData ) {
         return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
     }
 
     return (
+
+      
+      
         <ScrollView style={styles.container}>
 
+          
+
                         {/* Dải màu vàng cho chữ "Đang xử lý" */}
-            <View style={styles.statusContainer}>
-                <Text >Tiến độ công việc</Text>
-                <View style={styles.processingTag}>
-                    <Text style={styles.processingText}>Đang xử lý</Text>
-                </View>
-            </View>
+                          <View style={styles.statusContainer}>
+                  <Text>Tiến độ công việc</Text>
+                  <View style={[
+                      styles.processingTag, 
+                      taskStatus?.IN_PROGRESS === 1 ? styles.inProgress : styles.completed
+                  ]}>
+                      <Text style={styles.processingText}>
+                          {taskStatus?.IN_PROGRESS === 1 ? "Đang xử lý" : "Hoàn thành"}
+                      </Text>
+                  </View>
+              </View>
+        
         
             {/* Pie Chart (Donut) */}
             <View style={styles.pieWrapper}>
+              
                 <View style={styles.pieContainer}>
+
                     <PieChart
                           data={[
-                            { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#4285F4", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Hoàn thành", population: numberTaskStatusData.COMPLETED || 0, color: "#40A737", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Đang xử lý", population: numberTaskStatusData.IN_PROGRESS || 0, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Quá hạn", population: numberTaskStatusData.OVERDUE || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Từ chối", population: numberTaskStatusData.CANCELLED || 0, color: "red", legendFontColor: "#222", legendFontSize: 12 },
                         ]}
                         width={400}
                         height={250}
@@ -156,7 +216,10 @@ const AllTaskScreen = () => {
                     {/* Vòng tròn trắng ở giữa */}
                     <View style={styles.innerCircle}>
                         <Text style={styles.innerCircleText}>Tổng số</Text>
-                        <Text style={styles.innerCircleNumber}>{projectStatusData.total}</Text>
+                        <Text style={styles.innerCircleNumber}>{numberTaskStatusData.CANCELLED +
+                                                                 numberTaskStatusData.COMPLETED + 
+                                                                 numberTaskStatusData.IN_PROGRESS + 
+                                                                 numberTaskStatusData.OVERDUE  }</Text>
                     </View>
                 </View>
             </View>
@@ -168,6 +231,53 @@ const AllTaskScreen = () => {
 
             <View style={{ padding: 20, backgroundColor: '#F8F8F8', flex: 1 }}>
       <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>
+                     {/* Bộ lọc */}
+                     <View style={styles.filterContainer}>
+        <TouchableOpacity 
+          style={styles.filterButton} 
+          onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+        >
+          <Text style={styles.filterText}>Phân loại</Text>
+        </TouchableOpacity>
+       
+      </View>
+
+      {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
+      {showCategoryFilter && (
+                <View style={styles.dropdown}>
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setTaskType(0); // Gọi API với type = 0
+                            fetchData(0);    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Giao</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setTaskType(1); // Gọi API với type = 1
+                            fetchData(1);    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Được giao</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setTaskType(null); 
+                            fetchData(null );    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Tất cả</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id}
@@ -175,7 +285,23 @@ const AllTaskScreen = () => {
           <Card style={{ marginVertical: 8, backgroundColor: '#D9D9D9', borderRadius: 15 }}>
             <Card.Content style={{ flexDirection: 'row', alignItems: 'center', padding: 15 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, color: '#333', fontWeight: 'bold' }}>Đang xử lý</Text>
+
+                {/* // trạng thái công việc */}
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View 
+                  style={{
+                      width: 10, 
+                      height: 10, 
+                      borderRadius: 5, 
+                      backgroundColor: getStatusColor(item.status), 
+                      marginRight: 5
+                  }} 
+              />
+              <Text style={{ fontSize: 12, color: "#333", fontWeight: "bold" }}>
+                  {getStatusLabel(item.status)}
+              </Text>
+          </View>
+
                 <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5 }}>{item.title}</Text>
                 <Text style={{ fontSize: 12, color: '#666' }}>📅 {item.date}</Text>
               </View>
@@ -190,6 +316,36 @@ const AllTaskScreen = () => {
         </ScrollView>
     );
 };
+const getStatusLabel = (status: number): string => {
+  switch (status) {
+      case 1:
+          return "Đang xử lý";
+      case 2:
+          return "Hoàn thành";
+      case 3:
+          return "Từ chối";
+      case 4:
+          return "Quá hạn";
+      default:
+          return "Không xác định";
+  }
+};
+
+const getStatusColor = (status: number): string => {
+  switch (status) {
+      case 1:
+          return "#F59E0B"; // Xanh dương
+      case 2:
+          return "#28A745"; // Xanh lá
+      case 3:
+          return "#DC3545"; // Đỏ
+      case 4:
+          return "#FFC107"; // Vàng
+      default:
+          return "#333"; // Mặc định
+  }
+};
+
 
 const chartConfig = {
     backgroundGradientFrom: "#fff",
@@ -208,6 +364,12 @@ const styles = StyleSheet.create({
     taskText: { color: "white", fontWeight: "bold", textAlign: "center" },
     chartTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
     chart: { marginBottom: 20 },
+    inProgress: {
+      backgroundColor: "#FFBF57", // Màu vàng khi đang xử lý
+  },
+  completed: {
+    backgroundColor: "green", // Màu xanh khi hoàn thành
+},
 
     pieWrapper: { flexDirection: "row", alignItems: "center" },
     pieContainer: { position: "relative", width: 250, height: 250 },

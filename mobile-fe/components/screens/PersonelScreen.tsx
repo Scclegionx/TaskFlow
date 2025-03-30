@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert  } from "react-native";
 import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -8,6 +8,10 @@ import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@/constants/api";
 import { StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import * as FileSystem from "expo-file-system";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as MediaLibrary from "expo-media-library";
+
 
 
 interface UserProfile {
@@ -43,6 +47,7 @@ const PersonelScreen = () => {
 
   useEffect(() => {
     fetchProfile(); // Chỉ gọi API lấy profile khi component mount
+    fetchMembers(""); // Gọi API lấy danh sách nhân sự ngay khi vào màn hình
   }, []);
   
   const fetchProfile = async () => {
@@ -114,6 +119,122 @@ const PersonelScreen = () => {
     fetchMembers(searchText);
   };
 
+  // const downloadExcel = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const authToken = await AsyncStorage.getItem("token");
+  
+  //     if (!authToken) {
+  //       Alert.alert("Lỗi", "Vui lòng đăng nhập lại!");
+  //       return;
+  //     }
+  
+  //     // Gọi API để lấy file Excel
+  //     const response = await fetch(`${API_BASE_URL}/document/download`, {
+  //       method: "GET",
+  //       headers: {
+  //         Authorization: `Bearer ${authToken}`,
+  //       },
+  //     });
+  
+  //     if (!response.ok) {
+  //       throw new Error(`Lỗi API: ${response.status}`);
+  //     }
+  
+  //     // Đọc dữ liệu dạng base64
+  //     const base64Data = await response.text();
+  
+  //     // Tạo đường dẫn file
+  //     const fileUri = FileSystem.cacheDirectory + "DanhSachNhanSu.xlsx";
+      
+  //     // Ghi file vào cache
+  //     await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+  //       encoding: FileSystem.EncodingType.Base64,
+  //     });
+  
+  //     // Kiểm tra file tồn tại
+  //     const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  //     if (!fileInfo.exists) {
+  //       throw new Error("Không tạo được file");
+  //     }
+  
+  //     // Chuẩn bị mở file
+  //     const contentUri = await FileSystem.getContentUriAsync(fileUri);
+      
+  //     // Mở hộp thoại chọn ứng dụng
+  //     await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+  //       data: contentUri,
+  //       flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+  //       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //     });
+  
+  //   } catch (error) {
+  //     console.error("Lỗi tải file:", error);
+  //     Alert.alert(
+  //       "Lỗi", 
+  //       "Không thể mở file. Hãy cài ứng dụng đọc Excel như Microsoft Excel."
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const downloadExcel = async () => {
+    try {
+      setLoading(true);
+      const authToken = await AsyncStorage.getItem("token");
+  
+      const response = await fetch(`${API_BASE_URL}/document/download`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+  
+      if (!response.ok) throw new Error("Failed to download");
+  
+      // Convert response to blob
+      const blob = await response.blob();
+      
+      // Convert blob to base64 với kiểm tra null
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (!reader.result) {
+            return reject("Không đọc được dữ liệu");
+          }
+          
+          if (typeof reader.result === "string") {
+            resolve(reader.result.split(",")[1]);
+          } else {
+            resolve(Buffer.from(reader.result).toString("base64"));
+          }
+        };
+        reader.onerror = () => reject("Lỗi đọc file");
+        reader.readAsDataURL(blob);
+      });
+  
+      // Tạo file path
+      const fileUri = FileSystem.documentDirectory + "data.xlsx";
+      
+      // Ghi file
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+  
+      // Mở file
+      const contentUri = await FileSystem.getContentUriAsync(fileUri);
+      await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+        data: contentUri,
+        flags: 1,
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+  
+    } catch (error) {
+      Alert.alert("Lỗi khi tải file" || "Lỗi không xác định");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <View style={{ padding: 16, backgroundColor: "#F8F9FA", flex: 1 }}>
 
@@ -128,6 +249,12 @@ const PersonelScreen = () => {
                                  <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
                                     <FontAwesome name="search" size={20} color="white" />
                                 </TouchableOpacity>
+                                <TouchableOpacity onPress={() => {
+                console.log("Download button pressed");
+                downloadExcel();
+              }} style={{ backgroundColor: "#007BFF", padding: 10, borderRadius: 8, marginLeft: 10 }}>
+                <FontAwesome name="download" size={20} color="white" />
+              </TouchableOpacity>
                             </View>
       {/* Kiểm tra nếu đang load dữ liệu */}
       {loading ? (

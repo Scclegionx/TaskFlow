@@ -179,27 +179,28 @@ const AllTaskScreen = () => {
         return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
     }
 
-    return (
-
-      
-      
-        <ScrollView style={styles.container}>
-
-                            {/* 🔍 Thanh tìm kiếm */}
-                            <View style={styles.searchContainer}>
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Nhập từ khóa tìm kiếm..."
-                        value={searchText}
-                        onChangeText={setSearchText}
-                    />
-                    <TouchableOpacity onPress={() => fetchData(taskType, searchText)} style={styles.searchButton}>
-                        <FontAwesome name="search" size={20} color="white" />
-                    </TouchableOpacity>
+     return (
+        <View style={styles.container}>
+          <FlatList
+            data={tasks}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={
+              <>
+                {/* 🔍 Thanh tìm kiếm */}
+                <View style={styles.searchContainer}>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Nhập từ khóa tìm kiếm..."
+                    value={searchText}
+                    onChangeText={setSearchText}
+                  />
+                  <TouchableOpacity onPress={() => fetchData(taskType, searchText)} style={styles.searchButton}>
+                    <FontAwesome name="search" size={20} color="white" />
+                  </TouchableOpacity>
                 </View>
-
-                        {/* Dải màu vàng cho chữ "Đang xử lý" */}
-                          <View style={styles.statusContainer}>
+      
+                {/* Dải màu vàng cho chữ "Đang xử lý" */}
+                <View style={styles.statusContainer}>
                   <Text>Tiến độ công việc</Text>
                   <View style={[
                       styles.processingTag, 
@@ -209,131 +210,115 @@ const AllTaskScreen = () => {
                           {taskStatus?.IN_PROGRESS === 1 ? "Đang xử lý" : "Hoàn thành"}
                       </Text>
                   </View>
-              </View>
-        
-        
-            {/* Pie Chart (Donut) */}
-            <View style={styles.pieWrapper}>
-              
-                <View style={styles.pieContainer}>
-
+                </View>
+      
+                {/* Pie Chart (Donut) */}
+                <View style={styles.pieWrapper}>
+                  <View style={styles.pieContainer}>
                     <PieChart
-                          data={[
-                            { name: "Hoàn thành", population: numberTaskStatusData.COMPLETED || 0, color: "#40A737", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Đang xử lý", population: numberTaskStatusData.IN_PROGRESS || 0, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Quá hạn", population: numberTaskStatusData.OVERDUE || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Từ chối", population: numberTaskStatusData.CANCELLED || 0, color: "red", legendFontColor: "#222", legendFontSize: 12 },
-                        ]}
-                        width={400}
-                        height={250}
-                        chartConfig={chartConfig}
-                        accessor="population"
-                        backgroundColor="transparent"
-                        paddingLeft="0"
-                        absolute
+                      data={[
+                        { name: "Hoàn thành", population: numberTaskStatusData.COMPLETED || 0, color: "#40A737", legendFontColor: "#222", legendFontSize: 12 },
+                        { name: "Đang xử lý", population: numberTaskStatusData.IN_PROGRESS || 0, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
+                        { name: "Quá hạn", population: numberTaskStatusData.OVERDUE || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
+                        { name: "Từ chối", population: numberTaskStatusData.CANCELLED || 0, color: "red", legendFontColor: "#222", legendFontSize: 12 },
+                      ]}
+                      width={400}
+                      height={250}
+                      chartConfig={chartConfig}
+                      accessor="population"
+                      backgroundColor="transparent"
+                      paddingLeft="0"
+                      absolute
                     />
                     {/* Vòng tròn trắng ở giữa */}
                     <View style={styles.innerCircle}>
                         <Text style={styles.innerCircleText}>Tổng số</Text>
                         <Text style={styles.innerCircleNumber}>{numberTaskStatusData.CANCELLED +
-                                                                 numberTaskStatusData.COMPLETED + 
-                                                                 numberTaskStatusData.IN_PROGRESS + 
-                                                                 numberTaskStatusData.OVERDUE  }</Text>
+                                                                numberTaskStatusData.COMPLETED + 
+                                                                numberTaskStatusData.IN_PROGRESS + 
+                                                                numberTaskStatusData.OVERDUE  }</Text>
                     </View>
+                  </View>
                 </View>
-            </View>
-
-
-
-
-             {/* danh sách công việc */}
-
-            <View style={{ padding: 20, backgroundColor: '#F8F8F8', flex: 1 }}>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>
-                     {/* Bộ lọc */}
-                     <View style={styles.filterContainer}>
-        <TouchableOpacity 
-          style={styles.filterButton} 
-          onPress={() => setShowCategoryFilter(!showCategoryFilter)}
-        >
-          <Text style={styles.filterText}>Phân loại</Text>
-        </TouchableOpacity>
-       
-      </View>
-
-      {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
-      {showCategoryFilter && (
-                <View style={styles.dropdown}>
-                    <TouchableOpacity
+      
+                {/* Header danh sách công việc */}
+                <View style={{ padding: 20, backgroundColor: '#F8F8F8', marginBottom : - 5 }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>
+                  {/* Bộ lọc */}
+                  <View style={styles.filterContainer}>
+                    <TouchableOpacity 
+                      style={styles.filterButton} 
+                      onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+                    >
+                      <Text style={styles.filterText}>Phân loại</Text>
+                    </TouchableOpacity>
+                  </View>
+      
+                  {showCategoryFilter && (
+                    <View style={styles.dropdown}>
+                      <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => {
-                            setTaskType(0); // Gọi API với type = 0
-                            fetchData(0);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                          setTaskType(0);
+                          fetchData(0);
+                          setShowCategoryFilter(false);
                         }}
-                    >
+                      >
                         <Text>Giao</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => {
-                            setTaskType(1); // Gọi API với type = 1
-                            fetchData(1);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                          setTaskType(1);
+                          fetchData(1);
+                          setShowCategoryFilter(false);
                         }}
-                    >
+                      >
                         <Text>Được giao</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => {
-                            setTaskType(null); 
-                            fetchData(null );    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                          setTaskType(null); 
+                          fetchData(null);
+                          setShowCategoryFilter(false);
                         }}
-                    >
+                      >
                         <Text>Tất cả</Text>
-                    </TouchableOpacity>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
+              </>
+            }
+            renderItem={({ item }) => (
+              <Card style={{ marginVertical: 8, backgroundColor: '#D9D9D9', borderRadius: 15, marginHorizontal: 20 }}>
+                <Card.Content style={{ flexDirection: 'row', alignItems: 'center', padding: 15 }}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <View 
+                        style={{
+                          width: 10, 
+                          height: 10, 
+                          borderRadius: 5, 
+                          backgroundColor: getStatusColor(item.status), 
+                          marginRight: 5
+                        }} 
+                      />
+                      <Text style={{ fontSize: 12, color: "#333", fontWeight: "bold" }}>
+                        {getStatusLabel(item.status)}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5 }}>{item.title}</Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>📅 {item.date}</Text>
+                  </View>
+                  <IconButton icon="star-outline" size={24} />
+                </Card.Content>
+              </Card>
             )}
-      <FlatList
-        data={tasks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Card style={{ marginVertical: 8, backgroundColor: '#D9D9D9', borderRadius: 15 }}>
-            <Card.Content style={{ flexDirection: 'row', alignItems: 'center', padding: 15 }}>
-              <View style={{ flex: 1 }}>
-
-                {/* // trạng thái công việc */}
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View 
-                  style={{
-                      width: 10, 
-                      height: 10, 
-                      borderRadius: 5, 
-                      backgroundColor: getStatusColor(item.status), 
-                      marginRight: 5
-                  }} 
-              />
-              <Text style={{ fontSize: 12, color: "#333", fontWeight: "bold" }}>
-                  {getStatusLabel(item.status)}
-              </Text>
-          </View>
-
-                <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5 }}>{item.title}</Text>
-                <Text style={{ fontSize: 12, color: '#666' }}>📅 {item.date}</Text>
-              </View>
-              {/* <Avatar.Image size={40} source={{ uri: item.avatar }} /> */}
-              <IconButton icon="star-outline" size={24} />
-            </Card.Content>
-          </Card>
-        )}
-      />
-    </View>
-
-        </ScrollView>
-    );
+          />
+        </View>
+      );
 };
 const getStatusLabel = (status: number): string => {
   switch (status) {

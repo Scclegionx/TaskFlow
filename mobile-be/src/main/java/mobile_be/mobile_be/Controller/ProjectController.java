@@ -56,9 +56,13 @@ public class ProjectController {
 
     // api lay ra cac cong viec của du an
     // lay all cong viec trong he thong luon
+    // man hinh tat ca cong viec
     @GetMapping("/get-all-task-in-project")
-    public ResponseEntity<?> getAllTaskInProject(@RequestParam(value = "projectId", required = false) Integer projectId) {
-        return ResponseEntity.ok(projectService.getAllTaskInProject(projectId));
+    public ResponseEntity<?> getAllTaskInProject(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                                 @RequestParam(value = "userId", required = false) Integer userId,
+                                                 @RequestParam(value = "type", required = false) Integer type,
+                                                 @RequestParam(value = "textSearch", required = false) String textSearch) {
+        return ResponseEntity.ok(projectService.getAllTaskInProject(projectId, userId, type, textSearch));
     }
 
     @GetMapping("/get-project")

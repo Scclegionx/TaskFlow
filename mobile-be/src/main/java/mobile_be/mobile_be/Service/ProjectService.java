@@ -19,7 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import mobile_be.mobile_be.contains.enum_projectAndTaskType;
 
+import mobile_be.mobile_be.contains.enum_taskStatus;
+
+
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -131,9 +136,20 @@ public class ProjectService {
     }
 
 
-    @Transactional
-    public List<TaskResponseDTO> getAllTaskInProject(Integer projectId) {
-        List<Task> results = projectRepository.getAllTaskInProject(projectId);
+
+
+
+    public List<TaskResponseDTO> getAllTaskInProject(Integer projectId, Integer userId, Integer type, String textSearch) {
+
+        List<Task> results = new ArrayList<>();
+        if(type == null){
+            results = projectRepository.getAllTaskInProject(projectId, textSearch);
+        }else if (type == enum_projectAndTaskType.Giao.getValue()){
+            results = projectRepository.getAllTaskInProjectGiao(projectId, userId, textSearch);
+        }else if (type == enum_projectAndTaskType.DuocGiao.getValue()){
+            results = projectRepository.getAllTaskInProjectDuocGiao(projectId, userId, textSearch);
+        }
+
         return results.stream().map(task -> {
             TaskResponseDTO dto = taskMapper.toDTO(task);
 
@@ -141,6 +157,14 @@ public class ProjectService {
                 User user = userRepository.findById(task.getCreatedBy()).orElse(null);
                 if (user != null){
                     dto.setNameCreatedBy(user.getName());
+                }
+            }
+
+            // xu ly qua han
+            if (task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue()){
+                LocalDateTime currentDate = LocalDateTime.now();
+                if (task.getToDate() != null && currentDate.isAfter(task.getToDate())) {
+                    dto.setStatus(enum_taskStatus.OVERDUE.getValue());
                 }
             }
 
@@ -179,10 +203,10 @@ public class ProjectService {
     public ProjectResponseDTO getProjectById(Integer id) {
         Project project = projectRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-        
+
         ProjectResponseDTO dto = projectMapper.toDTO(project);
         dto.setMembers(projectMapper.mapProjectMembers(new ArrayList<>(project.getProjectMembers())));
-        dto.setTasks(projectMapper.mapTasks(new ArrayList<>(project.getTasks()))); 
+        dto.setTasks(projectMapper.mapTasks(new ArrayList<>(project.getTasks())));
 
         return dto;
     }

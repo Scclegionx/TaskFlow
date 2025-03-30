@@ -25,7 +25,7 @@ public class Task {
     // nguoi tao task
     private Integer createdBy;
     // tao bang trung gian cho task va user
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "task_assignees",
             joinColumns = @JoinColumn(name = "task_id"),

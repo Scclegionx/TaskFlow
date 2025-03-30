@@ -10,6 +10,7 @@ import mobile_be.mobile_be.Repository.TaskRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import mobile_be.mobile_be.contains.enum_taskStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +62,6 @@ public class TaskService {
         response.put("COMPLETED", result.getOrDefault(2, 0));
         response.put("CANCELLED", result.getOrDefault(3, 0));
         response.put("OVERDUE", result.getOrDefault(4, 0));
-
         return response;
     }
 
@@ -94,5 +94,15 @@ public class TaskService {
         return listTask;
     }
 
+    public Map<String, Integer> getStatusAllTasks() {
+        Map<String , Integer> result = new HashMap<>();
+      List<Task>  listTasks = taskRepository.findTasksByStatus(enum_taskStatus.IN_PROGRESS.getValue());
+      if (listTasks != null){
+            result.put("IN_PROGRESS", 1);
+      }else{
+            result.put("COMPLETED", 2);
+      }
+      return result;
+    }
 
 }

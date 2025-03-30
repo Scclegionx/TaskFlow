@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public interface TaskMapper {
     TaskMapper INSTANCE = Mappers.getMapper(TaskMapper.class);
 
+    @Mapping(source = "id", target = "id")
     @Mapping(source = "project.name", target = "project")
     @Mapping(source = "assignees", target = "assignees", qualifiedByName = "mapAssignees")
     TaskResponseDTO toDTO(Task task);

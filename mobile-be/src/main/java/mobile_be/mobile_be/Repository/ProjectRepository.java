@@ -113,9 +113,31 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     List<Project>  getAllProject(String name, Integer projectId);
 
 
+
     @Query(value = "SELECT * FROM tasks WHERE " +
-            ":projectId  is null or project_id = :projectId", nativeQuery = true)
-    List<Task> getAllTaskInProject(Integer projectId);
+            "( :projectId  is null or project_id = :projectId )" +
+            " AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))",
+            nativeQuery = true)
+    List<Task> getAllTaskInProject(Integer projectId, String textSearch);
+
+
+
+    @Query(value = "SELECT * FROM tasks t WHERE " +
+            "(:projectId  is null or t.project_id = :projectId)  and  " +
+            " t.created_by = :userId " +
+            "AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))",
+            nativeQuery = true)
+    List<Task> getAllTaskInProjectGiao(Integer projectId, Integer userId, String textSearch);
+
+
+
+    @Query(value = "SELECT * FROM tasks t " +
+            " join task_assignees  ta on ta.task_id = t.id  " +
+            " WHERE ta.user_id = :userId and  " +
+            "( :projectId  is null or t.project_id = :projectId )" +
+            "AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))",
+            nativeQuery = true)
+    List<Task> getAllTaskInProjectDuocGiao(Integer projectId, Integer userId, String textSearch);
 
 
 

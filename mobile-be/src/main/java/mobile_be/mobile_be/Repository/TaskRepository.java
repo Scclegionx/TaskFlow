@@ -64,4 +64,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             nativeQuery = true)
     List<Object[]> getTaskCountByStatusDuocGiao(Integer userId);
 
+
+    @Query(value = "SELECT * from tasks where status = :status", nativeQuery = true)
+    List<Task> findTasksByStatus(Integer status);
+
 }

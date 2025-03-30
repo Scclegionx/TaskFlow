@@ -40,4 +40,11 @@ public class TaskController {
     // da co ben project controller
 
 
+    //
+    // api de lay ra trang thai tat ca cong viec / dung trong man hinh tat ca cong viec
+    @GetMapping("/get-status-all-tasks")
+    public ResponseEntity<Map<String, Integer>> getStatusAllTasks(@RequestParam(value = "type", required = false) Integer type) {
+        return ResponseEntity.ok(taskService.getStatusAllTasks());
+    }
+
 }

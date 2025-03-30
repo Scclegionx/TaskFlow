@@ -1,5 +1,5 @@
 import React , { useEffect, useState }from "react";
-import { View, Text, ScrollView, FlatList,TouchableOpacity,Image, StyleSheet ,ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, FlatList,TouchableOpacity,Image, StyleSheet ,ActivityIndicator,TextInput  } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLayoutEffect } from "react";
@@ -58,9 +58,13 @@ const AllTaskScreen = () => {
 
     const [taskType, setTaskType] = useState<number | null>(null);// Lưu loại công việc
 
+    const [searchText, setSearchText] = useState("");
+
     
         
-        const fetchData = async (taskType: number | null = null) => {
+        const fetchData = async (taskType: number | null = null,
+                                searchText: string = ""   
+        ) => {
             const authToken = await AsyncStorage.getItem("token"); // Lấy token từ bộ nhớ
 
             const userId = await AsyncStorage.getItem("userId");  //  Lấy userId từ AsyncStorage
@@ -78,6 +82,10 @@ const AllTaskScreen = () => {
             if (taskType !== null) {
                 tasktUrl += `&type=${taskType}`;
             }
+
+            if (searchText.trim()) {
+              tasktUrl += `&textSearch=${encodeURIComponent(searchText)}`;
+          }
 
             // api lay so luong task ơ bieu do tron
             let numberTasktUrl = `${API_BASE_URL}/tasks/get-task-count-by-status?userId=${userId}`;
@@ -153,9 +161,9 @@ const AllTaskScreen = () => {
               // Gọi API lại mỗi khi taskType thay đổi
               useEffect(() => {
                   if (taskType !== null ) {
-                      fetchData(taskType);
+                      fetchData(taskType, searchText);
                   }
-              }, [taskType]);
+              }, [taskType, searchText]);
 
     if (loading) {
         return (
@@ -177,7 +185,18 @@ const AllTaskScreen = () => {
       
         <ScrollView style={styles.container}>
 
-          
+                            {/* 🔍 Thanh tìm kiếm */}
+                            <View style={styles.searchContainer}>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Nhập từ khóa tìm kiếm..."
+                        value={searchText}
+                        onChangeText={setSearchText}
+                    />
+                    <TouchableOpacity onPress={() => fetchData(taskType, searchText)} style={styles.searchButton}>
+                        <FontAwesome name="search" size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
 
                         {/* Dải màu vàng cho chữ "Đang xử lý" */}
                           <View style={styles.statusContainer}>
@@ -369,6 +388,29 @@ const styles = StyleSheet.create({
   },
   completed: {
     backgroundColor: "green", // Màu xanh khi hoàn thành
+},
+
+searchContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  padding: 10,
+  backgroundColor: "#f1f1f1"
+},
+searchInput: {
+  flex: 1,
+  backgroundColor: "white",
+  borderRadius: 8,
+  padding: 10,
+  fontSize: 16,
+  borderWidth: 1,
+  borderColor: "#ccc",
+  marginRight: 10
+},
+searchButton: {
+  // backgroundColor: "#007BFF",
+  backgroundColor: "#D3D3D3",
+  padding: 10,
+  borderRadius: 8
 },
 
     pieWrapper: { flexDirection: "row", alignItems: "center" },

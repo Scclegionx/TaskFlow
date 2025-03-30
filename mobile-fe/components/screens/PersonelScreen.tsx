@@ -8,6 +8,15 @@ import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@/constants/api";
 
 
+interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+  active: boolean;
+  roles: string[];
+  avatar: string;
+}
+
 
 const PersonelScreen = () => {
   const navigation = useNavigation(); // Use the hook to get the navigation object
@@ -21,9 +30,45 @@ const PersonelScreen = () => {
   const [filteredData, setFilteredData] = useState<{ name: string; email: string }[]>([]); // Dữ liệu sau khi lọc
   const [loading, setLoading] = useState(true);
 
+  // profile để hiển thị ảnh
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   // Lấy danh sách user từ API
   useEffect(() => {
+
+
+    const fetchProfile = async () => {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) {
+        console.error("Không tìm thấy token! Vui lòng đăng nhập.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/profile`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Lỗi khi lấy dữ liệu người dùng");
+        }
+
+        const data: UserProfile = await response.json(); // Ép kiểu dữ liệu
+        setProfile(data);
+      } catch (error) {
+        console.error("Lỗi:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+
+
     const fetchMembers = async () => {
       setLoading(true);
       try {
@@ -74,7 +119,7 @@ const handleSearch = (text: string) => {
     <View style={{ padding: 16, backgroundColor: "#F8F9FA", flex: 1 }}>
       {/* Ô tìm kiếm */}
       <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#E9ECEF", borderRadius: 10, paddingHorizontal: 10 }}>
-        <Avatar.Image size={30} source={{ uri: "https://i.pravatar.cc/50" }} />
+      <Avatar.Image size={30} source={{ uri: profile?.avatar || "" }} />
         <TextInput
           style={{ flex: 1, height: 40, marginLeft: 10 }}
           placeholder="Tìm kiếm"

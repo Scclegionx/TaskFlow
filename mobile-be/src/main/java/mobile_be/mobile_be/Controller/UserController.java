@@ -70,6 +70,9 @@ public class UserController {
         // Chuyển đổi sang DTO
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
+
+        // them avatar
+        userDTO.setAvatar(user.getAvatar());
         userDTO.setName(user.getName());
         userDTO.setEmail(user.getEmail());
         userDTO.setGender(user.getGender());

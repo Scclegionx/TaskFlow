@@ -46,11 +46,20 @@ const HomeScreen = () => {
     // bieu do tron     du an
     const [projectStatusData, setProjectStatusData] = useState<ProjectStatusData>(null);
 
-    const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+    const [showCategoryFilter, setShowCategoryFilter] = useState(false); // Hiển thị dropdown "Phân loại"
 
-    useEffect(() => {
-        const fetchData = async () => {
+    const [taskType, setTaskType] = useState<number | null>(null);// Lưu loại công việc
+
+    const [projectType, setProjectType] = useState<number | null>(null);// Lưu loại dự án
+
+
+  
+        const fetchData = async (
+            taskType: number | null = null,
+             projectType: number | null = null) => {
             const authToken = await AsyncStorage.getItem("token"); // Lấy token từ bộ nhớ
+
+            const userId = await AsyncStorage.getItem("userId");  //  Lấy userId từ AsyncStorage
     
             console.log("Token:", authToken);
 
@@ -60,6 +69,18 @@ const HomeScreen = () => {
             }
     
             try {
+
+                let tasktUrl = `${API_BASE_URL}/tasks/get-task-count-by-status?userId=${userId}`;
+            if (taskType !== null) {
+                tasktUrl += `&type=${taskType}`;
+            }
+
+            let projectUrl = `${API_BASE_URL}/projects/get-number-project-by-status?userId=${userId}`;
+            if (projectType !== null) {
+                projectUrl += `&type=${projectType}`;
+            }
+
+
                 // lan lượt  3 cai tren cung, task , du an
                 const [projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
                     fetch(`${API_BASE_URL}/projects/get-number-project-task-member`, {
@@ -69,14 +90,14 @@ const HomeScreen = () => {
                             "Content-Type": "application/json"
                         }
                     }),
-                    fetch(`${API_BASE_URL}/tasks/get-task-count-by-status`, {
+                    fetch(tasktUrl, {
                         method: "GET",
                         headers: {
                             "Authorization": `Bearer ${authToken}`,
                             "Content-Type": "application/json"
                         }
                     }),
-                    fetch(`${API_BASE_URL}/projects/get-number-project-by-status`, {
+                    fetch(projectUrl, {
                         method: "GET",
                         headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
                     }),
@@ -105,9 +126,19 @@ const HomeScreen = () => {
             }
         };
 
-    
+     // Gọi API khi component mount lần đầu
+     useEffect(() => {
         fetchData();
     }, []);
+
+    // Gọi API lại mỗi khi taskType thay đổi
+    useEffect(() => {
+        if (taskType !== null ) {
+            fetchData(taskType, projectType);
+        }
+    }, [taskType, projectType]);
+    
+
 
     if (loading) {
         return (
@@ -160,15 +191,40 @@ const HomeScreen = () => {
 
       {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
       {showCategoryFilter && (
-        <View style={styles.dropdown}>
-          <TouchableOpacity style={styles.dropdownItem}>
-            <Text>Giao</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dropdownItem}>
-            <Text>Được giao</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+                <View style={styles.dropdown}>
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setTaskType(0); // Gọi API với type = 0
+                            fetchData(0, projectType);    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Giao</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setTaskType(1); // Gọi API với type = 1
+                            fetchData(1, projectType);    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Được giao</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setTaskType(null); 
+                            fetchData(null , projectType );    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Tất cả</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         
             <BarChart
                 data={{
@@ -193,6 +249,56 @@ const HomeScreen = () => {
 
             {/* Pie Chart (Donut) */}
             <Text style={styles.chartTitle}>Dự án</Text>
+             {/* Bộ lọc */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity 
+          style={styles.filterButton} 
+          onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+        >
+          <Text style={styles.filterText}>Phân loại</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.filterButton}>
+          <Text style={styles.filterText}>Thời gian</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
+      {showCategoryFilter && (
+                <View style={styles.dropdown}>
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setProjectType(0); // Gọi API với type = 0
+                            fetchData(taskType, 0);    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Giao</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setProjectType(1); // Gọi API với type = 1
+                            fetchData(taskType, 1);    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Được giao</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setProjectType(null); 
+                            fetchData(taskType , null);    // Gọi API ngay khi chọn
+                            setShowCategoryFilter(false);
+                        }}
+                    >
+                        <Text>Tất cả</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
             <View style={styles.pieWrapper}>
                 <View style={styles.pieContainer}>
                     <PieChart

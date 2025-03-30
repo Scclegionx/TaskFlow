@@ -34,8 +34,10 @@ public class ProjectController {
     // api lay ra so luong du an theo trang thai
     // bieu do tron o home
     @GetMapping("/get-number-project-by-status")
-    public ResponseEntity<Map<String, Integer>> getNumberProjectByStatus(@RequestParam(value = "projectId", required = false) Integer projectId) {
-        return ResponseEntity.ok(projectService.getNumberProjectByStatus(projectId));
+    public ResponseEntity<Map<String, Integer>> getNumberProjectByStatus(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                                                         @RequestParam(value = "type", required = false) Integer type,
+                                                                         @RequestParam(value = "userId", required = false) Integer userId) {
+        return ResponseEntity.ok(projectService.getNumberProjectByStatus(projectId, type, userId));
     }
 
     // api lay ra danh sach cac du an

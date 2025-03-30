@@ -13,6 +13,8 @@ public class UserDTO {
     private boolean active;
     private Set<String> roles;
 
+    private String avatar;
+
     // Constructor nhận User
     public UserDTO(User user) {
         this.id = user.getId();

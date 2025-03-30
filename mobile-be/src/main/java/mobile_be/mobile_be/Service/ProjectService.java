@@ -89,8 +89,16 @@ public class ProjectService {
         return Collections.emptyMap();
     }
 
-    public  Map<String, Integer> getNumberProjectByStatus(Integer projectId){
-        List<Object[]> result = projectRepository.getNumberProjectByStatus(projectId);
+    public  Map<String, Integer> getNumberProjectByStatus(Integer projectId, Integer type, Integer userId) {
+        List<Object[]> result = new ArrayList<>();
+        if (type == null){
+            result = projectRepository.getNumberProjectByStatus(projectId);
+        }else if (type == 0){
+            result = projectRepository.getNumberProjectByStatusGiao(projectId, userId);
+        }else if (type == 1){
+            result = projectRepository.getNumberProjectByStatusDuocGiao(projectId, userId);
+        }
+
         if (!result.isEmpty()) {
             Object[] row = result.get(0);
             Map<String, Integer> totals = new HashMap<>();

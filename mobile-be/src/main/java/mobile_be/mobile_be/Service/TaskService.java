@@ -11,6 +11,7 @@ import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +32,21 @@ public class TaskService {
     private ProjectRepository projectRepository;
 
 
-    public Map<String, Integer> getTaskCountByStatus() {
-        List<Object[]> results = taskRepository.getTaskCountByStatus();
+    // type == null la lay tat ca cac trang thai
+    // type == 0 la giao
+    // type == 1 la duoc giao
+
+    public Map<String, Integer> getTaskCountByStatus(Integer type, Integer userId) {
+        List<Object[]> results = new ArrayList<>();
+        if (type == null){
+            results = taskRepository.getAllTaskCountByStatus();
+        }else if(type == 0){
+            results = taskRepository.getTaskCountByStatusGiao(userId);
+        }else if(type == 1){
+            results = taskRepository.getTaskCountByStatusDuocGiao(userId);
+        }
+
+
         Map<Integer, Integer> result = new HashMap<>();
 
         for (Object[] row : results) {

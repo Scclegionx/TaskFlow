@@ -8,6 +8,7 @@ import Header from "../Header";
 import { FontAwesome } from '@expo/vector-icons';
 import { Avatar, Card, IconButton } from "react-native-paper";
 import { API_BASE_URL } from "@/constants/api";
+import { useRouter } from "expo-router";
 
 
 // interface này task nhá
@@ -35,6 +36,8 @@ interface TaskStatus {
 }
 
 const AllTaskScreen = () => {
+
+    const router = useRouter();
     const navigation = useNavigation();
 
 
@@ -291,7 +294,11 @@ const AllTaskScreen = () => {
                 </View>
               </>
             }
+
             renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => router.push({ pathname: "/taskDetail", params: { project: JSON.stringify(item) } })}>
+
+  
               <Card style={{ marginVertical: 8, backgroundColor: '#D9D9D9', borderRadius: 15, marginHorizontal: 20 }}>
                 <Card.Content style={{ flexDirection: 'row', alignItems: 'center', padding: 15 }}>
                   <View style={{ flex: 1 }}>
@@ -315,6 +322,7 @@ const AllTaskScreen = () => {
                   <IconButton icon="star-outline" size={24} />
                 </Card.Content>
               </Card>
+              </TouchableOpacity>
             )}
           />
         </View>

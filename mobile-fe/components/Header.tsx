@@ -45,7 +45,8 @@ const Header = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { padding: 40, backgroundColor: "#fff" },
+    container: { padding: 40 ,
+                 backgroundColor: "#fff" },
     header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
     title: { fontSize: 24, fontWeight: "bold", color: "#222" },
     headerIcons: { flexDirection: "row", alignItems: "center" },

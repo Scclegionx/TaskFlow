@@ -119,65 +119,6 @@ const PersonelScreen = () => {
     fetchMembers(searchText);
   };
 
-  // const downloadExcel = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const authToken = await AsyncStorage.getItem("token");
-  
-  //     if (!authToken) {
-  //       Alert.alert("Lỗi", "Vui lòng đăng nhập lại!");
-  //       return;
-  //     }
-  
-  //     // Gọi API để lấy file Excel
-  //     const response = await fetch(`${API_BASE_URL}/document/download`, {
-  //       method: "GET",
-  //       headers: {
-  //         Authorization: `Bearer ${authToken}`,
-  //       },
-  //     });
-  
-  //     if (!response.ok) {
-  //       throw new Error(`Lỗi API: ${response.status}`);
-  //     }
-  
-  //     // Đọc dữ liệu dạng base64
-  //     const base64Data = await response.text();
-  
-  //     // Tạo đường dẫn file
-  //     const fileUri = FileSystem.cacheDirectory + "DanhSachNhanSu.xlsx";
-      
-  //     // Ghi file vào cache
-  //     await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-  //       encoding: FileSystem.EncodingType.Base64,
-  //     });
-  
-  //     // Kiểm tra file tồn tại
-  //     const fileInfo = await FileSystem.getInfoAsync(fileUri);
-  //     if (!fileInfo.exists) {
-  //       throw new Error("Không tạo được file");
-  //     }
-  
-  //     // Chuẩn bị mở file
-  //     const contentUri = await FileSystem.getContentUriAsync(fileUri);
-      
-  //     // Mở hộp thoại chọn ứng dụng
-  //     await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
-  //       data: contentUri,
-  //       flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
-  //       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  //     });
-  
-  //   } catch (error) {
-  //     console.error("Lỗi tải file:", error);
-  //     Alert.alert(
-  //       "Lỗi", 
-  //       "Không thể mở file. Hãy cài ứng dụng đọc Excel như Microsoft Excel."
-  //     );
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const downloadExcel = async () => {
     try {

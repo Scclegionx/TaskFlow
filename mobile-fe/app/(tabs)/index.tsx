@@ -7,7 +7,10 @@ import { useRouter } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
 
 import Icon from "react-native-vector-icons/FontAwesome"; // Import icon
+import { Dimensions } from 'react-native';
 
+
+const { width } = Dimensions.get('window');
 
 // 3 cai tren cung cua home
 type ApiResponse = {
@@ -157,23 +160,36 @@ const HomeScreen = () => {
     }
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={styles.container} >
             {/* Task Summary */}
-            <View style={styles.taskSummary}>
-                <TouchableOpacity style={[styles.taskBox, styles.blueBox]}>
-                    <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
-                    <Icon name="folder" size={24} color="#fff" />  
-                </TouchableOpacity>
-                {/* <TouchableOpacity style={[styles.taskBox, styles.grayBox]}> */}
-                <TouchableOpacity style={[styles.taskBox, styles.grayBox]}  onPress={() => router.push("/allTask")} > 
-                    <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0}) </Text>
-                    <Icon name="tasks" size={24} color="#fff" />  
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.taskBox, styles.redBox]}    onPress={() => router.push("/personel")}>
-                    <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
-                    <Icon name="users" size={24} color="#fff" />  
-                </TouchableOpacity>
-            </View>
+
+                                {/* Phần 3 task box cần scroll ngang */}
+                        <ScrollView 
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.taskSummaryScroll}
+                        >
+                        <TouchableOpacity style={[styles.taskBox, styles.blueBox]}>
+                            <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
+                            <Icon name="folder" size={24} color="#fff" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.taskBox, styles.grayBox]}
+                            onPress={() => router.push("/allTask")}
+                        >
+                            <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0})</Text>
+                            <Icon name="tasks" size={24} color="#fff" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.taskBox, styles.redBox]}
+                            onPress={() => router.push("/personel")}
+                        >
+                            <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
+                            <Icon name="users" size={24} color="#fff" />
+                        </TouchableOpacity>
+                        </ScrollView>
 
             
 
@@ -308,9 +324,9 @@ const HomeScreen = () => {
                 <View style={styles.pieContainer}>
                     <PieChart
                           data={[
-                            { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#4285F4", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#F59E0B", legendFontColor: "#222", legendFontSize: 12 },
+                            { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
                         ]}
                         width={400}
                         height={250}
@@ -367,6 +383,11 @@ const styles = StyleSheet.create({
         borderRadius: 10, 
         margin: 5,
     },
+    taskSummaryScroll: {
+        paddingVertical: 0, // Thêm padding dọc nếu cần
+        marginBottom: 20,
+        marginTop: -5,
+      },
     blueBox: { backgroundColor: "#4B7BE5" },
     grayBox: { backgroundColor: "#778190" },
     redBox: { backgroundColor: "#D06537" },
@@ -432,6 +453,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#ddd",
       },
+
+
       
 });
 

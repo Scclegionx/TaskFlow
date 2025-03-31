@@ -93,4 +93,12 @@ public class UserService {
             return ResponseEntity.badRequest().body("Check out failed");
         }
     }
+
+    public ResponseEntity<?> getTydstate() {
+        try {
+            return ResponseEntity.ok(tydstateRepository.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Get tydstate failed");
+        }
+    }
 }

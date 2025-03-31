@@ -28,4 +28,10 @@ public class TydstateController {
     public ResponseEntity<?> checkOut(@RequestParam (value = "userId") Integer userId) {
         return userService.checkOut(userId);
     }
+
+    // api lấy ra bảng chấm công
+    @PostMapping("/get-tydstate")
+    public ResponseEntity<?> getTydState() {
+        return userService.getTydstate();
+    }
 }

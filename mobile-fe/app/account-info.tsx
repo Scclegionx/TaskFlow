@@ -69,7 +69,7 @@ const AccountInfo = () => {
 
             Alert.alert("Thành công", "Cập nhật thông tin thành công");
             loadUserData();
-        } catch (error) {
+        } catch (error:any) {
             Alert.alert("Lỗi", error.message);
             console.error("Lỗi cập nhật thông tin:", error);
         }
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         backgroundColor: '#fff',
         padding: 12,
-        borderRadius: 10,
+        borderRadius: 15,
         marginBottom: 10,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },

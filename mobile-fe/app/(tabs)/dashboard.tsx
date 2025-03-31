@@ -134,7 +134,7 @@ const HomeScreen = () => {
                 <TouchableOpacity style={[styles.taskBox, styles.grayBox]}  onPress={() => router.push("/allTask")} > 
                     <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0}) </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.taskBox, styles.redBox]}    onPress={() => router.push("/personelDetail")}>
+                <TouchableOpacity style={[styles.taskBox, styles.redBox]}    onPress={() => router.push("/personel")}>
                     <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
                 </TouchableOpacity>
             </View>

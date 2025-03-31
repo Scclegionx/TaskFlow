@@ -31,13 +31,12 @@ const LoginScreen = () => {
             const response = await login(email, password);
             const token = response.token;
             const payload = JSON.parse(atob(token.split('.')[1])); 
-
             await AsyncStorage.setItem('token', token);
             await AsyncStorage.setItem('username', payload.username);
             await AsyncStorage.setItem('exp', payload.exp.toString());
             await AsyncStorage.setItem('email', payload.sub);
             await AsyncStorage.setItem('userId', payload.id.toString());
-            await AsyncStorage.setItem('avatar', payload.avatar.toString());
+            await AsyncStorage.setItem('avatar', payload.avatar ? payload.avatar.toString() : "null");
             Alert.alert('Successful!', 'Logged in!');
             router.push('/');
         } catch (error:any) {

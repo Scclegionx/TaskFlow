@@ -231,7 +231,7 @@ const HomeScreen = () => {
                             setShowCategoryFilter(false);
                         }}
                     >
-                        <Text>Được giao</Text>
+                        <Text>Được giao </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

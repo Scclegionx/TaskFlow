@@ -21,6 +21,9 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
 
+    // xin chao cac ban
+    //
+
     // api lay ra so luong cong viec theo tung trang thai\
     // dung cho man hinh home va cong viec
     @GetMapping("/get-task-count-by-status")

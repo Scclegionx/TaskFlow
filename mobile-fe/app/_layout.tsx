@@ -29,7 +29,7 @@ export default function RootLayout() {
   }, [loaded]);
 
   useEffect(() => {
-    const publicRoutes = ['/login', '/register'];
+    const publicRoutes = ['/login', '/register', '/welcome'];
     const currentRoute = `/${segments.join('/')}`;
 
     if (publicRoutes.includes(currentRoute)) {
@@ -66,9 +66,8 @@ export default function RootLayout() {
   return (
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
+          <Stack.Screen name="welcome" />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          {/* <Stack.Screen name="notifications" options={{ title: "Thông báo" }} /> */}
-          <Stack.Screen name="projectdetail" options={{ title: "Chi tiết Project" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

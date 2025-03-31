@@ -3,7 +3,6 @@ package mobile_be.mobile_be.Model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.Set;
 
 @Entity
@@ -15,7 +14,9 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(unique = true, nullable = false)
+    private RoleName name;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -24,4 +25,8 @@ public class Role {
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<Permission> permissions;
+
+    public enum RoleName {
+        USER, ADMIN
+    }
 }

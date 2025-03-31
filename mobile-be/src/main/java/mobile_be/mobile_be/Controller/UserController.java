@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -77,7 +78,7 @@ public class UserController {
         userDTO.setDateOfBirth(user.getDateOfBirth());
         userDTO.setActive(user.isActive());
         userDTO.setRoles(user.getRoles().stream()
-                .map(role -> role.getName())  // Chỉ lấy tên của vai trò
+                .map(role -> role.getName().name())  // Chỉ lấy tên của vai trò
                 .collect(Collectors.toSet()));
 
         return userDTO;

@@ -5,29 +5,26 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.text.DateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "tydstate")
-@AllArgsConstructor
+@Table(name = "kpi")
 @NoArgsConstructor
-public class Tydstate {
-
-    // bang cham cong cua nhan vien
+@AllArgsConstructor
+public class Kpi {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     private Integer user_id;
 
-    private LocalDateTime checkin;
+    @Column(name = "kpi_registry")
+    private Integer kpiRegistry;
 
-    private LocalDateTime checkout;
+    // diem hien tai
+    private Integer point;
 
-    private int status;
-
-    private float total_hours;
+    // khong  lưu gio
+    private LocalDate time;
 }

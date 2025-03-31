@@ -27,16 +27,8 @@ export default function TabLayout() {
                     default: {},
                 }),
             }}>
-
             <Tabs.Screen
                 name="index"
-                options={{
-                    href:null,
-                }}
-            />
-                
-            <Tabs.Screen
-                name="dashboard"
                 options={{
                     title: 'Trang chủ',
                     tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,

@@ -35,7 +35,7 @@ const Header = () => {
             {/* Search Bar */}
             <View style={styles.searchBar}>
             
-            <Avatar.Image size={30} source={{ uri: user.avatar || "" }} style={styles.avatar} />
+            <Avatar.Image size={30} source={{ uri: user.avatar || "http://res.cloudinary.com/doah3bdw6/image/upload/v1743153165/r0nulby5tat56nq1q394.png" }} style={styles.avatar} />
                 
                 <TextInput placeholder="Tìm kiếm" style={styles.input} />
                 <Ionicons name="search" size={20} color="gray" style={styles.icon} />

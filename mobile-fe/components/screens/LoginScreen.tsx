@@ -39,7 +39,7 @@ const LoginScreen = () => {
             await AsyncStorage.setItem('userId', payload.id.toString());
             await AsyncStorage.setItem('avatar', payload.avatar ? payload.avatar.toString() : "null");
             Alert.alert('Successful!', 'Logged in!');
-            router.push('/');
+            router.push('/dashboard');
         } catch (error:any) {
             Alert.alert('Error', error.response?.data || 'Failed to login');
         }

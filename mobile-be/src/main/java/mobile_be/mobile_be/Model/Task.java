@@ -48,6 +48,9 @@ public class Task {
 
     private LocalDateTime createdAt;
 
+    // muc do uu tien | kho khan cua task
+    private Integer level;
+
 
 }
 

@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -71,6 +70,9 @@ public class UserController {
         // Chuyển đổi sang DTO
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
+
+        // them avatar
+        userDTO.setAvatar(user.getAvatar());
         userDTO.setName(user.getName());
         userDTO.setEmail(user.getEmail());
         userDTO.setGender(user.getGender());
@@ -78,7 +80,7 @@ public class UserController {
         userDTO.setDateOfBirth(user.getDateOfBirth());
         userDTO.setActive(user.isActive());
         userDTO.setRoles(user.getRoles().stream()
-                .map(role -> role.getName().name())  // Chỉ lấy tên của vai trò
+                .map(role -> role.getName())  // Chỉ lấy tên của vai trò
                 .collect(Collectors.toSet()));
 
         return userDTO;
@@ -91,7 +93,7 @@ public class UserController {
         }
 
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
         String newEmail = request.get("email");
         String password = request.get("password");
@@ -229,6 +231,14 @@ public class UserController {
 
         return ResponseEntity.ok(user);
     }
+
+
+    // api lay thong tin user
+    @GetMapping("/get-user-by-id")
+    public ResponseEntity<User> getUserById(@RequestParam(value = "userId", required = false) Integer userId) {
+        return ResponseEntity.ok(userRepository.findById(userId).orElse(null));
+    }
+
 
 }
 

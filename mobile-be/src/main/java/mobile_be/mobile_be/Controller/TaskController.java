@@ -1,5 +1,6 @@
 package mobile_be.mobile_be.Controller;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.request.TaskRequest;
 import mobile_be.mobile_be.Model.Task;
@@ -20,12 +21,15 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
 
+    // xin chao cac ban
+    //
 
     // api lay ra so luong cong viec theo tung trang thai\
     // dung cho man hinh home va cong viec
     @GetMapping("/get-task-count-by-status")
-    public ResponseEntity<Map<String, Integer>> getTaskCountByStatus() {
-        return ResponseEntity.ok(taskService.getTaskCountByStatus());
+    public ResponseEntity<Map<String, Integer>> getTaskCountByStatus(@RequestParam(value = "type" , required = false) Integer type,
+                                                                     @RequestParam(value = "userId", required = false) Integer userId) {
+        return ResponseEntity.ok(taskService.getTaskCountByStatus(type, userId));
     }
 
     // tao task ( ai lam thi sua lai)
@@ -38,7 +42,20 @@ public class TaskController {
     // api lay ra tat ca cac cong viec
     // da co ben project controller
 
-    ///
+
     //
+    // api de lay ra trang thai tat ca cong viec / dung trong man hinh tat ca cong viec
+    @GetMapping("/get-status-all-tasks")
+    public ResponseEntity<Map<String, Integer>> getStatusAllTasks(@RequestParam(value = "type", required = false) Integer type) {
+        return ResponseEntity.ok(taskService.getStatusAllTasks());
+    }
+
+
+    // api lay ra thong tin chi tiet cong viec
+    // dung trong man chi tiet cong viec
+    @GetMapping("/get-task-detail")
+    public ResponseEntity<Task> getTaskDetail(@RequestParam(value = "taskId", required = false) Integer taskId) {
+        return ResponseEntity.ok(taskService.getTaskDetail(taskId));
+    }
 
 }

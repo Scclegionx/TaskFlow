@@ -13,12 +13,13 @@ import java.util.function.Function;
 public class JwtUtil {
     private final String SECRET_KEY = "1cbaee3794baa86215098188f54d3adaaefc3c7b49ed28dc475cc29a4ac4fe05";
 
-    public String generateToken(int id, String email, Set<String> roles, String name) {
+    public String generateToken(int id, String email, Set<String> roles, String name, String avatar) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("id", id)
                 .claim("roles", roles)
                 .claim("username", name)
+                .claim("avatar",avatar )
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)

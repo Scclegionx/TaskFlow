@@ -34,8 +34,10 @@ public class ProjectController {
     // api lay ra so luong du an theo trang thai
     // bieu do tron o home
     @GetMapping("/get-number-project-by-status")
-    public ResponseEntity<Map<String, Integer>> getNumberProjectByStatus(@RequestParam(value = "projectId", required = false) Integer projectId) {
-        return ResponseEntity.ok(projectService.getNumberProjectByStatus(projectId));
+    public ResponseEntity<Map<String, Integer>> getNumberProjectByStatus(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                                                         @RequestParam(value = "type", required = false) Integer type,
+                                                                         @RequestParam(value = "userId", required = false) Integer userId) {
+        return ResponseEntity.ok(projectService.getNumberProjectByStatus(projectId, type, userId));
     }
 
     // api lay ra danh sach cac du an
@@ -54,9 +56,13 @@ public class ProjectController {
 
     // api lay ra cac cong viec của du an
     // lay all cong viec trong he thong luon
+    // man hinh tat ca cong viec
     @GetMapping("/get-all-task-in-project")
-    public ResponseEntity<?> getAllTaskInProject(@RequestParam(value = "projectId", required = false) Integer projectId) {
-        return ResponseEntity.ok(projectService.getAllTaskInProject(projectId));
+    public ResponseEntity<?> getAllTaskInProject(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                                 @RequestParam(value = "userId", required = false) Integer userId,
+                                                 @RequestParam(value = "type", required = false) Integer type,
+                                                 @RequestParam(value = "textSearch", required = false) String textSearch) {
+        return ResponseEntity.ok(projectService.getAllTaskInProject(projectId, userId, type, textSearch));
     }
 
     @GetMapping("/get-project")
@@ -67,8 +73,9 @@ public class ProjectController {
     // api lay ra  nhan su cua du an
     // api lay ra nhan su cho ca he thong
     @GetMapping("/get-all-member-in-project")
-    public ResponseEntity<?> getAllMemberInProject(@RequestParam(value = "projectId", required = false) Integer projectId) {
-        return ResponseEntity.ok(projectService.getAllMemberInProject(projectId));
+    public ResponseEntity<?> getAllMemberInProject(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                                   @RequestParam(value = "textSearch", required = false) String textSearch) {
+        return ResponseEntity.ok(projectService.getAllMemberInProject(projectId, textSearch));
     }
 
 

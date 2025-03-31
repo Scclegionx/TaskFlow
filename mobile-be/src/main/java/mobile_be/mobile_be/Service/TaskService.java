@@ -10,10 +10,10 @@ import mobile_be.mobile_be.Repository.TaskRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import mobile_be.mobile_be.contains.enum_taskStatus;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -31,8 +31,21 @@ public class TaskService {
     private ProjectRepository projectRepository;
 
 
-    public Map<String, Integer> getTaskCountByStatus() {
-        List<Object[]> results = taskRepository.getTaskCountByStatus();
+    // type == null la lay tat ca cac trang thai
+    // type == 0 la giao
+    // type == 1 la duoc giao
+
+    public Map<String, Integer> getTaskCountByStatus(Integer type, Integer userId) {
+        List<Object[]> results = new ArrayList<>();
+        if (type == null){
+            results = taskRepository.getAllTaskCountByStatus();
+        }else if(type == 0){
+            results = taskRepository.getTaskCountByStatusGiao(userId);
+        }else if(type == 1){
+            results = taskRepository.getTaskCountByStatusDuocGiao(userId);
+        }
+
+
         Map<Integer, Integer> result = new HashMap<>();
 
         for (Object[] row : results) {
@@ -47,7 +60,6 @@ public class TaskService {
         response.put("COMPLETED", result.getOrDefault(2, 0));
         response.put("CANCELLED", result.getOrDefault(3, 0));
         response.put("OVERDUE", result.getOrDefault(4, 0));
-
         return response;
     }
 
@@ -80,5 +92,26 @@ public class TaskService {
         return listTask;
     }
 
+    public Map<String, Integer> getStatusAllTasks() {
+        Map<String , Integer> result = new HashMap<>();
+      List<Task>  listTasks = taskRepository.findTasksByStatus(enum_taskStatus.IN_PROGRESS.getValue());
+      if (listTasks != null){
+            result.put("IN_PROGRESS", 1);
+      }else{
+            result.put("COMPLETED", 2);
+      }
+      return result;
+    }
+
+    public Task getTaskDetail(Integer taskId) {
+        Task task = taskRepository.getTaskDetail(taskId);
+        if (task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue()
+                && task.getToDate() != null) {
+            if (task.getToDate().isBefore(LocalDateTime.now())) {
+                task.setStatus(enum_taskStatus.OVERDUE.getValue());
+            }
+        }
+        return task;
+    }
 
 }

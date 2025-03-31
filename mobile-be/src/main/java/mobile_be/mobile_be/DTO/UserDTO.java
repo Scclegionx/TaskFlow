@@ -17,6 +17,8 @@ public class UserDTO {
     private boolean active;
     private Set<String> roles;
 
+    private String avatar;
+
     // Constructor nhận User
     public UserDTO(User user) {
         this.id = user.getId();
@@ -24,7 +26,7 @@ public class UserDTO {
         this.email = user.getEmail();
         this.active = user.isActive();
         this.roles = user.getRoles().stream()
-                         .map(role -> role.getName().toString())
+                         .map(role -> role.getName())
                          .collect(Collectors.toSet());
     }
 

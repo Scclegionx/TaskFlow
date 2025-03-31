@@ -6,7 +6,6 @@ import mobile_be.mobile_be.Model.Role;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.BlacklistRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
-import mobile_be.mobile_be.Repository.RoleRepository;
 import mobile_be.mobile_be.DTO.RegisterRequest;
 import mobile_be.mobile_be.DTO.LoginRequest;
 import mobile_be.mobile_be.Utils.JwtUtil;
@@ -27,18 +26,16 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final BlacklistRepository blacklistRepository;
 
     @Autowired
-    public AuthController(UserRepository userRepository, BlacklistRepository blacklistRepository, JwtUtil jwtUtil,RoleRepository roleRepository) {
+    public AuthController(UserRepository userRepository, BlacklistRepository blacklistRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.blacklistRepository = blacklistRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.jwtUtil = jwtUtil;
-        this.roleRepository = roleRepository;
     }
 
     @PostMapping("/register")
@@ -49,17 +46,12 @@ public class AuthController {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("Email already in use");
         }
-        Role userRole = roleRepository.findByName(Role.RoleName.USER)
-            .orElseThrow(() -> new RuntimeException("Default role USER not found"));
-        
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setActive(true);
-        user.setRoles(Set.of(userRole));
         userRepository.save(user);
-        
         return ResponseEntity.ok("User registered successfully!");
     }
 
@@ -74,7 +66,7 @@ public class AuthController {
 
         // Lấy roles của user qua join bảng role_user
         Set<String> roles = user.getRoles().stream()
-                .map(role -> role.getName().toString()) // Hoặc .toString()
+                .map(Role::getName)
                 .collect(Collectors.toSet());
 
         // Tạo JWT với thông tin id, email, roles

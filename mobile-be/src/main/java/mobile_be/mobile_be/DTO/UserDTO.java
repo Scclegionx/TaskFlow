@@ -26,7 +26,7 @@ public class UserDTO {
         this.email = user.getEmail();
         this.active = user.isActive();
         this.roles = user.getRoles().stream()
-                         .map(role -> role.getName().toString())
+                         .map(role -> role.getName())
                          .collect(Collectors.toSet());
     }
 

@@ -48,7 +48,7 @@ const ChangePasswordScreen = () => {
             setOldPassword("");
             setNewPassword("");
             setConfirmPassword("");
-        } catch (error:any) {
+        } catch (error) {
             Alert.alert("Lỗi", error.message);
         }
     };

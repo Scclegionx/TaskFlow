@@ -184,7 +184,7 @@ const HomeScreen = () => {
 
                         <TouchableOpacity 
                             style={[styles.taskBox, styles.redBox]}
-                            onPress={() => router.push("/personel")}
+                            onPress={() => router.push("/allPersonel")}
                         >
                             <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
                             <Icon name="users" size={24} color="#fff" />

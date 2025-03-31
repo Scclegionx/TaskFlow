@@ -11,6 +11,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
 import * as MediaLibrary from "expo-media-library";
+import { useRouter } from "expo-router";
 
 
 
@@ -24,7 +25,10 @@ interface UserProfile {
 }
 
 
-const PersonelScreen = () => {
+const AllPersonelScreen = () => {
+
+  const router = useRouter();
+
   const navigation = useNavigation(); // Use the hook to get the navigation object
   
   useLayoutEffect(() => {
@@ -218,7 +222,7 @@ const PersonelScreen = () => {
                   padding: 12,
                   borderRadius: 10,
                   marginBottom: 8,
-                }}
+                }} onPress={() => router.push({ pathname: "/personelDetail", params: { project: JSON.stringify(item) } })}
               >
                 <Icon name="user-circle" size={24} color="red" style={{ marginRight: 10 }} />
                 <View>
@@ -260,4 +264,4 @@ const styles = StyleSheet.create({
   },
 
 });
-export default PersonelScreen;
+export default AllPersonelScreen;

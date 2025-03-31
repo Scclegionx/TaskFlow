@@ -232,6 +232,14 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+
+    // api lay thong tin user
+    @GetMapping("/get-user-by-id")
+    public ResponseEntity<User> getUserById(@RequestParam(value = "userId", required = false) Integer userId) {
+        return ResponseEntity.ok(userRepository.findById(userId).orElse(null));
+    }
+
+
 }
 
 

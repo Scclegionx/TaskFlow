@@ -296,7 +296,7 @@ const AllTaskScreen = () => {
             }
 
             renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => router.push({ pathname: "/taskDetail", params: { project: JSON.stringify(item) } })}>
+            <TouchableOpacity onPress={() => router.push({ pathname: "/taskDetail",  params: { taskId: item.id.toString() } })}>
 
   
               <Card style={{ marginVertical: 8, backgroundColor: '#D9D9D9', borderRadius: 15, marginHorizontal: 20 }}>
@@ -346,13 +346,13 @@ const getStatusLabel = (status: number): string => {
 const getStatusColor = (status: number): string => {
   switch (status) {
       case 1:
-          return "#F59E0B"; // Xanh dương
+          return "#F59E0B"; // vàng
       case 2:
           return "#28A745"; // Xanh lá
       case 3:
           return "#DC3545"; // Đỏ
       case 4:
-          return "#FFC107"; // Vàng
+          return "#3B82F6"; //  xanh dương
       default:
           return "#333"; // Mặc định
   }

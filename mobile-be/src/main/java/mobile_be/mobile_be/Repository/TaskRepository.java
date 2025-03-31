@@ -68,4 +68,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query(value = "SELECT * from tasks where status = :status", nativeQuery = true)
     List<Task> findTasksByStatus(Integer status);
 
+
+    @Query(value ="SELECT * from tasks  t where t.id = :taskId", nativeQuery = true)
+    Task getTaskDetail(Integer taskId);
+
 }

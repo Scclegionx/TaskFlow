@@ -47,4 +47,12 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getStatusAllTasks());
     }
 
+
+    // api lay ra thong tin chi tiet cong viec
+    // dung trong man chi tiet cong viec
+    @GetMapping("/get-task-detail")
+    public ResponseEntity<Task> getTaskDetail(@RequestParam(value = "taskId", required = false) Integer taskId) {
+        return ResponseEntity.ok(taskService.getTaskDetail(taskId));
+    }
+
 }

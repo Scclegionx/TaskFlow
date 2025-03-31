@@ -12,10 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import mobile_be.mobile_be.contains.enum_taskStatus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -103,6 +101,17 @@ public class TaskService {
             result.put("COMPLETED", 2);
       }
       return result;
+    }
+
+    public Task getTaskDetail(Integer taskId) {
+        Task task = taskRepository.getTaskDetail(taskId);
+        if (task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue()
+                && task.getToDate() != null) {
+            if (task.getToDate().isBefore(LocalDateTime.now())) {
+                task.setStatus(enum_taskStatus.OVERDUE.getValue());
+            }
+        }
+        return task;
     }
 
 }

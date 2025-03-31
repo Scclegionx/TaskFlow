@@ -28,7 +28,10 @@ public class Project {
     @JoinColumn(name = "created_by")
     private User createdBy;
 
-    @OneToMany(mappedBy = "project")
+
+    // dung json ignore de tranh lap , k lay neu ko can thiet
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<ProjectMember> projectMembers;
 
     private Integer status;

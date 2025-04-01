@@ -169,7 +169,7 @@ const HomeScreen = () => {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.taskSummaryScroll}
                         >
-                        <TouchableOpacity style={[styles.taskBox, styles.blueBox]}>
+                        <TouchableOpacity style={[styles.taskBox, styles.blueBox]} onPress={() => router.push("/project")}  >
                             <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
                             <Icon name="folder" size={24} color="#fff" />
                         </TouchableOpacity>

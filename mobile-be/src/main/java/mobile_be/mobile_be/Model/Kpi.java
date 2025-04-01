@@ -17,13 +17,22 @@ public class Kpi {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private Integer user_id;
+    private Integer userId;
 
     @Column(name = "kpi_registry")
     private Integer kpiRegistry;
 
     // diem hien tai
-    private Integer point;
+    private Integer totalPoint;
+
+    // diem cong
+    private Integer plusPoint;
+
+    // diem tru
+    private Integer minusPoint;
+
+    // trang thai
+    private Integer status;
 
     // khong  lưu gio
     private LocalDate time;

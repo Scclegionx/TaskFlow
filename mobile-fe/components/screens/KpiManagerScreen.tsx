@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert  } from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, Button, Modal } from "react-native";
 import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,7 +27,7 @@ interface UserProfile {
 
 interface KPIEntry {
   id: number;
-  user_id: number;
+  userId: number;
   kpiRegistry: number;
   totalPoint: number | null;
   plusPoint: number | null;
@@ -42,7 +42,7 @@ const AllPersonelScreen = () => {
   const router = useRouter();
 
   const navigation = useNavigation(); // Use the hook to get the navigation object
-  
+
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Quản lý KPI" }); // Cập nhật tiêu đề
   }, [navigation]);
@@ -50,13 +50,16 @@ const AllPersonelScreen = () => {
 
   const [kpiData, setKpiData] = useState<Array<KPIEntry>>([]); // kpi  co dung de lay du lieu kpi
 
- 
+
   const [loading, setLoading] = useState(true);
 
 
   const [searchText, setSearchText] = useState("");
 
   const [time, setTime] = useState<string>("");
+
+  const [modalVisible, setModalVisible] = useState(false); // popup đăng ký KPI
+  const [kpiValue, setKpiValue] = useState("");
 
 
   // profile để hiển thị ảnh
@@ -68,7 +71,7 @@ const AllPersonelScreen = () => {
     fetchKPIByMonth("", "");
     fetchProfile(); // Chỉ gọi API lấy profile khi component mount
   }, []);
-  
+
   const fetchProfile = async () => {
     try {
       const authToken = await AsyncStorage.getItem("token");
@@ -76,7 +79,7 @@ const AllPersonelScreen = () => {
         console.error("Không tìm thấy token! Vui lòng đăng nhập.");
         return;
       }
-  
+
       const response = await fetch(`${API_BASE_URL}/users/profile`, {
         method: "GET",
         headers: {
@@ -84,7 +87,7 @@ const AllPersonelScreen = () => {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (response.ok) {
         const profileData: UserProfile = await response.json();
         setProfile(profileData);
@@ -95,11 +98,13 @@ const AllPersonelScreen = () => {
       console.error("Lỗi khi gọi API profile:", error);
     }
   };
-  
 
 
 
-  const fetchKPIByMonth = async (time: string , textSearch : string) => {    try {
+
+  const fetchKPIByMonth = async (time: string,
+    textSearch: string) => {
+    try {
       const authToken = await AsyncStorage.getItem("token");
       if (!authToken) {
         console.error("Không tìm thấy token! Vui lòng đăng nhập.");
@@ -111,7 +116,7 @@ const AllPersonelScreen = () => {
         kpiMonthUrl += `?textSearch=${encodeURIComponent(searchText)}`;
       }
 
-  
+
       const response = await fetch(
         kpiMonthUrl,
         {
@@ -122,11 +127,11 @@ const AllPersonelScreen = () => {
           },
         }
       );
-  
+
       if (response.ok) {
         const kpiData: KPIEntry[] = await response.json();
         setKpiData(kpiData);
-        
+
       } else {
         console.error("Lỗi khi lấy dữ liệu KPI theo tháng.");
         return [];
@@ -134,34 +139,27 @@ const AllPersonelScreen = () => {
     } catch (error) {
       console.error("Lỗi khi gọi API KPI:", error);
       return [];
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
-
-
-  
-  const handleSearch = () => {
-    fetchKPIByMonth(time, searchText);
-  };
-
 
   const downloadExcel = async () => {
     try {
       setLoading(true);
       const authToken = await AsyncStorage.getItem("token");
-  
+
       const response = await fetch(`${API_BASE_URL}/document/download`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
       });
-  
+
       if (!response.ok) throw new Error("Failed to download");
-  
+
       // Convert response to blob
       const blob = await response.blob();
-      
+
       // Convert blob to base64 với kiểm tra null
       const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -169,7 +167,7 @@ const AllPersonelScreen = () => {
           if (!reader.result) {
             return reject("Không đọc được dữ liệu");
           }
-          
+
           if (typeof reader.result === "string") {
             resolve(reader.result.split(",")[1]);
           } else {
@@ -179,15 +177,15 @@ const AllPersonelScreen = () => {
         reader.onerror = () => reject("Lỗi đọc file");
         reader.readAsDataURL(blob);
       });
-  
+
       // Tạo file path
       const fileUri = FileSystem.documentDirectory + "data.xlsx";
-      
+
       // Ghi file
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {
         encoding: FileSystem.EncodingType.Base64,
       });
-  
+
       // Mở file
       const contentUri = await FileSystem.getContentUriAsync(fileUri);
       await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
@@ -195,110 +193,361 @@ const AllPersonelScreen = () => {
         flags: 1,
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-  
+
     } catch (error) {
       Alert.alert("Lỗi khi tải file" || "Lỗi không xác định");
     } finally {
       setLoading(false);
     }
   };
+
+
+
+
+  const fetchRegistryKPI = async (pointKpi: number) => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) {
+        console.error("Không tìm thấy token! Vui lòng đăng nhập.");
+        return;
+      }
+
+      let kpiRegistryUrl = `${API_BASE_URL}/kpi/register-kpi?userId=${profile?.id}&pointKpi=${pointKpi}`;
+
+      const response = await fetch(
+        kpiRegistryUrl,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response;
+
+
+    } catch (error) {
+      console.error("Lỗi khi gọi API KPI:", error);
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  const fetchDeleteKPI = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) {
+        console.error("Không tìm thấy token! Vui lòng đăng nhập.");
+        return;
+      }
+
+      let kpiDeleteUrl = `${API_BASE_URL}/kpi/delete-kpi?userId=${profile?.id}`;
+
+      const response = await fetch(
+        kpiDeleteUrl,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response;
+
+
+    } catch (error) {
+      console.error("Lỗi khi gọi API KPI:", error);
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  const handleSearch = () => {
+    fetchKPIByMonth(time, searchText);
+  };
+
+
+  // Hàm gọi API khi bấm xác nhận
+  const handleRegisterKpi = async () => {
+    if (!kpiValue) {
+      Alert.alert("Lỗi", "Vui lòng nhập mục tiêu KPI!");
+      return;
+    }
+
+
+    // Gọi API đăng ký KPI
+    const response = await fetchRegistryKPI(Number(kpiValue)); // Gọi API và chờ kết quả
+
+    if (response && response?.status === 200) {
+      Alert.alert("Thành công", "Đăng ký KPI thành công!");
+      setModalVisible(false); // Đóng popup
+      setKpiValue(""); // Reset input
+    } else {
+      Alert.alert("Thất bại ", "Bạn đã đăng ký KPI cho tháng này trước đó rồi!");
+    }
+
+    fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI sau khi đăng ký
+
+    // Ẩn popup sau khi gửi API
+    setModalVisible(false);
+    setKpiValue(""); // Reset input
+  };
+
+
+
+  // Xử lý sửa
+  const handleEdit = async () => {
+
+
+    // Gọi API đăng ký KPI
+    const response = await fetchDeleteKPI();
+
+    if (response && response?.status === 200) {
+      Alert.alert("Thành công", "Xoá KPI thành công!");
+    } else {
+      Alert.alert("Thất bại ", "Bạn không có quyền xoá KPI này");
+    }
+
+    fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI sau khi đăng ký
+
+  };
+
+  // Xử lý xóa
+  const handleDelete = async (user_id: number) => {
+    Alert.alert(
+      "Xác nhận xóa",
+      "Bạn có chắc chắn muốn xóa KPI này?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel"
+        },
+        {
+          text: "Xóa",
+
+          onPress: async () => {
+            console.log(' userID hiện tại :', profile?.id);
+            console.log(' userID xoá :', user_id);
+            if (user_id === profile?.id) {
+              console.log('bắt đầu Xóa KPI với userID:', user_id);
+              
+              // Gọi API xoa KPI
+              const response = await fetchDeleteKPI();
+
+              if (response && response?.status === 200) {
+                Alert.alert("Thành công", "Xoá KPI thành công!");
+              } else {
+                console.log("xoá thất bại");
+                Alert.alert("Thất bại ", "Bạn không có quyền xoá KPI này");
+              }
+            } else {
+              Alert.alert("Thất bại ", "Bạn không có quyền xoá KPI này");
+            }
+
+
+
+
+            fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI sau khi xoa
+          }
+        }
+      ]
+    );
+  };
+
+
+
+
   return (
     <View style={{ padding: 16, backgroundColor: "#F8F9FA", flex: 1 }}>
 
-            {/* 🔍 Thanh tìm kiếm */}
-            <View style={styles.searchContainer}>
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="Nhập từ khóa tìm kiếm..."
-                                    value={searchText}
-                                    onChangeText={setSearchText}
-                                />
-                                 <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
-                                    <FontAwesome name="search" size={20} color="white" />
-                                </TouchableOpacity>
+      {/* 🔍 Thanh tìm kiếm */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Nhập từ khóa tìm kiếm..."
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+        <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+          <FontAwesome name="search" size={20} color="white" />
+        </TouchableOpacity>
 
-                                <TouchableOpacity onPress={() => {
-                console.log("Download button pressed");
-                downloadExcel();
-              }} style={{ backgroundColor: "#007BFF", padding: 10, borderRadius: 8, marginLeft: 10 }}>
-                <FontAwesome name="download" size={20} color="white" />
-              </TouchableOpacity>
-                            </View>
+        <TouchableOpacity onPress={() => {
+          console.log("Download button pressed");
+          downloadExcel();
+        }} style={{ backgroundColor: "#007BFF", padding: 10, borderRadius: 8, marginLeft: 10 }}>
+          <FontAwesome name="download" size={20} color="white" />
+        </TouchableOpacity>
+      </View>
 
 
-        {/* Kiểm tra nếu đang load dữ liệu */}
-  {loading ? (
-    <ActivityIndicator size="large" color="blue" style={{ marginTop: 20 }} />
-  ) : (
-    <>
-      {/* Tổng số bản ghi KPI */}
-      <Text style={{ fontSize: 20, fontWeight: "bold", marginVertical: 15 }}>
-        Tổng số KPI: {kpiData.length}
-      </Text>
+      {/* Kiểm tra nếu đang load dữ liệu */}
+      {loading ? (
+        <ActivityIndicator size="large" color="blue" style={{ marginTop: 20 }} />
+      ) : (
+        <>
+          {/* Tổng số bản ghi KPI */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 15 }}>
+            <Text style={{ fontSize: 20, fontWeight: "bold" }}>
+              Tổng số KPI: {kpiData.length}
+            </Text>
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#007bff",
+                paddingVertical: 8,
+                paddingHorizontal: 16,
+                borderRadius: 20,
+              }}
+              onPress={() => setModalVisible(true)} // Hiển thị popup khi nhấn
+            >
+              <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>Đăng ký</Text>
+            </TouchableOpacity>
+          </View>
 
-      {/* Danh sách KPI */}
-      <FlatList
-        data={kpiData}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#CECECE", // xám nhạt
-              padding: 16,
-              borderRadius: 12,
-              marginBottom: 10,
-              elevation: 3,
-            }}
-            // onPress={() => handleKPIPress(item)}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {/* Icon người dùng */}
-              <Icon 
-                name="user-circle" 
-                size={32} 
-                color="#4CAF50" 
-                style={{ marginRight: 15 }}
-              />
 
-              {/* Thông tin chính */}
-              <View style={{ flex: 1 }}>      
-              <View style={styles.row}>
-                  <Text style={styles.label}>Nhân sự:</Text>
-                  <Text style={styles.value}>{item.userName}</Text>
-                </View>
-
-                <View style={styles.row}>
-                  <Text style={styles.label}>Điểm cộng:</Text>
-                  <Text style={styles.value}>{item.plusPoint ? item.plusPoint : "0"}</Text>
-                </View>
-
-                <View style={styles.row}>
-                  <Text style={styles.label}>Điểm trừ:</Text>
-                  <Text style={styles.value}>{item.minusPoint ? item.minusPoint : "0"}</Text>
-                </View>
-
-                <View style={styles.row}>
-                  <Text style={styles.label}>Tổng điểm:</Text>
-                  <Text style={[
-                    styles.value, 
-                    { color: '#2196F3'  }
-                  ]}>
-                    {item.totalPoint ? item.totalPoint : "0"} / {item.kpiRegistry ? item.kpiRegistry : "0"}
-                  </Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Thời gian:</Text>
-                  <Text style={styles.value}>{item.time}</Text>
+          {/* Popup nhập KPI */}
+          <Modal visible={modalVisible} transparent animationType="slide">
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+              <View style={{ backgroundColor: "white", padding: 20, borderRadius: 10, width: 300, alignItems: "center" }}>
+                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Nhập mục tiêu KPI</Text>
+                <TextInput
+                  style={{
+                    width: "100%",
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 5,
+                    padding: 10,
+                    fontSize: 16,
+                    marginBottom: 15,
+                    textAlign: "center",
+                  }}
+                  keyboardType="numeric"
+                  placeholder="Nhập số KPI..."
+                  value={kpiValue}
+                  onChangeText={setKpiValue}
+                />
+                <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
+                  <TouchableOpacity
+                    style={{ backgroundColor: "red", padding: 10, borderRadius: 5, flex: 1, marginRight: 10 }}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>Hủy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ backgroundColor: "green", padding: 10, borderRadius: 5, flex: 1 }}
+                    onPress={handleRegisterKpi} // Gọi API khi nhấn xác nhận
+                  >
+                    <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>Xác nhận</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-
-
             </View>
-          </TouchableOpacity>
-        )}
-      />
-    </>
-  )}
+          </Modal>
+
+          {/* Danh sách KPI */}
+          <FlatList
+            data={kpiData}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#CECECE", // xám nhạt
+                  padding: 16,
+                  borderRadius: 12,
+                  marginBottom: 10,
+                  elevation: 3,
+
+                }}
+              // onPress={() => handleKPIPress(item)}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {/* Icon người dùng */}
+                  <Icon
+                    name="user-circle"
+                    size={32}
+                    color="#4CAF50"
+                    style={{ marginRight: 15 }}
+                  />
+
+                  {/* Thông tin chính */}
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Nhân sự:</Text>
+                      <Text style={styles.value}>{item.userName}</Text>
+                    </View>
+
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Điểm cộng:</Text>
+                      <Text style={styles.value}>{item.plusPoint ? item.plusPoint : "0"}</Text>
+                    </View>
+
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Điểm trừ:</Text>
+                      <Text style={styles.value}>{item.minusPoint ? item.minusPoint : "0"}</Text>
+                    </View>
+
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Tổng điểm:</Text>
+                      <Text style={[
+                        styles.value,
+                        { color: '#2196F3' }
+                      ]}>
+                        {item.totalPoint ? item.totalPoint : "0"} / {item.kpiRegistry ? item.kpiRegistry : "0"}
+                      </Text>
+                    </View>
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Thời gian:</Text>
+                      <Text style={styles.value}>{item.time}</Text>
+                    </View>
+                  </View>
+
+
+                </View>
+
+                {/* Thanh công cụ dưới cùng */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginTop: 10,
+                  paddingTop: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: '#999'
+                }}>
+                  {/* Nút sửa bên trái */}
+                  <TouchableOpacity
+                    onPress={() => handleEdit()}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Icon name="pencil" size={18} color="#4CAF50" />
+                    <Text style={{ marginLeft: 8, color: '#4CAF50' }}>Sửa</Text>
+                  </TouchableOpacity>
+
+                  
+
+                  {/* Nút xóa bên phải */}
+                  <TouchableOpacity
+                    onPress={() => handleDelete(item.userId? item.userId : 0)}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Icon name="trash" size={18} color="#f44336" />
+                    <Text style={{ marginLeft: 8, color: '#f44336' }}>Xóa</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        </>
+      )}
     </View>
   );
 };

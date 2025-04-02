@@ -40,9 +40,10 @@ public class KpiService {
         String formattedDate = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
         // check kpi ton tai
-        Kpi kpiExist = kpiRepository.findByUserIdAndTime(userId, formattedDate);
-        if (kpiExist != null) {
-            return ResponseEntity.badRequest().body("Bạn đã đăng ký KPI cho tháng này rồi  " + kpiExist.getId());
+        List<Kpi> kpiExist = kpiRepository.findByUserIdAndTime(userId, formattedDate);
+        if (kpiExist != null && !kpiExist.isEmpty()) {
+            log.info("kpiExist: " + kpiExist);
+            return ResponseEntity.badRequest().body("Bạn đã đăng ký KPI cho tháng này rồi  ");
         }
 
         Kpi newKpi = new Kpi();
@@ -52,7 +53,7 @@ public class KpiService {
 
         kpiRepository.save(newKpi);
 
-       return ResponseEntity.ok("đăng ký KPI thành công");
+        return ResponseEntity.ok("đăng ký KPI thành công");
     }
 
     public ResponseEntity<?> getKpiByMonth(String time, String textSearch) {
@@ -62,15 +63,50 @@ public class KpiService {
         }
         List<Kpi> listKpi = kpiRepository.getKpiByMonth(time, textSearch);
 
-       List<KpiResponseDTO> results = listKpi.stream().map(kpi ->{
-           KpiResponseDTO kpiResponseDTO = KpiMapper.INSTANCE.toDTO(kpi);
-              Optional<User> user = userRepository.findById(kpi.getUserId());
-                if (user.isPresent()) {
-                    kpiResponseDTO.setUserName(user.get().getName());
-                }
-                return kpiResponseDTO;
-               }).collect(Collectors.toList());
+        List<KpiResponseDTO> results = listKpi.stream().map(kpi -> {
+            KpiResponseDTO kpiResponseDTO = KpiMapper.INSTANCE.toDTO(kpi);
+            Optional<User> user = userRepository.findById(kpi.getUserId());
+            if (user.isPresent()) {
+                kpiResponseDTO.setUserName(user.get().getName());
+            }
+            return kpiResponseDTO;
+        }).collect(Collectors.toList());
 
         return ResponseEntity.ok(results);
     }
+
+    public ResponseEntity<?> deleteKpi(Integer kpiId) {
+
+        log.info("kpiId: " + kpiId);
+        // Lấy ngày hiện tại
+        LocalDate today = LocalDate.now();
+
+        // Định dạng thành yyyy-MM
+        String formattedDate = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+
+        Kpi kpi = kpiRepository.findById(kpiId).orElse(null);
+        if (kpi == null) {
+            return ResponseEntity.badRequest().body("KPI không tồn tại");
+        }
+        kpiRepository.deleteById(kpi.getId());
+        return ResponseEntity.ok("Xóa KPI thành công");
+    }
+
+    public ResponseEntity<?> editKpi(Integer kpiId, Integer point_kpi) {
+        // Lấy ngày hiện tại
+        LocalDate today = LocalDate.now();
+
+        // Định dạng thành yyyy-MM
+        String formattedDate = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+
+        Kpi kpi = kpiRepository.findById(kpiId).orElse(null);
+        if (kpi == null) {
+            return ResponseEntity.badRequest().body("KPI không tồn tại");
+        }
+        kpi.setKpiRegistry(point_kpi);
+        kpiRepository.save(kpi);
+        return ResponseEntity.ok("Sửa KPI thành công");
+    }
+
+
 }

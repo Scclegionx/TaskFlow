@@ -12,6 +12,7 @@ import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
+import { Item } from "react-native-paper/lib/typescript/components/Drawer/Drawer";
 
 
 
@@ -53,13 +54,22 @@ const AllPersonelScreen = () => {
 
   const [loading, setLoading] = useState(true);
 
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedKpi, setSelectedKpi] = useState<KPIEntry | null>(null); //  null là đăng ký mới, có dữ liệu là sửa
+
 
   const [searchText, setSearchText] = useState("");
 
   const [time, setTime] = useState<string>("");
 
   const [modalVisible, setModalVisible] = useState(false); // popup đăng ký KPI
-  const [kpiValue, setKpiValue] = useState("");
+  const [kpiValue, setKpiValue] = useState(""); // Giá trị nhập trong ô input
+
+
+
+  const [kpi_Id, setkpi_Id] = useState<number>(0);
+
+  const [user_Id, setuser_Id] = useState<number>(0);
 
 
   // profile để hiển thị ảnh
@@ -238,7 +248,7 @@ const AllPersonelScreen = () => {
 
 
 
-  const fetchDeleteKPI = async () => {
+  const fetchDeleteKPI = async (kpiId: number) => {
     try {
       const authToken = await AsyncStorage.getItem("token");
       if (!authToken) {
@@ -246,7 +256,7 @@ const AllPersonelScreen = () => {
         return;
       }
 
-      let kpiDeleteUrl = `${API_BASE_URL}/kpi/delete-kpi?userId=${profile?.id}`;
+      let kpiDeleteUrl = `${API_BASE_URL}/kpi/delete-kpi?kpiId=${kpiId}`;
 
       const response = await fetch(
         kpiDeleteUrl,
@@ -269,6 +279,44 @@ const AllPersonelScreen = () => {
       setLoading(false);
     }
   };
+
+
+
+  const fetchEditKPI = async (kpiId: number, total_point: number) => {
+    console.log("hahaah")
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) {
+        console.error("Không tìm thấy token! Vui lòng đăng nhập.");
+        return;
+      }
+
+      let kpiDeleteUrl = `${API_BASE_URL}/kpi/edit-kpi?kpiId=${kpiId}&pointKpi=${total_point}`;
+
+      const response = await fetch(
+        kpiDeleteUrl,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response;
+
+
+    } catch (error) {
+      console.error("Lỗi khi gọi API KPI:", error);
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
 
 
 
@@ -300,30 +348,69 @@ const AllPersonelScreen = () => {
 
     // Ẩn popup sau khi gửi API
     setModalVisible(false);
+    setSelectedKpi(null); // Reset selected KPI
     setKpiValue(""); // Reset input
+  };
+
+
+  // Hàm gọi API khi bấm xác nhận
+  const handleEditKpi = async () => {
+
+    console.log(" bắt đầu sửa kpi ");
+    if (!kpiValue) {
+      Alert.alert("Lỗi", "Vui lòng nhập mục tiêu KPI!");
+      return;
+    }
+
+    console.log('userID hiện tại hhahaha :', profile?.id);
+    console.log('userID hiện tại phamtu :', user_Id);
+    if (user_Id === profile?.id) {
+      console.log('bắt đầu Xóa KPI với userID:', user_Id);
+
+
+      const response = await fetchEditKPI(kpi_Id, Number(kpiValue)); // Gọi API và chờ kết quả
+
+
+      if (response && response?.status === 200) {
+        Alert.alert("Thành công", "Sửa KPI thành công!");
+        setModalVisible(false); // Đóng popup
+        setKpiValue(""); // Reset input
+      } else {
+        Alert.alert("Thất bại ", "Bạn không có quyền sửa KPI này");
+      }
+    } else {
+      console.log("lỗi khi sửa kpi");
+      Alert.alert("Thất bại ", "Bạn không có quyền sửa KPI này");
+    }
+
+
+    fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI
+
+    // Ẩn popup sau khi gửi API
+    setModalVisible(false);
+    setSelectedKpi(null); // Reset selected KPI
+    setKpiValue(""); // Reset input
+
+    setkpi_Id(0);
+    setuser_Id(0);// set lai nho de y
   };
 
 
 
   // Xử lý sửa
-  const handleEdit = async () => {
-
-
-    // Gọi API đăng ký KPI
-    const response = await fetchDeleteKPI();
-
-    if (response && response?.status === 200) {
-      Alert.alert("Thành công", "Xoá KPI thành công!");
-    } else {
-      Alert.alert("Thất bại ", "Bạn không có quyền xoá KPI này");
-    }
-
-    fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI sau khi đăng ký
-
+  const handleEdit = (kpi: KPIEntry) => {
+    setuser_Id(kpi.userId ? kpi.userId : 0);
+    setkpi_Id(kpi.id);
+    setSelectedKpi(kpi); // Lưu KPI đang chọn vào state
+    setKpiValue(kpi.kpiRegistry.toString()); // Điền giá trị hiện tại vào input
+    setModalVisible(true); // Mở popup
   };
 
+
+
+
   // Xử lý xóa
-  const handleDelete = async (user_id: number) => {
+  const handleDelete = async (kpiId: number, user_id: number) => {
     Alert.alert(
       "Xác nhận xóa",
       "Bạn có chắc chắn muốn xóa KPI này?",
@@ -340,9 +427,9 @@ const AllPersonelScreen = () => {
             console.log(' userID xoá :', user_id);
             if (user_id === profile?.id) {
               console.log('bắt đầu Xóa KPI với userID:', user_id);
-              
+
               // Gọi API xoa KPI
-              const response = await fetchDeleteKPI();
+              const response = await fetchDeleteKPI(kpiId);
 
               if (response && response?.status === 200) {
                 Alert.alert("Thành công", "Xoá KPI thành công!");
@@ -353,10 +440,6 @@ const AllPersonelScreen = () => {
             } else {
               Alert.alert("Thất bại ", "Bạn không có quyền xoá KPI này");
             }
-
-
-
-
             fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI sau khi xoa
           }
         }
@@ -408,7 +491,11 @@ const AllPersonelScreen = () => {
                 paddingHorizontal: 16,
                 borderRadius: 20,
               }}
-              onPress={() => setModalVisible(true)} // Hiển thị popup khi nhấn
+              onPress={() => {
+                setSelectedKpi(null); // Reset selected KPI
+                setKpiValue(""); // Xóa giá trị cũ
+                setModalVisible(true); // Mở popup
+              }}
             >
               <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>Đăng ký</Text>
             </TouchableOpacity>
@@ -419,7 +506,9 @@ const AllPersonelScreen = () => {
           <Modal visible={modalVisible} transparent animationType="slide">
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
               <View style={{ backgroundColor: "white", padding: 20, borderRadius: 10, width: 300, alignItems: "center" }}>
-                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Nhập mục tiêu KPI</Text>
+                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
+                  {selectedKpi ? "Chỉnh sửa KPI" : "Đăng ký KPI mới"}
+                </Text>
                 <TextInput
                   style={{
                     width: "100%",
@@ -439,15 +528,20 @@ const AllPersonelScreen = () => {
                 <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
                   <TouchableOpacity
                     style={{ backgroundColor: "red", padding: 10, borderRadius: 5, flex: 1, marginRight: 10 }}
-                    onPress={() => setModalVisible(false)}
+                    onPress={() => {
+                      setModalVisible(false);
+                      setSelectedKpi(null);
+                    }}
                   >
                     <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>Hủy</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ backgroundColor: "green", padding: 10, borderRadius: 5, flex: 1 }}
-                    onPress={handleRegisterKpi} // Gọi API khi nhấn xác nhận
+                    onPress={handleEditKpi}
                   >
-                    <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>Xác nhận</Text>
+                    <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>
+                      {selectedKpi ? "Cập nhật" : "Đăng ký"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -525,18 +619,18 @@ const AllPersonelScreen = () => {
                 }}>
                   {/* Nút sửa bên trái */}
                   <TouchableOpacity
-                    onPress={() => handleEdit()}
+                    onPress={() => handleEdit(item)}
                     style={{ flexDirection: 'row', alignItems: 'center' }}
                   >
                     <Icon name="pencil" size={18} color="#4CAF50" />
                     <Text style={{ marginLeft: 8, color: '#4CAF50' }}>Sửa</Text>
                   </TouchableOpacity>
 
-                  
+
 
                   {/* Nút xóa bên phải */}
                   <TouchableOpacity
-                    onPress={() => handleDelete(item.userId? item.userId : 0)}
+                    onPress={() => handleDelete(item.id, item.userId ? item.userId : 0)}
                     style={{ flexDirection: 'row', alignItems: 'center' }}
                   >
                     <Icon name="trash" size={18} color="#f44336" />

@@ -5,10 +5,7 @@ import mobile_be.mobile_be.Service.KpiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/api/kpi")
@@ -34,9 +31,17 @@ public class KpiController {
     }
 
     // api sửa kpi
-    @PostMapping("/edit-kpi")
-    public ResponseEntity<?> editKpi(@RequestParam (value = "userId", required = false) Integer userId,
+    @PutMapping("/edit-kpi")
+    public ResponseEntity<?> editKpi(@RequestParam (value = "kpiId", required = false) Integer kpiId,
                                     @RequestParam (value = "pointKpi", required = false) Integer pointKpi) {
-        return null;
+        return kpiService.editKpi(kpiId, pointKpi);
+    }
+
+
+    // api xoa kpi
+    // chi cho phep xoa cua chinh minh
+    @DeleteMapping("/delete-kpi")
+    public ResponseEntity<?> deleteKpi(@RequestParam (value = "kpiId", required = false) Integer kpiId) {
+        return kpiService.deleteKpi(kpiId);
     }
 }

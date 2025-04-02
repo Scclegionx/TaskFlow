@@ -12,7 +12,7 @@ public interface KpiRepository extends JpaRepository<Kpi, Integer> {
     @Query(value = "SELECT * FROM kpi WHERE user_id = :userId " +
             " AND DATE_FORMAT(time, '%Y-%m') = :time   ",
             nativeQuery = true)
-    Kpi findByUserIdAndTime(Integer userId, String time);
+    List<Kpi> findByUserIdAndTime(Integer userId, String time);
 
 
     // k.* la lay tat ca cac truong cua bang kpi
@@ -23,4 +23,6 @@ public interface KpiRepository extends JpaRepository<Kpi, Integer> {
             "order by k.total_point desc ",
             nativeQuery = true)
     List<Kpi> getKpiByMonth(String time, String textSearch);
+
+    List<Kpi> findByUserId(Integer userId);
 }

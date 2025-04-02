@@ -327,6 +327,8 @@ const AllPersonelScreen = () => {
 
   // Hàm gọi API khi bấm xác nhận
   const handleRegisterKpi = async () => {
+
+    console.info("bắt đầu đăng ký kpi");
     if (!kpiValue) {
       Alert.alert("Lỗi", "Vui lòng nhập mục tiêu KPI!");
       return;
@@ -404,6 +406,7 @@ const AllPersonelScreen = () => {
     setSelectedKpi(kpi); // Lưu KPI đang chọn vào state
     setKpiValue(kpi.kpiRegistry.toString()); // Điền giá trị hiện tại vào input
     setModalVisible(true); // Mở popup
+
   };
 
 
@@ -537,7 +540,7 @@ const AllPersonelScreen = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ backgroundColor: "green", padding: 10, borderRadius: 5, flex: 1 }}
-                    onPress={handleEditKpi}
+                    onPress={selectedKpi ? handleEditKpi : handleRegisterKpi}
                   >
                     <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>
                       {selectedKpi ? "Cập nhật" : "Đăng ký"}
@@ -573,6 +576,8 @@ const AllPersonelScreen = () => {
                     style={{ marginRight: 15 }}
                   />
 
+                  
+
                   {/* Thông tin chính */}
                   <View style={{ flex: 1 }}>
                     <View style={styles.row}>
@@ -598,6 +603,22 @@ const AllPersonelScreen = () => {
                       ]}>
                         {item.totalPoint ? item.totalPoint : "0"} / {item.kpiRegistry ? item.kpiRegistry : "0"}
                       </Text>
+                      {/* Thêm icon điều kiện */}
+                      {(item.totalPoint || 0) >= (item.kpiRegistry || 0) ? (
+                        <Icon
+                          name="check-circle"
+                          size={20}
+                          color="#4CAF50"
+                          style={{ marginLeft: 8 }}
+                        />
+                      ) : (
+                        <Icon
+                          name="close"
+                          size={20}
+                          color="#F44336"
+                          style={{ marginLeft: 8 }}
+                        />
+                      )}
                     </View>
                     <View style={styles.row}>
                       <Text style={styles.label}>Thời gian:</Text>

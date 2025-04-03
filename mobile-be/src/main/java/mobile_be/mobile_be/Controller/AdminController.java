@@ -26,13 +26,15 @@ public class AdminController {
         if (userDetails == null) {
             return ResponseEntity.status(401).body("Chưa xác thực: Bạn chưa đăng nhập!");
         }
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-        Set<String> roles = userDetails.getAuthorities()
-                                       .stream()
-                                       .map(grantedAuthority -> grantedAuthority.getAuthority())
-                                       .collect(Collectors.toSet());
+        Set<String> roles = user.getRoles().stream()
+                                .map(role -> role.getName().name())  // Chỉ lấy tên của vai trò
+                                .collect(Collectors.toSet());
+        System.out.println("User Roles: " + roles);
 
-        if (!roles.contains("ROLE_ADMIN")) { // ROLE_ADMIN thay vì ADMIN
+        if (!roles.contains("ADMIN")) { // ROLE_ADMIN thay vì ADMIN
             return ResponseEntity.status(403).body("Không có quyền: Bạn không phải là admin!");
         }
 
@@ -47,16 +49,44 @@ public class AdminController {
             return ResponseEntity.status(401).body("Chưa xác thực: Bạn chưa đăng nhập!");
         }
 
-        Set<String> roles = userDetails.getAuthorities()
-                                       .stream()
-                                       .map(grantedAuthority -> grantedAuthority.getAuthority())
-                                       .collect(Collectors.toSet());
+        User useradmin = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-        if (!roles.contains("ROLE_ADMIN")) {
+        Set<String> roles = useradmin.getRoles().stream()
+                                .map(role -> role.getName().name())  // Chỉ lấy tên của vai trò
+                                .collect(Collectors.toSet());
+        System.out.println("User Roles: " + roles);
+
+        if (!roles.contains("ADMIN")) {
             return ResponseEntity.status(403).body("Không có quyền: Bạn không phải là admin!");
         }
 
         userRepository.save(user);
         return ResponseEntity.ok("Thêm người dùng thành công!");
+    }
+    @DeleteMapping("/delete-user/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Integer id, @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("Chưa xác thực: Bạn chưa đăng nhập!");
+        }
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        Set<String> roles = user.getRoles().stream()
+                                .map(role -> role.getName().name())  // Chỉ lấy tên của vai trò
+                                .collect(Collectors.toSet());
+        System.out.println("User Roles: " + roles);
+
+        if (!roles.contains("ADMIN")) {
+            return ResponseEntity.status(403).body("Không có quyền: Bạn không phải là admin!");
+        }
+
+        if (!userRepository.existsById(id)) {
+            return ResponseEntity.status(404).body("Không tìm thấy người dùng với ID: " + id);
+        }
+
+        userRepository.deleteById(id);
+        return ResponseEntity.ok("Xóa người dùng thành công!");
     }
 }

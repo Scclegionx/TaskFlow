@@ -17,12 +17,15 @@ import { Platform } from "react-native";
 const Profile = () => {
   const router = useRouter();
   const [user, setUser] = useState({ name: "", email: "", avatar: "" });
+  const [roles, setRoles] = useState([]);
 
   useEffect(() => {
     const loadUser = async () => {
       const name = await AsyncStorage.getItem("username");
       const email = await AsyncStorage.getItem("email");
       const avatar = (await AsyncStorage.getItem("avatar")) || ""; // Lấy avatar từ AsyncStorage
+      const storedRoles = await AsyncStorage.getItem('roles');
+      setRoles(storedRoles ? JSON.parse(storedRoles) : []);
       if (name && email) setUser({ name, email, avatar });
     };
     loadUser();
@@ -115,7 +118,7 @@ const Profile = () => {
                 <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
                 <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
                 <ProfileItem icon="📝" label="Nhiệm vụ của tôi" />
-                <ProfileItem icon="👤" label="Quyền Admin" />
+                {roles.includes("ADMIN") && <ProfileItem icon="👤" label="Quyền Admin" onPress={() => router.push('/Admin')}/>}
             </View>
 
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>

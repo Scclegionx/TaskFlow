@@ -38,6 +38,7 @@ const LoginScreen = () => {
             await AsyncStorage.setItem('email', payload.sub);
             await AsyncStorage.setItem('userId', payload.id.toString());
             await AsyncStorage.setItem('avatar', payload.avatar ? payload.avatar.toString() : "null");
+            await AsyncStorage.setItem('roles', JSON.stringify(payload.roles));
             Alert.alert('Successful!', 'Logged in!');
             router.push('/dashboard');
         } catch (error:any) {

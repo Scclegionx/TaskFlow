@@ -2,11 +2,13 @@ package mobile_be.mobile_be.Service;
 
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.response.ChamCongResponseDTO;
+import mobile_be.mobile_be.DTO.response.InfoUserResponseDTO;
 import mobile_be.mobile_be.Model.Tydstate;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.TydstateRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -141,6 +144,66 @@ public class UserService {
            return ResponseEntity.ok(chamCongResponseDTOList);
         } catch (Exception e) {
             log.info(error.toString());
+            return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
+        }
+    }
+
+    public ResponseEntity<?> getUserById(Integer userId){
+        try{
+
+            LocalDate startDate = LocalDate.now().withDayOfMonth(1);
+            LocalDate endDate = LocalDate.now();
+
+           Object[] results = userRepository.getUserById(userId, startDate, endDate);
+
+            if (results == null) {
+                return ResponseEntity.badRequest().body("khong tim thay user");
+            }
+
+            Object[] result = (Object[]) results[0]; // Lấy dòng đầu tiên
+
+
+            Integer id = (result[0] instanceof Integer) ? (Integer) result[0] : null;
+            String name = (result[1] instanceof String) ? (String) result[1] : null;
+            String email = (result[2] instanceof String) ? (String) result[2] : null;
+            Integer gender = (result[3] instanceof Integer) ? (Integer) result[3] : null;
+            String dob = (result[4] instanceof String) ? (String) result[4] : null;
+            Integer totalPoint = (result[5] instanceof Number) ? ((Number) result[5]).intValue() : null;
+            Integer kpiRegistry = (result[6] instanceof Number) ? ((Number) result[6]).intValue() : null;
+            Float totalHours = (result[7] instanceof Number) ? ((Number) result[7]).floatValue() : null;
+            String avatar = (result[8] instanceof String) ? (String) result[8] : null;
+
+            String total_point = (totalPoint != null ? totalPoint.toString() : "0") +
+                    " / " +
+                    (kpiRegistry != null ? kpiRegistry.toString() : "0");
+
+            String genderDatail= "";
+            if(gender == null){
+                genderDatail = "Chưa cập nhật";
+            }else if (gender == 0){
+                genderDatail = "Nam";
+            }else if (gender == 1){
+                genderDatail = "Nữ";
+            }
+
+            if(dob == null){
+                dob = "Chưa cập nhật";
+            }
+
+            InfoUserResponseDTO  infoUserResponseDTO = new InfoUserResponseDTO();
+            infoUserResponseDTO.setId(id);
+            infoUserResponseDTO.setName(name);
+            infoUserResponseDTO.setEmail(email);
+            infoUserResponseDTO.setGender(genderDatail);
+            infoUserResponseDTO.setDateOfBirth(dob);
+            infoUserResponseDTO.setTotalPoint(total_point);
+            infoUserResponseDTO.setTotalHours(totalHours);
+            infoUserResponseDTO.setAvatar(avatar);
+
+
+            return ResponseEntity.ok(infoUserResponseDTO);
+        }catch (Exception e){
+            log.error("Error: " + e.getMessage());
             return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
         }
     }

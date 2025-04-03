@@ -403,7 +403,7 @@ const ChamCongScreen = () => {
                   <Text style={{ fontSize: 16, color: "black" }}>
                     Số giờ làm việc : {item.total_hours}
                   </Text>
-                  <Text style={{ fontSize: 19 }}>
+                  <Text style={{ fontSize: 17 }}>
                     <Text style={{ color: 'black' }}>Trạng thái: </Text>
                     <Text style={{ color: getStatusColor(item.status) }}>
                       {getStatusLabel(item.status)}

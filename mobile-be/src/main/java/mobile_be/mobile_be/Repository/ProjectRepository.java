@@ -20,7 +20,9 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     @Query(value = "SELECT " +
             "(SELECT COUNT(*) FROM projects) AS total1, " +
             "(SELECT COUNT(*) FROM tasks) AS total2, " +
-            "(SELECT COUNT(*) FROM users) AS total3",
+            "(SELECT COUNT(DISTINCT u.id) FROM users u " +
+            "join project_members pm on u.id = pm.user_id " +
+            " ) AS total3",
             nativeQuery = true)
     List<Object[]> getNumberProjectAndTask();
 

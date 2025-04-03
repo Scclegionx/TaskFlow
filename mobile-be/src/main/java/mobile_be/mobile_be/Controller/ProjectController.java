@@ -26,6 +26,7 @@ public class ProjectController {
     }
 
     // api lay so luong  du an , cong viec, thanh vien hien thi o giao dien home
+    // chi user duoc join du an thi moi tinh
     @GetMapping("/get-number-project-task-member")
     public ResponseEntity<Map<String , Integer>> getNumberProjectAndTask() {
         return ResponseEntity.ok(projectService.getNumberProjectAndTask());

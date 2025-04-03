@@ -1,5 +1,5 @@
 import React , {useState, useEffect} from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView ,Image} from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect } from "react";
@@ -22,6 +22,9 @@ interface DetailRowProps {
     gender : string;
     phoneNumber : string;
     dateOfBirth : string;
+    totalPoint : string ;
+    totalHours : number;
+    avatar : string;
   }
   
 
@@ -78,6 +81,14 @@ const PersonelDetailScreen  = () => {
   return (
     <View style={styles.container}>
     <View style={styles.card}>
+
+      {/* Thêm Image ở đây */}
+      <Image
+        style={styles.avatar}
+        source={{ uri: inforPersonData?.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s' }} // Đường dẫn đến ảnh
+        resizeMode="cover"
+      />
+
       <View style={styles.row}>
         <Text style={styles.label}>Tên : </Text>
         <Text style={styles.value}>{inforPersonData?.name}</Text>
@@ -92,6 +103,23 @@ const PersonelDetailScreen  = () => {
         <Text style={styles.label}>Giới tính : </Text>
         <Text style={styles.value}>{inforPersonData?.gender}</Text>
       </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Ngày sinh: </Text>
+        <Text style={styles.value}>{inforPersonData?.dateOfBirth}</Text>
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Điểm số: </Text>
+        <Text style={styles.value}>{inforPersonData?.totalPoint}</Text>
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Thời gian làm việc: </Text>
+        <Text style={styles.value}>{inforPersonData?.totalHours}</Text>
+      </View>
+
+
 
       
     </View>
@@ -113,7 +141,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: '#D9D9D9',
     borderRadius: 8,
     padding: 16,
     shadowColor: '#000',
@@ -131,10 +159,20 @@ const styles = StyleSheet.create({
     width: 120,
     fontWeight: 'bold',
     color: '#333',
+    fontSize: 16,
   },
   value: {
+    fontSize: 16,
     flex: 1,
-    color: '#666',
+    color: 'black',
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50, // Để tạo hình tròn
+    alignSelf: 'center', // Căn giữa theo chiều ngang
+    marginBottom: 20, // Khoảng cách với phần thông tin phía dưới
+    backgroundColor: '#e1e4e8', // Màu nền dự phòng
   },
   status: {
     color: 'orange', // Màu cho trạng thái

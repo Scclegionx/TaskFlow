@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert  } from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,20 +24,26 @@ interface UserProfile {
   avatar: string;
 }
 
+interface inforUser{
+  id: number;
+  name: string;
+  email: string;
+}
+
 
 const AllPersonelScreen = () => {
 
   const router = useRouter();
 
   const navigation = useNavigation(); // Use the hook to get the navigation object
-  
+
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Nhân sự" }); // Cập nhật tiêu đề
   }, [navigation]);
 
   const [search, setSearch] = useState("");
   const [data, setData] = useState<{ name: string; email: string }[]>([]);
-  const [filteredData, setFilteredData] = useState<{ name: string; email: string }[]>([]); // Dữ liệu sau khi lọc
+  const [filteredData, setFilteredData] = useState<inforUser[]>([]);
   const [loading, setLoading] = useState(true);
 
 
@@ -53,7 +59,7 @@ const AllPersonelScreen = () => {
     fetchProfile(); // Chỉ gọi API lấy profile khi component mount
     fetchMembers(""); // Gọi API lấy danh sách nhân sự ngay khi vào màn hình
   }, []);
-  
+
   const fetchProfile = async () => {
     try {
       const authToken = await AsyncStorage.getItem("token");
@@ -61,7 +67,7 @@ const AllPersonelScreen = () => {
         console.error("Không tìm thấy token! Vui lòng đăng nhập.");
         return;
       }
-  
+
       const response = await fetch(`${API_BASE_URL}/users/profile`, {
         method: "GET",
         headers: {
@@ -69,7 +75,7 @@ const AllPersonelScreen = () => {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (response.ok) {
         const profileData: UserProfile = await response.json();
         setProfile(profileData);
@@ -80,10 +86,10 @@ const AllPersonelScreen = () => {
       console.error("Lỗi khi gọi API profile:", error);
     }
   };
-  
+
   const fetchMembers = async (searchText: string) => {
     setLoading(true);
-  
+
     try {
       const authToken = await AsyncStorage.getItem("token");
       if (!authToken) {
@@ -91,12 +97,12 @@ const AllPersonelScreen = () => {
         setLoading(false);
         return;
       }
-  
+
       let membersUrl = `${API_BASE_URL}/projects/get-all-member-in-project`;
       if (searchText.trim()) {
         membersUrl += `?textSearch=${encodeURIComponent(searchText)}`;
       }
-  
+
       const response = await fetch(membersUrl, {
         method: "GET",
         headers: {
@@ -104,7 +110,7 @@ const AllPersonelScreen = () => {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (response.ok) {
         const membersData = await response.json();
         setData(membersData);
@@ -118,7 +124,7 @@ const AllPersonelScreen = () => {
       setLoading(false);
     }
   };
-  
+
   const handleSearch = () => {
     fetchMembers(searchText);
   };
@@ -128,18 +134,18 @@ const AllPersonelScreen = () => {
     try {
       setLoading(true);
       const authToken = await AsyncStorage.getItem("token");
-  
+
       const response = await fetch(`${API_BASE_URL}/document/download`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
       });
-  
+
       if (!response.ok) throw new Error("Failed to download");
-  
+
       // Convert response to blob
       const blob = await response.blob();
-      
+
       // Convert blob to base64 với kiểm tra null
       const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -147,7 +153,7 @@ const AllPersonelScreen = () => {
           if (!reader.result) {
             return reject("Không đọc được dữ liệu");
           }
-          
+
           if (typeof reader.result === "string") {
             resolve(reader.result.split(",")[1]);
           } else {
@@ -157,15 +163,15 @@ const AllPersonelScreen = () => {
         reader.onerror = () => reject("Lỗi đọc file");
         reader.readAsDataURL(blob);
       });
-  
+
       // Tạo file path
       const fileUri = FileSystem.documentDirectory + "data.xlsx";
-      
+
       // Ghi file
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {
         encoding: FileSystem.EncodingType.Base64,
       });
-  
+
       // Mở file
       const contentUri = await FileSystem.getContentUriAsync(fileUri);
       await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
@@ -173,7 +179,7 @@ const AllPersonelScreen = () => {
         flags: 1,
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-  
+
     } catch (error) {
       Alert.alert("Lỗi khi tải file" || "Lỗi không xác định");
     } finally {
@@ -183,24 +189,24 @@ const AllPersonelScreen = () => {
   return (
     <View style={{ padding: 16, backgroundColor: "#F8F9FA", flex: 1 }}>
 
-            {/* 🔍 Thanh tìm kiếm */}
-            <View style={styles.searchContainer}>
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="Nhập từ khóa tìm kiếm..."
-                                    value={searchText}
-                                    onChangeText={setSearchText}
-                                />
-                                 <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
-                                    <FontAwesome name="search" size={20} color="white" />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => {
-                console.log("Download button pressed");
-                downloadExcel();
-              }} style={{ backgroundColor: "#007BFF", padding: 10, borderRadius: 8, marginLeft: 10 }}>
-                <FontAwesome name="download" size={20} color="white" />
-              </TouchableOpacity>
-                            </View>
+      {/* 🔍 Thanh tìm kiếm */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Nhập từ khóa tìm kiếm..."
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+        <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+          <FontAwesome name="search" size={20} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+          console.log("Download button pressed");
+          downloadExcel();
+        }} style={{ backgroundColor: "#007BFF", padding: 10, borderRadius: 8, marginLeft: 10 }}>
+          <FontAwesome name="download" size={20} color="white" />
+        </TouchableOpacity>
+      </View>
       {/* Kiểm tra nếu đang load dữ liệu */}
       {loading ? (
         <ActivityIndicator size="large" color="blue" style={{ marginTop: 20 }} />
@@ -222,7 +228,7 @@ const AllPersonelScreen = () => {
                   padding: 12,
                   borderRadius: 10,
                   marginBottom: 8,
-                }} onPress={() => router.push({ pathname: "/personelDetail", params: { project: JSON.stringify(item) } })}
+                }} onPress={() => router.push({ pathname: "/personelDetail", params: { userId: item.id } })}
               >
                 <Icon name="user-circle" size={24} color="red" style={{ marginRight: 10 }} />
                 <View>

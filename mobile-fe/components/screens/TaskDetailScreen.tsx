@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   section: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#D9D9D9',
     borderRadius: 8,
     padding: 16,
   },

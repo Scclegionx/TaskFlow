@@ -1,6 +1,7 @@
 package mobile_be.mobile_be.Service;
 
 import lombok.extern.slf4j.Slf4j;
+import mobile_be.mobile_be.DTO.response.ChamCongResponseDTO;
 import mobile_be.mobile_be.Model.Tydstate;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.TydstateRepository;
@@ -14,8 +15,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 import mobile_be.mobile_be.contains.enum_tydstate;
+import org.springframework.web.servlet.View;
 
 @Service
 @Slf4j
@@ -26,6 +31,8 @@ public class UserService {
 
     @Autowired
     private TydstateRepository tydstateRepository;
+    @Autowired
+    private View error;
 
     public ResponseEntity<?> checkIn(Integer userId) {
 
@@ -79,10 +86,15 @@ public class UserService {
             total_hours = Math.round(total_hours * 10) / 10.0f;
             log.info("Total hours: " + total_hours);
 
-            if (total_hours < 8) {
-                tydstate.setStatus(enum_tydstate.Thieu.getValue());
-            } else {
+
+            if (total_hours >=8 && tydstate.getCheckin().getHour() <= 8) {
                 tydstate.setStatus(enum_tydstate.Du.getValue());
+            } else if (tydstate.getCheckin().getHour() > 8 && tydstate.getCheckout().getHour() >= 17){
+                tydstate.setStatus(enum_tydstate.DiMuon.getValue());
+            }else if (tydstate.getCheckin().getHour() > 8 && tydstate.getCheckout().getHour() < 17){
+                tydstate.setStatus(enum_tydstate.DiMuonVeSom.getValue());
+            }else if (tydstate.getCheckin().getHour() <= 8 && tydstate.getCheckout().getHour() < 17){
+                tydstate.setStatus(enum_tydstate.VeSom.getValue());
             }
 
             tydstate.setTotal_hours(total_hours);
@@ -94,11 +106,42 @@ public class UserService {
         }
     }
 
-    public ResponseEntity<?> getTydstate() {
+    public ResponseEntity<?> getTydstate(String startDate, String endDate, String textSearch) {
         try {
-            return ResponseEntity.ok(tydstateRepository.findAll());
+            List<Tydstate> typstateList = tydstateRepository.getAllTydstate(startDate, endDate, textSearch);
+
+            // Định dạng lại theo kiểu yyyy-MM-dd HH:mm:ss
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            List<ChamCongResponseDTO> chamCongResponseDTOList = typstateList.stream().map(tydstate -> {
+                ChamCongResponseDTO chamCongResponseDTO = new ChamCongResponseDTO();
+
+                String checkInTime = "";
+                String checkOutTime = "chưa chưa ra về";
+               if (tydstate.getCheckin() != null) {
+                    checkInTime = tydstate.getCheckin().format(formatter);
+                }
+               if (tydstate.getCheckout() != null) {
+                    checkOutTime = tydstate.getCheckout().format(formatter);
+                }
+
+                chamCongResponseDTO.setId(tydstate.getId());
+                chamCongResponseDTO.setUser_id(tydstate.getUser_id());
+                chamCongResponseDTO.setCheckin(checkInTime);
+                chamCongResponseDTO.setCheckout(checkOutTime);
+                chamCongResponseDTO.setStatus(tydstate.getStatus());
+                chamCongResponseDTO.setTotal_hours(tydstate.getTotal_hours());
+
+                User user = userRepository.findById(tydstate.getUser_id()).orElseThrow(() -> new RuntimeException("User not found"));
+                chamCongResponseDTO.setUsername(user.getName());
+                return chamCongResponseDTO;
+            }).toList();
+
+
+           return ResponseEntity.ok(chamCongResponseDTOList);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Get tydstate failed");
+            log.info(error.toString());
+            return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
         }
     }
 }

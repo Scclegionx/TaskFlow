@@ -115,7 +115,8 @@ const Profile = () => {
                 <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
                 <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
                 <ProfileItem icon="📝" label="Nhiệm vụ của tôi" />
-                <ProfileItem icon="📝" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
+                <ProfileItem icon="🏆" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
+                <ProfileItem icon="⏳" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
                 <ProfileItem icon="👤" label="Quyền Admin" />
             </View>
 

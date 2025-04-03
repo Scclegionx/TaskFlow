@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.DTO.UpdateProfileRequest;
 import mobile_be.mobile_be.Repository.UserRepository;
+import mobile_be.mobile_be.Service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import mobile_be.mobile_be.Utils.JwtUtil;
@@ -33,12 +34,14 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final UserService userService;
 
-    public UserController(Cloudinary cloudinary, UserRepository userRepository, JwtUtil jwtUtil) {
+    public UserController(Cloudinary cloudinary, UserRepository userRepository, JwtUtil jwtUtil, UserService userService) {
         this.cloudinary = cloudinary;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = new BCryptPasswordEncoder();
+        this.userService = userService;
     }
 
     @GetMapping
@@ -236,8 +239,10 @@ public class UserController {
 
     // api lay thong tin user
     @GetMapping("/get-user-by-id")
-    public ResponseEntity<User> getUserById(@RequestParam(value = "userId", required = false) Integer userId) {
-        return ResponseEntity.ok(userRepository.findById(userId).orElse(null));
+    public ResponseEntity<?> getUserById(@RequestParam(value = "userId", required = false) Integer userId) {
+
+        var result = userService.getUserById(userId);
+       return result;
     }
 
 

@@ -21,6 +21,7 @@ public class ProjectController {
 
     @PostMapping("/create-project")
     public ResponseEntity<Project> createProject(@RequestBody CreateProjectRequest request) {
+        System.out.println("Received request: " + request);
         Project project = projectService.createProject(request);
         return ResponseEntity.ok(project);
     }

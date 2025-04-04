@@ -54,12 +54,14 @@ public class UserController {
         return userRepository.save(user);
     }
     @GetMapping("/search")
-    public ResponseEntity<UserDTO> searchUserByEmail(@RequestParam String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với email: " + email));
+    public ResponseEntity<List<UserDTO>> searchUserByEmail(@RequestParam String email) {
+        List<User> users = userRepository.findByEmailContainingIgnoreCase(email);
 
-        UserDTO userDTO = new UserDTO(user);
-        return ResponseEntity.ok(userDTO);
+        List<UserDTO> userDTOs = users.stream()
+                .map(UserDTO::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(userDTOs);
     }
 
     @GetMapping("/profile")

@@ -8,13 +8,12 @@ import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.KpiRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.HikariCheckpointRestoreLifecycle;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import mobile_be.mobile_be.contains.enum_status_kpi;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,6 +49,10 @@ public class KpiService {
         newKpi.setUserId(userId);
         newKpi.setKpiRegistry(point_kpi);
         newKpi.setTime(today);
+        newKpi.setMinusPoint(0);
+        newKpi.setPlusPoint(0);
+        newKpi.setTotalPoint(0);
+        newKpi.setStatus(enum_status_kpi.ChuaDu.getValue());
 
         kpiRepository.save(newKpi);
 

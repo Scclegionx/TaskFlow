@@ -58,4 +58,17 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getTaskDetail(taskId));
     }
 
+    // api chuyen trang thai hoan thanh cong viec
+    @PutMapping("/mark-complete")
+    public ResponseEntity<?> markComplete(@RequestParam(value = "taskId", required = false) Integer taskId) {
+        return ResponseEntity.ok(taskService.markComplete(taskId));
+    }
+
+    // api cho pm duyet cong viec hoan thanh
+    @PutMapping("/task-approve-finish")
+    public ResponseEntity<?> taskApproveFinish(@RequestParam(value = "taskId", required = false) Integer taskId) {
+        return ResponseEntity.ok(taskService.taskApproveFinish(taskId));
+    }
+
+
 }

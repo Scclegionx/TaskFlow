@@ -44,4 +44,5 @@ public class KpiController {
     public ResponseEntity<?> deleteKpi(@RequestParam (value = "kpiId", required = false) Integer kpiId) {
         return kpiService.deleteKpi(kpiId);
     }
+
 }

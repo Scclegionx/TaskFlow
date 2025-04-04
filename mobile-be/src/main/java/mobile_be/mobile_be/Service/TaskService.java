@@ -2,17 +2,23 @@ package mobile_be.mobile_be.Service;
 
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.request.TaskRequest;
+import mobile_be.mobile_be.Model.Kpi;
 import mobile_be.mobile_be.Model.Project;
 import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Model.User;
+import mobile_be.mobile_be.Repository.KpiRepository;
 import mobile_be.mobile_be.Repository.ProjectRepository;
 import mobile_be.mobile_be.Repository.TaskRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
+import mobile_be.mobile_be.contains.enum_projectStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import mobile_be.mobile_be.contains.enum_taskStatus;
+import mobile_be.mobile_be.contains.enum_levelTask;
+import mobile_be.mobile_be.contains.enum_status_kpi;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -29,6 +35,10 @@ public class TaskService {
 
     @Autowired
     private ProjectRepository projectRepository;
+    @Autowired
+    private KpiRepository kpiRepository;
+    @Autowired
+    private KpiService kpiService;
 
 
     // type == null la lay tat ca cac trang thai
@@ -74,6 +84,7 @@ public class TaskService {
         task.setFromDate(taskRequest.getFromDate());
         task.setStatus(taskRequest.getStatus());
         task.setAssignees(user);
+        task.setCreatedAt(LocalDateTime.now());
         // doan nay sua lai thanh  user tu token hien tai
         task.setCreatedBy(taskRequest.getCreatedBy());
         taskRepository.save(task);
@@ -104,6 +115,7 @@ public class TaskService {
     }
 
     public Task getTaskDetail(Integer taskId) {
+        log.info("haha");
         Task task = taskRepository.getTaskDetail(taskId);
         if (task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue()
                 && task.getToDate() != null) {
@@ -114,4 +126,72 @@ public class TaskService {
         return task;
     }
 
+    public Task markComplete(Integer taskId) {
+        log.info("Task ID: {}", taskId);
+        Task task = taskRepository.findById(taskId);
+        if (task != null) {
+            task.setWaitFinish(1);
+            taskRepository.save(task);
+        }
+        return task;
+    }
+
+    public Task taskApproveFinish(Integer taskId) {
+        Task task = taskRepository.findById(taskId);
+        if (task != null) {
+            task.setStatus(enum_taskStatus.COMPLETED.getValue());
+            task.setWaitFinish(0);
+
+            LocalDateTime localDateTime = task.getCreatedAt();
+
+            String time = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+
+            Integer plusPoint = 0;
+            if(task.getLevel() == null){
+                plusPoint = 0;
+            }else if (task.getLevel() == enum_levelTask.De.getValue()){
+                plusPoint = 1;
+            }else if (task.getLevel() == enum_levelTask.TrungBinh.getValue()){
+                plusPoint = 2;
+            }else if (task.getLevel() == enum_levelTask.Kho.getValue()){
+                plusPoint = 3;
+            }
+
+            List<User> listUser = task.getAssignees();
+            if(listUser != null){
+                for (User user : listUser) {
+                    Kpi kpi =  kpiRepository.getByUserIdAndTime(user.getId(), time);
+
+                    if (kpi != null){
+                        // diem hien tai + diem task
+                        kpi.setPlusPoint(kpi.getPlusPoint() + plusPoint);
+
+                        // diem cong - diem tru
+                        // lay gia tri vua set vào
+                        kpi.setTotalPoint(kpi.getPlusPoint() - kpi.getMinusPoint());
+                        if(kpi.getTotalPoint() >= kpi.getKpiRegistry()){
+                            kpi.setStatus(enum_status_kpi.Du.getValue());
+                        }
+                        kpiRepository.save(kpi);
+                    }
+                }
+            }
+            taskRepository.save(task);
+
+            Project project = task.getProject();
+            Set<Task> listTask = project.getTasks();
+            boolean checkFinish = true;
+            for (Task t : listTask) {
+                if (t.getStatus() != enum_taskStatus.IN_PROGRESS.getValue()) {
+                    checkFinish = false;
+                    break;
+                }
+            }
+            if (checkFinish) {
+                project.setStatus(enum_projectStatus.COMPLETED.getValue());
+                projectRepository.save(project);
+            }
+        }
+        return task;
+    }
 }

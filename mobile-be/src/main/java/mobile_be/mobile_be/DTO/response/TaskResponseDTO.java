@@ -17,5 +17,6 @@ public class TaskResponseDTO {
     private LocalDateTime toDate;
     private Integer status;
     private String nameCreatedBy;
+    private Integer waitFinish;
 
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image, Alert } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect } from "react";
@@ -27,8 +27,10 @@ interface TaskDetail {
   };
   createdBy: number;
   assignees: Array<{
+    id: number;
     name: string;
   }>;
+  waitFinish: number;
 }
 
 interface User {
@@ -64,6 +66,7 @@ const TaskDetailScreen = () => {
   const [commentData, setCommentData] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
 
+  const [currentUserId, setCurrentUserId] = useState(Number);  // id của người đang đăng nhập
 
 
 
@@ -73,11 +76,12 @@ const TaskDetailScreen = () => {
 
 
 
-
   useEffect(() => {
     const fetchTaskDetail = async () => {
       try {
         const authToken = await AsyncStorage.getItem("token");
+        const currentUser_id = await AsyncStorage.getItem("userId");
+        setCurrentUserId(Number(currentUser_id));
         if (!authToken) throw new Error("Vui lòng đăng nhập");
 
         const response = await fetch(
@@ -154,7 +158,137 @@ const TaskDetailScreen = () => {
   }, []);
 
 
+  const fetchMarkComplete = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) throw new Error("Vui lòng đăng nhập");
 
+      const response = await fetch(
+        `${API_BASE_URL}/tasks/mark-complete?taskId=${taskId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Không tải được dữ liệu");
+      const data = await response.json();
+      setJobData(data);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message); // Safely access the message property
+      } else {
+        setError("Đã xảy ra lỗi không xác định"); // Handle non-Error types
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const fetchApproveComplete = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) throw new Error("Vui lòng đăng nhập");
+
+      const response = await fetch(
+        `${API_BASE_URL}/tasks/task-approve-finish?taskId=${taskId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Không tải được dữ liệu");
+      const data = await response.json();
+      setJobData(data);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message); // Safely access the message property
+      } else {
+        setError("Đã xảy ra lỗi không xác định"); // Handle non-Error types
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const fetchTask_Detail = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) throw new Error("Vui lòng đăng nhập");
+
+      const response = await fetch(
+        `${API_BASE_URL}/tasks/get-task-detail?taskId=${taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Không tải được dữ liệu");
+      const data = await response.json();
+      setJobData(data);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message); // Safely access the message property
+      } else {
+        setError("Đã xảy ra lỗi không xác định"); // Handle non-Error types
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  const handleMarkComplete = async () => {
+    Alert.alert(
+      "Thông báo",
+      "Bạn có muốn xác nhận hoàn thành công việc này không?",
+      [
+        {
+          text: "Không",
+          style: "cancel", // Đóng hộp thoại mà không làm gì
+        },
+        {
+          text: "Có",
+          onPress: async () => {
+            await fetchMarkComplete();// Gọi API xác nhận
+            await fetchTask_Detail(); // Cập nhật lại dữ liệu
+          },
+        },
+      ]
+    );
+  };
+
+
+
+  const handleApproveComplete = async () => {
+    Alert.alert(
+      "Thông báo",
+      "Bạn có muốn xác nhận hoàn thành công việc này không?",
+      [
+        {
+          text: "Không",
+          style: "cancel", // Đóng hộp thoại mà không làm gì
+        },
+        {
+          text: "Có",
+          onPress: async () => {
+            await fetchApproveComplete(); // Gọi API xác nhận
+            await fetchTask_Detail(); // Cập nhật lại dữ liệu
+          },
+        },
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -297,13 +431,36 @@ const TaskDetailScreen = () => {
         />
 
         {/* Thêm nút ở đây */}
-        {jobData.status === 1 && (
+        {/* đang xử lý , mà chưa chọn xác nhận hoàn thành */}
+        {/* chỉ có  người thực hiện mới được quyền */}
+        {/* status = 1 là trạng thái chờ duyệt */}
+        {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
           <TouchableOpacity
             style={styles.completeButton}
-          // onPress={handleMarkComplete}
+            onPress={handleMarkComplete}
           >
             <Icon name="check" size={20} color="#fff" />
             <Text style={styles.completeButtonText}>Đánh dấu hoàn thành</Text>
+          </TouchableOpacity>
+        )}
+
+
+
+        {jobData.waitFinish === 1 && (
+          <View style={styles.waitFinishContainer}>
+            <Icon name="hourglass" size={16} color="#2ecc71" />
+            <Text style={styles.waitFinishText}>Chờ duyệt hoàn thành</Text>
+          </View>
+        )}
+
+        {jobData.waitFinish === 1 && jobData.createdBy === currentUserId && (
+          <TouchableOpacity
+            style={styles.duyetButton} // Thêm một style mới cho nút này
+            onPress={handleApproveComplete} // Hàm xử lý khi nhấn nút
+          >
+            <Icon name="check" size={20} color="#fff" />
+            <Text style={styles.duyetButtonText}> Xác nhận hoàn thành </Text>
+            <Icon name="check" size={20} color="#fff" />
           </TouchableOpacity>
         )}
       </View>
@@ -389,10 +546,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  waitFinishContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 15,
+  },
+  waitFinishText: {
+    color: '#2ecc71',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8, // Khoảng cách giữa icon và text
+  },
+
   completeButton: {
     flexDirection: 'row', // Căn icon + text theo chiều ngang
     alignItems: 'center', // Căn giữa theo chiều dọc
-    backgroundColor: '#4CAF50', // Màu xanh lá
+    backgroundColor: '#99CCFF',
     padding: 10,
     borderRadius: 8,
     justifyContent: 'center',
@@ -424,6 +594,22 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     textAlign: 'right',
+  },
+
+  duyetButton: {
+    backgroundColor: "#66CC66",
+    padding: 10,
+    borderRadius: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+
+  duyetButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    marginLeft: 5,
   },
 
 

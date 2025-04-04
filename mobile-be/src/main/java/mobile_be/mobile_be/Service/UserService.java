@@ -109,7 +109,7 @@ public class UserService {
         }
     }
 
-    public ResponseEntity<?> getTydstate(String startDate, String endDate, String textSearch) {
+    public List<ChamCongResponseDTO> getTydstate(String startDate, String endDate, String textSearch) {
         try {
             List<Tydstate> typstateList = tydstateRepository.getAllTydstate(startDate, endDate, textSearch);
 
@@ -141,10 +141,10 @@ public class UserService {
             }).toList();
 
 
-           return ResponseEntity.ok(chamCongResponseDTOList);
+           return chamCongResponseDTOList;
         } catch (Exception e) {
             log.info(error.toString());
-            return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
+            return Arrays.asList();
         }
     }
 

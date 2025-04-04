@@ -25,4 +25,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "LIMIT 1",
             nativeQuery = true)
     Object[] getUserById(Integer userId, LocalDate startDate, LocalDate endDate);
+
+
+    @Query(value = "Select * from users u ," +
+            "join projects p on p.user_id = u.id " , nativeQuery = true)
+    List<User> getListUser();
 }

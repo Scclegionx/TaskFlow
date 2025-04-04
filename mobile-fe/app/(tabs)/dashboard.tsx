@@ -1,4 +1,4 @@
-import React , { useEffect, useState }from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,11 +17,11 @@ type ApiResponse = {
     projects: number;
     tasks: number;
     users: number;
-  } | null;
+} | null;
 
 
-  // bieu do cot trong home
-  type TaskStatusData = {
+// bieu do cot trong home
+type TaskStatusData = {
     IN_PROGRESS: number;
     CANCELLED: number;
     COMPLETED: number;
@@ -47,7 +47,7 @@ const HomeScreen = () => {
     const [taskData, setTaskData] = useState<TaskStatusData>(null);
     // loading
     const [loading, setLoading] = useState(true);
- 
+
     // bieu do tron     du an
     const [projectStatusData, setProjectStatusData] = useState<ProjectStatusData>(null);
 
@@ -58,24 +58,24 @@ const HomeScreen = () => {
     const [projectType, setProjectType] = useState<number | null>(null);// Lưu loại dự án
 
 
-  
-        const fetchData = async (
-            taskType: number | null = null,
-             projectType: number | null = null) => {
-            const authToken = await AsyncStorage.getItem("token"); // Lấy token từ bộ nhớ
 
-            const userId = await AsyncStorage.getItem("userId");  //  Lấy userId từ AsyncStorage
-    
-            console.log("Token:", authToken);
+    const fetchData = async (
+        taskType: number | null = null,
+        projectType: number | null = null) => {
+        const authToken = await AsyncStorage.getItem("token"); // Lấy token từ bộ nhớ
 
-            if (!authToken) {
-                console.error("No token found! Please log in.");
-                return;
-            }
-    
-            try {
+        const userId = await AsyncStorage.getItem("userId");  //  Lấy userId từ AsyncStorage
 
-                let tasktUrl = `${API_BASE_URL}/tasks/get-task-count-by-status?userId=${userId}`;
+        console.log("Token:", authToken);
+
+        if (!authToken) {
+            console.error("No token found! Please log in.");
+            return;
+        }
+
+        try {
+
+            let tasktUrl = `${API_BASE_URL}/tasks/get-task-count-by-status?userId=${userId}`;
             if (taskType !== null) {
                 tasktUrl += `&type=${taskType}`;
             }
@@ -86,63 +86,63 @@ const HomeScreen = () => {
             }
 
 
-                // lan lượt  3 cai tren cung, task , du an
-                const [projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
-                    fetch(`${API_BASE_URL}/projects/get-number-project-task-member`, {
-                        method: "GET",
-                        headers: {
-                            "Authorization": `Bearer ${authToken}`,
-                            "Content-Type": "application/json"
-                        }
-                    }),
-                    fetch(tasktUrl, {
-                        method: "GET",
-                        headers: {
-                            "Authorization": `Bearer ${authToken}`,
-                            "Content-Type": "application/json"
-                        }
-                    }),
-                    fetch(projectUrl, {
-                        method: "GET",
-                        headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
-                    }),
-                ]);
+            // lan lượt  3 cai tren cung, task , du an
+            const [projectResponse, taskResponse, projectStatusResponse] = await Promise.all([
+                fetch(`${API_BASE_URL}/projects/get-number-project-task-member`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${authToken}`,
+                        "Content-Type": "application/json"
+                    }
+                }),
+                fetch(tasktUrl, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${authToken}`,
+                        "Content-Type": "application/json"
+                    }
+                }),
+                fetch(projectUrl, {
+                    method: "GET",
+                    headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
+                }),
+            ]);
 
-                if (projectResponse.ok) {
-                    setData(await projectResponse.json());
-                } else {
-                    console.error("Failed to fetch project data.");
-                }
-
-                if (taskResponse.ok) {
-                    setTaskData(await taskResponse.json());
-                } else {
-                    console.error("Failed to fetch task data.");
-                }
-
-                if (projectStatusResponse.ok) setProjectStatusData(await projectStatusResponse.json());
-                else console.error("Failed to fetch project status data.");
-
-
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                setLoading(false);
+            if (projectResponse.ok) {
+                setData(await projectResponse.json());
+            } else {
+                console.error("Failed to fetch project data.");
             }
-        };
 
-     // Gọi API khi component mount lần đầu
-     useEffect(() => {
+            if (taskResponse.ok) {
+                setTaskData(await taskResponse.json());
+            } else {
+                console.error("Failed to fetch task data.");
+            }
+
+            if (projectStatusResponse.ok) setProjectStatusData(await projectStatusResponse.json());
+            else console.error("Failed to fetch project status data.");
+
+
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Gọi API khi component mount lần đầu
+    useEffect(() => {
         fetchData();
     }, []);
 
     // Gọi API lại mỗi khi taskType thay đổi
     useEffect(() => {
-        if (taskType !== null ) {
+        if (taskType !== null) {
             fetchData(taskType, projectType);
         }
     }, [taskType, projectType]);
-    
+
 
 
     if (loading) {
@@ -155,7 +155,7 @@ const HomeScreen = () => {
     }
 
     // doan check nay can thiet de khong null
-    if (!data || !taskData || !projectStatusData ) {
+    if (!data || !taskData || !projectStatusData) {
         return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
     }
 
@@ -163,55 +163,55 @@ const HomeScreen = () => {
         <ScrollView style={styles.container} >
             {/* Task Summary */}
 
-                                {/* Phần 3 task box cần scroll ngang */}
-                        <ScrollView 
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.taskSummaryScroll}
-                        >
-                        <TouchableOpacity style={[styles.taskBox, styles.blueBox]} onPress={() => router.push("/project")}  >
-                            <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
-                            <Icon name="folder" size={24} color="#fff" />
-                        </TouchableOpacity>
+            {/* Phần 3 task box cần scroll ngang */}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.taskSummaryScroll}
+            >
+                <TouchableOpacity style={[styles.taskBox, styles.blueBox]} onPress={() => router.push("/project")}  >
+                    <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
+                    <Icon name="folder" size={24} color="#fff" />
+                </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            style={[styles.taskBox, styles.grayBox]}
-                            onPress={() => router.push("/allTask")}
-                        >
-                            <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0})</Text>
-                            <Icon name="tasks" size={24} color="#fff" />
-                        </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.taskBox, styles.grayBox]}
+                    onPress={() => router.push("/allTask")}
+                >
+                    <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0})</Text>
+                    <Icon name="tasks" size={24} color="#fff" />
+                </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            style={[styles.taskBox, styles.redBox]}
-                            onPress={() => router.push("/allPersonel")}
-                        >
-                            <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
-                            <Icon name="users" size={24} color="#fff" />
-                        </TouchableOpacity>
-                        </ScrollView>
+                <TouchableOpacity
+                    style={[styles.taskBox, styles.redBox]}
+                    onPress={() => router.push("/allPersonel")}
+                >
+                    <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
+                    <Icon name="users" size={24} color="#fff" />
+                </TouchableOpacity>
+            </ScrollView>
 
-            
+
 
             {/* Bar Chart */}
             <Text style={styles.chartTitle}>Công việc</Text>
-                    
-               {/* Bộ lọc */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity 
-          style={styles.filterButton} 
-          onPress={() => setShowCategoryFilter(!showCategoryFilter)}
-        >
-          <Text style={styles.filterText}>Phân loại</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>Thời gian</Text>
-        </TouchableOpacity>
-      </View>
+            {/* Bộ lọc */}
+            <View style={styles.filterContainer}>
+                <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+                >
+                    <Text style={styles.filterText}>Phân loại</Text>
+                </TouchableOpacity>
 
-      {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
-      {showCategoryFilter && (
+                <TouchableOpacity style={styles.filterButton}>
+                    <Text style={styles.filterText}>Thời gian</Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
+            {showCategoryFilter && (
                 <View style={styles.dropdown}>
                     <TouchableOpacity
                         style={styles.dropdownItem}
@@ -237,8 +237,8 @@ const HomeScreen = () => {
                     <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => {
-                            setTaskType(null); 
-                            fetchData(null , projectType );    // Gọi API ngay khi chọn
+                            setTaskType(null);
+                            fetchData(null, projectType);    // Gọi API ngay khi chọn
                             setShowCategoryFilter(false);
                         }}
                     >
@@ -246,7 +246,7 @@ const HomeScreen = () => {
                     </TouchableOpacity>
                 </View>
             )}
-        
+
             <BarChart
                 data={{
                     labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn"],
@@ -270,22 +270,22 @@ const HomeScreen = () => {
 
             {/* Pie Chart (Donut) */}
             <Text style={styles.chartTitle}>Dự án</Text>
-             {/* Bộ lọc */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity 
-          style={styles.filterButton} 
-          onPress={() => setShowCategoryFilter(!showCategoryFilter)}
-        >
-          <Text style={styles.filterText}>Phân loại</Text>
-        </TouchableOpacity>
+            {/* Bộ lọc */}
+            <View style={styles.filterContainer}>
+                <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+                >
+                    <Text style={styles.filterText}>Phân loại</Text>
+                </TouchableOpacity>
 
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>Thời gian</Text>
-        </TouchableOpacity>
-      </View>
+                <TouchableOpacity style={styles.filterButton}>
+                    <Text style={styles.filterText}>Thời gian</Text>
+                </TouchableOpacity>
+            </View>
 
-      {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
-      {showCategoryFilter && (
+            {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
+            {showCategoryFilter && (
                 <View style={styles.dropdown}>
                     <TouchableOpacity
                         style={styles.dropdownItem}
@@ -311,8 +311,8 @@ const HomeScreen = () => {
                     <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => {
-                            setProjectType(null); 
-                            fetchData(taskType , null);    // Gọi API ngay khi chọn
+                            setProjectType(null);
+                            fetchData(taskType, null);    // Gọi API ngay khi chọn
                             setShowCategoryFilter(false);
                         }}
                     >
@@ -323,7 +323,7 @@ const HomeScreen = () => {
             <View style={styles.pieWrapper}>
                 <View style={styles.pieContainer}>
                     <PieChart
-                          data={[
+                        data={[
                             { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
                             { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#F59E0B", legendFontColor: "#222", legendFontSize: 12 },
                             { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
@@ -358,7 +358,7 @@ const HomeScreen = () => {
 const chartConfig = {
     backgroundGradientFrom: "#fff",
     backgroundGradientTo: "#fff",
-    decimalPlaces: 0, 
+    decimalPlaces: 0,
     color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Màu chữ
     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
     fillShadowGradientFrom: "#3762D0", // Màu xanh dương
@@ -378,16 +378,16 @@ const styles = StyleSheet.create({
     taskBox: {
         width: 171.67,  // Đặt chiều rộng
         height: 94,     // Đặt chiều cao
-        justifyContent: "center",  
+        justifyContent: "center",
         alignItems: "center",
-        borderRadius: 10, 
+        borderRadius: 10,
         margin: 5,
     },
     taskSummaryScroll: {
         paddingVertical: 0, // Thêm padding dọc nếu cần
         marginBottom: 20,
         marginTop: -5,
-      },
+    },
     blueBox: { backgroundColor: "#4B7BE5" },
     grayBox: { backgroundColor: "#778190" },
     redBox: { backgroundColor: "#D06537" },
@@ -421,9 +421,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-start",
         marginBottom: 15,
-      },
-      
-      filterButton: {
+    },
+
+    filterButton: {
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderWidth: 1,
@@ -431,14 +431,14 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginRight: 10,
         backgroundColor: "#f9f9f9",
-      },
-      
-      filterText: {
+    },
+
+    filterText: {
         fontSize: 14,
         color: "#333",
-      },
+    },
 
-      dropdown: {
+    dropdown: {
         backgroundColor: "#fff",
         padding: 10,
         borderRadius: 5,
@@ -446,16 +446,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 5,
-        elevation: 3, 
-      },
-      dropdownItem: {
+        elevation: 3,
+    },
+    dropdownItem: {
         padding: 10,
         borderBottomWidth: 1,
         borderBottomColor: "#ddd",
-      },
+    },
 
 
-      
+
 });
 
 export default HomeScreen;

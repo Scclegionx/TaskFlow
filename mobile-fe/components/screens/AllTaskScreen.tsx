@@ -17,7 +17,9 @@ interface Task {
     title: string;
     toDate?: string; // Optional if it can be undefined
     date: string; // Add this property;
-    status: number
+    status: number,
+    waitFinish : number,
+    
   }
 
  // bieu do cot trong home
@@ -133,7 +135,9 @@ const AllTaskScreen = () => {
             id: task.id || String(index),
             title: task.title,
             date: task.toDate || "Không có ngày hết hạn" ,
-            status : task.status
+            status : task.status,
+            waitFinish : task.waitFinish
+
            
           })));
           } else {
@@ -312,12 +316,15 @@ const AllTaskScreen = () => {
                           marginRight: 5
                         }} 
                       />
-                      <Text style={{ fontSize: 12, color: "#333", fontWeight: "bold" }}>
+                      <Text style={{ fontSize: 14, color: "black" }}>
                         {getStatusLabel(item.status)}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5 }}>{item.title}</Text>
-                    <Text style={{ fontSize: 12, color: '#666' }}>📅 {item.date}</Text>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5 , color : "#000000"}}>{item.title}</Text>
+                    <Text style={{ fontSize: 14, color: 'black' ,  marginVertical: 5 }}>📅 {item.date}</Text>
+                    {item.waitFinish === 1 && (
+                    <Text style={{ fontSize: 14, color: 'green',  marginVertical: 5  }}>⏳ Chờ duyệt </Text>
+                  )}
                   </View>
                   <IconButton icon="star-outline" size={24} />
                 </Card.Content>

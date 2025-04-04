@@ -51,6 +51,9 @@ public class Task {
     // muc do uu tien | kho khan cua task
     private Integer level;
 
+    // trang thai cho duyet hoan thanh
+    private Integer waitFinish;
+
 
 }
 

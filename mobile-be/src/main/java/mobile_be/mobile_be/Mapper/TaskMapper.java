@@ -18,6 +18,7 @@ public interface TaskMapper {
     TaskMapper INSTANCE = Mappers.getMapper(TaskMapper.class);
 
     @Mapping(source = "id", target = "id")
+    @Mapping(source = "waitFinish", target = "waitFinish")
     @Mapping(source = "project.name", target = "project")
     @Mapping(source = "assignees", target = "assignees", qualifiedByName = "mapAssignees")
     TaskResponseDTO toDTO(Task task);

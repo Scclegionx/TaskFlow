@@ -25,4 +25,10 @@ public interface KpiRepository extends JpaRepository<Kpi, Integer> {
     List<Kpi> getKpiByMonth(String time, String textSearch);
 
     List<Kpi> findByUserId(Integer userId);
+
+
+    @Query(value = "SELECT * FROM kpi WHERE user_id = :userId " +
+            " AND DATE_FORMAT(time, '%Y-%m') = :time   ",
+            nativeQuery = true)
+    Kpi getByUserIdAndTime(Integer userId, String time);
 }

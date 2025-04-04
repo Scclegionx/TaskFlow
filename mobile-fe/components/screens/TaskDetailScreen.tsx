@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image  } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect } from "react";
@@ -40,12 +40,12 @@ interface User {
 
 interface Comment {
   id: number;
-  user: {
-    name: string;
-    avatar?: string;
-  };
   content: string;
-  createdAt: string;
+  userId: number;
+  taskId: number;
+  date: string;
+  userName: string;
+
 }
 
 const TaskDetailScreen = () => {
@@ -53,21 +53,25 @@ const TaskDetailScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
   const { taskId } = useLocalSearchParams();
+
+
   const [jobData, setJobData] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creatorInfo, setCreatorInfo] = useState<User | null>(null);
   const [loadingCreator, setLoadingCreator] = useState(false);
-
   // Thêm state trong component
-const [comments, setComments] = useState<Comment[]>([]);
-const [newComment, setNewComment] = useState('');
+  const [commentData, setCommentData] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+
 
 
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Chi tiết công việc" }); // Cập nhật tiêu đề
   }, [navigation]);
+
+
 
 
   useEffect(() => {
@@ -125,6 +129,88 @@ const [newComment, setNewComment] = useState('');
     jobData?.createdBy && fetchCreatorInfo();
   }, [jobData?.createdBy]);
 
+  const fetchCommentData = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/comments/get-comment?taskId=${taskId}`,
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+
+      if (response.ok) {
+        const comments = await response.json();
+        setCommentData(comments);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải bình luận:', error);
+    }
+  };
+
+  // Sử dụng trong useEffect
+  useEffect(() => {
+    if (taskId) {
+      fetchCommentData();
+    }
+  }, []);
+
+
+
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!jobData) {
+    return (
+      <View style={styles.center}>
+        <Text>Không tìm thấy công việc</Text>
+      </View>
+    );
+  }
+
+
+  // Thêm hàm xử lý gửi bình luận
+  const handleSendComment = async () => {
+    try {
+      if (!newComment.trim()) return;
+
+      const userId = await AsyncStorage.getItem("userId");
+
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/comments/create-comment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          taskId,
+          content: newComment,
+          userId: userId,
+        })
+      });
+
+      if (response.ok) {
+        const newCommentData = await response.json();
+        setCommentData([...commentData, newCommentData]);
+        setNewComment('');
+      }
+    } catch (error) {
+      console.error('Lỗi khi gửi bình luận:', error);
+    }
+  };
 
 
 
@@ -156,77 +242,26 @@ const [newComment, setNewComment] = useState('');
     4: '#3B82F6'     // xanh
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
-
-  if (!jobData) {
-    return (
-      <View style={styles.center}>
-        <Text>Không tìm thấy công việc</Text>
-      </View>
-    );
-  }
-
-
-  // Thêm hàm xử lý gửi bình luận
-const handleSendComment = async () => {
-  try {
-    if (!newComment.trim()) return;
-
-    const authToken = await AsyncStorage.getItem("token");
-    const response = await fetch(`${API_BASE_URL}/comments`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        taskId,
-        content: newComment
-      })
-    });
-
-    if (response.ok) {
-      const newCommentData = await response.json();
-      setComments([...comments, newCommentData]);
-      setNewComment('');
-    }
-  } catch (error) {
-    console.error('Lỗi khi gửi bình luận:', error);
-  }
-};
 
   // Thêm phần render bình luận
-const renderComment = ({ item }: { item: Comment }) => (
-  <View style={styles.commentItem}>
-    <Image
-      source={{ uri: item.user.avatar || 'https://via.placeholder.com/40' }}
-      style={styles.avatar}
-    />
-    <View style={styles.commentContent}>
-      <View style={styles.commentHeader}>
-        <Text style={styles.commentName}>{item.user.name}</Text>
-        <Text style={styles.commentTime}>
-          {new Date(item.createdAt).toLocaleDateString('vi-VN')}
-        </Text>
+  const renderComment = ({ item }: { item: Comment }) => (
+    <View style={styles.commentItem}>
+      <Image
+        source={{ uri: 'http://res.cloudinary.com/doah3bdw6/image/upload/v1743153165/r0nulby5tat56nq1q394.png' }} // Thay bằng avatar thực tế nếu có
+        style={styles.avatar}
+      />
+      <View style={styles.commentContent}>
+        <View style={styles.commentHeader}>
+          <Text style={styles.commentName}>{item.userName}</Text>
+          <Text style={styles.commentTime}>
+            {/* {formatDateTime(item.date)} */}
+            {item.date}
+          </Text>
+        </View>
+        <Text style={styles.commentText}>{item.content}</Text>
       </View>
-      <Text style={styles.commentText}>{item.content}</Text>
     </View>
-  </View>
-);
+  );
 
 
 
@@ -275,35 +310,36 @@ const renderComment = ({ item }: { item: Comment }) => (
 
 
       {/* Phần bình luận */}
-    <View style={styles.commentSection}>
-      <Text style={styles.sectionTitle}>Bình luận ({comments.length})</Text>
-      
-      <FlatList
-        data={comments}
-        renderItem={renderComment}
-        keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={
-          <Text style={styles.emptyComment}>Chưa có bình luận nào</Text>
-        }
-      />
+      <View style={styles.commentSection}>
+        <Text style={styles.sectionTitle}>Bình luận ({commentData.length})</Text>
 
-      <View style={styles.commentInputContainer}>
-        <TextInput
-          style={styles.commentInput}
-          placeholder="Thêm bình luận..."
-          value={newComment}
-          onChangeText={setNewComment}
-          multiline
+        {/* dữ liệu  */}
+        <FlatList
+          data={commentData}
+          renderItem={renderComment}
+          keyExtractor={(item) => item.id.toString()}
+          ListEmptyComponent={
+            <Text style={styles.emptyComment}>Chưa có bình luận nào</Text>
+          }
         />
-        <TouchableOpacity 
-          style={styles.sendButton} 
-          onPress={handleSendComment}
-          disabled={!newComment.trim()}
-        >
-          <Icon name="send" size={20} color="#fff" />
-        </TouchableOpacity>
+
+        <View style={styles.commentInputContainer}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="Thêm bình luận..."
+            value={newComment}
+            onChangeText={setNewComment}
+            multiline
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={handleSendComment}
+            disabled={!newComment.trim()}
+          >
+            <Icon name="send" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
 
 
 

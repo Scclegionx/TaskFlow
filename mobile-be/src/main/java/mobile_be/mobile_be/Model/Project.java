@@ -34,10 +34,11 @@ public class Project {
     @JsonIgnore
     private Set<ProjectMember> projectMembers;
 
-    private Integer status;
+    private Integer status = 1;
 
     // tgian tao du an
-    private Date createdAt;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt = new Date();
 
     // ngay bat dau
     private Date fromDate;

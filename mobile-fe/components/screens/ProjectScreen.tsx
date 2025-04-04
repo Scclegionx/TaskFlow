@@ -3,10 +3,11 @@ import { View, Text, FlatList, ActivityIndicator,TouchableOpacity } from "react-
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import ProjectItem from "../ProjectItem";
-import { styles } from "../../assets/styles/projectStyles";
+import { styles } from "@/assets/styles/projectStyles";
 import { API_URL_project } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import {AntDesign} from "@expo/vector-icons";
 
 interface IProject {
         id: number;
@@ -90,6 +91,12 @@ export default function ProjectsScreen() {
                 </TouchableOpacity>
                 )}
             />
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => router.push("/createProject")}
+            >
+                <AntDesign name="plus" size={24} color="white" />
+            </TouchableOpacity>
         </View>
     );
 }

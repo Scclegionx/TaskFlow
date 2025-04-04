@@ -53,6 +53,10 @@ public class ProjectService {
         project.setName(request.getName());
         project.setDescription(request.getDescription());
         project.setCreatedBy(creator);
+        project.setFromDate(request.getFromDate());
+        project.setToDate(request.getToDate());
+        project.setCreatedAt(new Date()); // Lưu thời gian hiện tại
+        project.setStatus(1);
         Project savedProject = projectRepository.save(project);
 
         Set<ProjectMember> members = request.getUserIds().stream()

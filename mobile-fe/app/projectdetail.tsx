@@ -12,7 +12,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { debounce } from "lodash";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createTask, deleteTask } from "@/hooks/useTaskApi";
+import { createTask, deleteTask, assignTask } from "@/hooks/useTaskApi";
 
 interface ItemProject {
     id: number;
@@ -102,6 +102,8 @@ export default function ProjectDetail() {
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [showAddTask, setShowAddTask] = useState(false);
     const [newTaskDescription, setNewTaskDescription] = useState("");
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
     useFocusEffect(
         useCallback(() => {
@@ -230,6 +232,34 @@ export default function ProjectDetail() {
         );
     };
 
+    const handleShowAssignModal = (taskId: number) => {
+        setSelectedTaskId(taskId);
+        setShowAssignModal(true);
+    };
+
+    const handleAssignTask = async (userId: number) => {
+        if (!selectedTaskId) return;
+        
+        try {
+            await assignTask(selectedTaskId, userId);
+            await loadProjects(); // Reload data để cập nhật UI
+            setShowAssignModal(false);
+            setSelectedTaskId(null);
+            Alert.alert("Thành công", "Đã gán nhiệm vụ cho thành viên");
+        } catch (error: any) {
+            Alert.alert("Lỗi", error.message || "Không thể gán nhiệm vụ");
+        }
+    };
+
+    const handleTaskPress = (taskId: number) => {
+        if (userRole === 'ADMIN') {
+            router.push({
+                pathname: '/editTask',
+                params: { taskId: taskId }
+            });
+        }
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.card}>
@@ -342,20 +372,48 @@ export default function ProjectDetail() {
                         data={ItemProject.tasks}
                         keyExtractor={(task) => task.id.toString()}
                         renderItem={({ item }) => (
-                            <View style={styles.taskItem}>
-                                <View style={styles.taskInfo}>
-                                    <Text style={styles.listText}>
-                                        🔹 {item.title}
-                                    </Text>
-                                    <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
-                                        {getTaskStatusText(item.status)}
-                                    </Text>
-                                </View>
-                                {userRole === 'ADMIN' && (
-                                    <TouchableOpacity onPress={() => handleRemoveTask(item.id)}>
-                                        <AntDesign name="delete" size={20} color="#FF4D67" />
-                                    </TouchableOpacity>
-                                )}
+                            <View style={[
+                                styles.taskItem,
+                                userRole === 'ADMIN' && styles.taskItemClickable
+                            ]}>
+                                <TouchableOpacity 
+                                    style={styles.taskContent}
+                                    onPress={() => userRole === 'ADMIN' && handleTaskPress(item.id)}
+                                    disabled={userRole !== 'ADMIN'}
+                                >
+                                    <View style={styles.taskHeader}>
+                                        <Text style={styles.taskTitle}>
+                                            🔹 {item.title}
+                                        </Text>
+                                        {userRole === 'ADMIN' && (
+                                            <TouchableOpacity 
+                                                style={styles.deleteButton}
+                                                onPress={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRemoveTask(item.id);
+                                                }}
+                                            >
+                                                <AntDesign name="close" size={16} color="#FF4D67" />
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                    <View style={styles.taskFooter}>
+                                        <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
+                                            {getTaskStatusText(item.status)}
+                                        </Text>
+                                        {userRole === 'ADMIN' && (
+                                            <TouchableOpacity 
+                                                style={styles.assignButton}
+                                                onPress={(e) => {
+                                                    e.stopPropagation();
+                                                    handleShowAssignModal(item.id);
+                                                }}
+                                            >
+                                                <AntDesign name="adduser" size={20} color="#007BFF" />
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
                             </View>
                         )}
                         scrollEnabled={false}
@@ -366,6 +424,42 @@ export default function ProjectDetail() {
                     </View>
                 )}
             </View>
+
+            {/* Modal Assign Task */}
+            <Modal
+                visible={showAssignModal}
+                transparent={true}
+                animationType="slide"
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Chọn thành viên</Text>
+                        <FlatList
+                            data={ItemProject?.members.filter(member => member.role !== 'ADMIN')}
+                            keyExtractor={(member) => member.id.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity 
+                                    style={styles.memberOption}
+                                    onPress={() => handleAssignTask(item.id)}
+                                >
+                                    <Text style={styles.memberOptionText}>
+                                        {item.name} ({item.email})
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                        <TouchableOpacity 
+                            style={styles.closeButton}
+                            onPress={() => {
+                                setShowAssignModal(false);
+                                setSelectedTaskId(null);
+                            }}
+                        >
+                            <Text style={styles.closeButtonText}>Đóng</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }
@@ -473,6 +567,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 15,
+        textAlign: 'center',
     },
     searchInput: {
         borderWidth: 1,
@@ -505,51 +600,54 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     taskItem: {
+        padding: 15,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#EEE',
+    },
+    taskHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 10,
+    },
+    taskTitle: {
+        fontSize: 16,
+        color: '#333',
+        flex: 1,
+        paddingRight: 24,
+    },
+    deleteButton: {
+        position: 'absolute',
+        right: -5,
+        top: -5,
+        padding: 5,
+    },
+    taskFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
+        marginTop: 5,
+    },
+    assignButton: {
+        backgroundColor: '#E8F4FF',
+        padding: 5,
+        borderRadius: 20,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    memberOption: {
+        padding: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#EEE',
     },
-    taskInfo: {
-        flex: 1,
-    },
-    statusText: {
-        fontSize: 12,
-        marginTop: 4,
-    },
-    taskInput: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 15,
-        minHeight: 100,
-        textAlignVertical: 'top',
-    },
-    modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10,
-    },
-    modalButton: {
-        flex: 1,
-        padding: 10,
-        borderRadius: 8,
-        marginHorizontal: 5,
-        alignItems: 'center',
-    },
-    cancelButton: {
-        backgroundColor: '#FF4D67',
-    },
-    addButton: {
-        backgroundColor: '#007BFF',
-    },
-    buttonText: {
-        color: 'white',
-        fontWeight: 'bold',
+    memberOptionText: {
+        fontSize: 16,
+        color: '#333',
     },
     emptyContainer: {
         padding: 20,
@@ -559,5 +657,16 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#666',
         fontSize: 16,
+    },
+    statusText: {
+        fontSize: 12,
+        marginTop: 4,
+    },
+    taskItemClickable: {
+        opacity: 1,
+        cursor: 'pointer',
+    },
+    taskContent: {
+        flex: 1,
     },
 });

@@ -215,4 +215,78 @@ public class TaskService {
 
         taskRepository.delete(task);
     }
+
+    @Transactional
+    public void assignTask(Integer taskId, Integer userId) {
+        Task task = taskRepository.findById(taskId);
+        if (task == null) {
+            throw new RuntimeException("Không tìm thấy nhiệm vụ");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        // Kiểm tra quyền (chỉ ADMIN của project mới được gán nhiệm vụ)
+        Project project = task.getProject();
+        ProjectMemberId memberId = new ProjectMemberId(task.getCreatedBy(), project.getId());
+        ProjectMember member = projectMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người tạo"));
+
+        if (!"ADMIN".equals(member.getRole())) {
+            throw new RuntimeException("Bạn không có quyền gán nhiệm vụ này");
+        }
+
+        // Kiểm tra xem người được gán có phải là thành viên của project không
+        ProjectMemberId assigneeMemberId = new ProjectMemberId(userId, project.getId());
+        if (!projectMemberRepository.existsById(assigneeMemberId)) {
+            throw new RuntimeException("Người dùng không phải là thành viên của dự án");
+        }
+
+        // Khởi tạo danh sách assignees nếu chưa có
+        if (task.getAssignees() == null) {
+            task.setAssignees(new ArrayList<>());
+        }
+
+        // Kiểm tra xem người dùng đã được gán nhiệm vụ này chưa
+        if (task.getAssignees().stream().anyMatch(assignee -> assignee.getId().equals(userId))) {
+            throw new RuntimeException("Người dùng đã được gán nhiệm vụ này");
+        }
+
+        // Thêm người dùng vào danh sách assignees
+        task.getAssignees().add(user);
+        
+        // Cập nhật trạng thái task thành "Đang xử lý" nếu đang ở trạng thái "Chưa được giao"
+        if (task.getStatus() == 1) { // 1 là "Chưa được giao"
+            task.setStatus(2); // 2 là "Đang xử lý"
+        }
+
+        taskRepository.save(task);
+
+        // Gửi thông báo cho người được gán nhiệm vụ
+        String slug = "/tasks/" + task.getId();
+        notificationService.sendNotification(userId, "Bạn được gán một nhiệm vụ mới: " + task.getTitle(), slug);
+    }
+
+    @Transactional
+    public Task updateTask(TaskRequest taskRequest) {
+        Task task = taskRepository.findById(taskRequest.getId());
+
+        // Kiểm tra quyền (chỉ ADMIN của project mới được cập nhật)
+        Project project = task.getProject();
+        ProjectMemberId memberId = new ProjectMemberId(task.getCreatedBy(), project.getId());
+        ProjectMember member = projectMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người tạo"));
+
+        if (!"ADMIN".equals(member.getRole())) {
+            throw new RuntimeException("Bạn không có quyền cập nhật nhiệm vụ này");
+        }
+
+        task.setTitle(taskRequest.getTitle());
+        task.setDescription(taskRequest.getDescription());
+        task.setFromDate(taskRequest.getFromDate());
+        task.setToDate(taskRequest.getToDate());
+        task.setLevel(taskRequest.getLevel());
+
+        return taskRepository.save(task);
+    }
 }

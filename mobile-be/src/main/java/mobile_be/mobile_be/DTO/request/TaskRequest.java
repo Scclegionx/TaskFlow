@@ -11,6 +11,7 @@ import java.util.List;
 
 @Data
 public class TaskRequest {
+    private Integer id;
     private Integer projectId;
     private Integer createdBy;
     private List<Integer> assignedTo;

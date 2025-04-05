@@ -82,4 +82,30 @@ public class TaskController {
                     .body("Lỗi khi xóa nhiệm vụ: " + e.getMessage());
         }
     }
+
+    @PutMapping("/assign")
+    public ResponseEntity<?> assignTask(
+            @RequestParam Integer taskId,
+            @RequestParam Integer userId) {
+        try {
+            taskService.assignTask(taskId, userId);
+            return ResponseEntity.ok("Gán nhiệm vụ thành công");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi gán nhiệm vụ: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/update-task")
+    public ResponseEntity<?> updateTask(@RequestBody TaskRequest taskRequest) {
+        try {
+            Task updatedTask = taskService.updateTask(taskRequest);
+            return ResponseEntity.ok("Cập nhật nhiệm vụ thành công");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi cập nhật nhiệm vụ: " + e.getMessage());
+        }
+    }
 }

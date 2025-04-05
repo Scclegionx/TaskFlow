@@ -34,6 +34,7 @@ public interface ProjectMapper {
         return tasks.stream().map(t -> {
             TaskDTO dto = new TaskDTO();
             dto.setId(t.getId());
+            dto.setTitle(t.getTitle());
             dto.setDescription(t.getDescription());
             dto.setStatus(t.getStatus().toString()); // Ép kiểu sang String nếu cần
             return dto;

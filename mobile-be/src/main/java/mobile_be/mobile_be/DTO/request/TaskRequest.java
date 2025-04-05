@@ -11,6 +11,7 @@ import java.util.List;
 
 @Data
 public class TaskRequest {
+    private Integer id;
     private Integer projectId;
     private Integer createdBy;
     private List<Integer> assignedTo;
@@ -19,4 +20,5 @@ public class TaskRequest {
     private LocalDateTime fromDate;
     private LocalDateTime toDate;
     private Integer status;
+    private Integer level;
 }

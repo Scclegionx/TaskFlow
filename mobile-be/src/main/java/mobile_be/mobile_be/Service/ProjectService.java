@@ -3,9 +3,8 @@ package mobile_be.mobile_be.Service;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.CreateProjectRequest;
-import mobile_be.mobile_be.DTO.response.ProjectResponseDTO;
-import mobile_be.mobile_be.DTO.response.TaskResponseDTO;
-import mobile_be.mobile_be.DTO.response.UserResponseDTO;
+import mobile_be.mobile_be.DTO.response.*;
+import mobile_be.mobile_be.DTO.request.UpdateProjectRequest;
 import mobile_be.mobile_be.Mapper.ProjectMapper;
 import mobile_be.mobile_be.Mapper.TaskMapper;
 import mobile_be.mobile_be.Mapper.UserMapper;
@@ -18,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 
 import mobile_be.mobile_be.contains.enum_projectAndTaskType;
 
@@ -36,6 +36,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final NotificationService notificationService;
+    private final EntityManager entityManager;
 
     @Autowired
     private ProjectMapper projectMapper;
@@ -55,25 +56,37 @@ public class ProjectService {
         project.setCreatedBy(creator);
         project.setFromDate(request.getFromDate());
         project.setToDate(request.getToDate());
-        project.setCreatedAt(new Date()); // Lưu thời gian hiện tại
+        project.setCreatedAt(new Date());
         project.setStatus(1);
         Project savedProject = projectRepository.save(project);
 
-        Set<ProjectMember> members = request.getUserIds().stream()
-                .map(userId -> {
+        // Tạo Set để lưu tất cả thành viên
+        Set<ProjectMember> members = new HashSet<>();
+
+        // Thêm người tạo project với role ADMIN
+        ProjectMember creatorMember = new ProjectMember();
+        creatorMember.setId(new ProjectMemberId(creator.getId(), savedProject.getId()));
+        creatorMember.setUser(creator);
+        creatorMember.setProject(savedProject);
+        creatorMember.setRole("ADMIN");
+        members.add(creatorMember);
+
+        // Thêm các thành viên khác với role MEMBER
+        request.getUserIds().stream()
+                .filter(userId -> !userId.equals(request.getCreatedBy())) // Lọc bỏ creator vì đã thêm ở trên
+                .forEach(userId -> {
                     User user = userRepository.findById(userId.intValue())
                             .orElseThrow(() -> new RuntimeException("User not found"));
                     ProjectMember member = new ProjectMember();
-                    member.setId(new ProjectMemberId(user.getId(), savedProject.getId().intValue()));
+                    member.setId(new ProjectMemberId(user.getId(), savedProject.getId()));
                     member.setUser(user);
                     member.setProject(savedProject);
-                    member.setRole("member");
-                    return member;
-                })
-                .collect(Collectors.toSet());
+                    member.setRole("MEMBER");
+                    members.add(member);
+                });
 
         projectMemberRepository.saveAll(members);
-        String slug = "/projects"+"/"+project.getId();
+        String slug = "/projects/" + project.getId();
 
         // Gửi thông báo cho tất cả thành viên mới
         for (User member : members.stream().map(ProjectMember::getUser).collect(Collectors.toList())) {
@@ -206,13 +219,176 @@ public class ProjectService {
     @Transactional
     public ProjectResponseDTO getProjectById(Integer id) {
         Project project = projectRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dự án"));
 
-        ProjectResponseDTO dto = projectMapper.toDTO(project);
-        dto.setMembers(projectMapper.mapProjectMembers(new ArrayList<>(project.getProjectMembers())));
+        ProjectResponseDTO dto = new ProjectResponseDTO();
+        dto.setId(project.getId());
+        dto.setName(project.getName());
+        dto.setDescription(project.getDescription());
+        dto.setCreatedBy(project.getCreatedBy().getName());
+        dto.setStatus(project.getStatus());
+        dto.setFromDate(project.getFromDate());
+        dto.setToDate(project.getToDate());
+        
+        // Map members với role
+        List<ProjectMemberDTO> memberDTOs = project.getProjectMembers().stream()
+                .map(pm -> {
+                    ProjectMemberDTO memberDTO = new ProjectMemberDTO();
+                    memberDTO.setId(pm.getUser().getId());
+                    memberDTO.setName(pm.getUser().getName());
+                    memberDTO.setEmail(pm.getUser().getEmail());
+                    memberDTO.setRole(pm.getRole());
+                    return memberDTO;
+                })
+                .collect(Collectors.toList());
+        dto.setMembers(memberDTOs);
+
+        // Map tasks
         dto.setTasks(projectMapper.mapTasks(new ArrayList<>(project.getTasks())));
 
         return dto;
     }
 
+    public ProjectResponseDTO updateProject(Integer projectId, UpdateProjectRequest request, Integer userId) 
+            throws IllegalAccessException {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dự án"));
+
+        // Kiểm tra quyền
+        if (!project.getCreatedBy().getId().equals(userId)) {
+            throw new IllegalAccessException("Bạn không có quyền sửa dự án này");
+        }
+
+        // Cập nhật thông tin
+        if (request.getName() != null) {
+            project.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            project.setDescription(request.getDescription());
+        }
+        if (request.getStatus() != null) {
+            project.setStatus(request.getStatus());
+        }
+        if (request.getFromDate() != null) {
+            project.setFromDate(request.getFromDate());
+        }
+        if (request.getToDate() != null) {
+            project.setToDate(request.getToDate());
+        }
+
+        Project updatedProject = projectRepository.save(project);
+        return convertToProjectResponseDTO(updatedProject);
+    }
+
+    @Transactional
+    public void deleteProject(Integer projectId, Integer userId) throws IllegalAccessException {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dự án"));
+
+        // Kiểm tra quyền
+        if (!project.getCreatedBy().getId().equals(userId)) {
+            throw new IllegalAccessException("Bạn không có quyền xóa dự án này");
+        }
+
+        try {
+            // Xóa project và các bản ghi liên quan
+            projectRepository.delete(project);
+            projectRepository.flush(); // Đảm bảo thay đổi được đẩy xuống DB ngay lập tức
+        } catch (Exception e) {
+            throw new RuntimeException("Có lỗi xảy ra khi xóa dự án: " + e.getMessage());
+        }
+    }
+
+    private ProjectResponseDTO convertToProjectResponseDTO(Project project) {
+        // Implement chuyển đổi từ Project sang ProjectResponseDTO
+        ProjectResponseDTO dto = new ProjectResponseDTO();
+        dto.setId(project.getId());
+        dto.setName(project.getName());
+        dto.setDescription(project.getDescription());
+        dto.setStatus(project.getStatus());
+        dto.setFromDate(project.getFromDate());
+        dto.setToDate(project.getToDate());
+        // Set các trường khác nếu cần
+        return dto;
+    }
+
+    @Transactional
+    public void addProjectMember(Integer projectId, Integer userId) throws IllegalAccessException {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dự án"));
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        // Kiểm tra xem người dùng đã là thành viên chưa
+        boolean isMemberExists = project.getProjectMembers().stream()
+                .anyMatch(pm -> pm.getUser().getId().equals(userId));
+        
+        if (isMemberExists) {
+            throw new RuntimeException("Người dùng đã là thành viên của dự án");
+        }
+
+        // Tạo ProjectMember mới
+        ProjectMember newMember = new ProjectMember();
+        ProjectMemberId id = new ProjectMemberId(userId, projectId);
+        newMember.setId(id);
+        newMember.setProject(project);
+        newMember.setUser(user);
+        newMember.setRole("MEMBER"); // Mặc định role là MEMBER
+
+        projectMemberRepository.save(newMember);
+    }
+
+    @Transactional
+    public void removeProjectMember(Integer projectId, Integer memberId, Integer currentUserId) throws IllegalAccessException {
+        System.out.println("=== Bắt đầu xóa thành viên ===");
+        
+        // Kiểm tra dự án tồn tại
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dự án"));
+
+        // Kiểm tra quyền của người thực hiện
+        ProjectMemberId currentUserMemberId = new ProjectMemberId(currentUserId, projectId);
+        ProjectMember currentUserMember = projectMemberRepository.findById(currentUserMemberId)
+                .orElseThrow(() -> new RuntimeException("Bạn không phải là thành viên của dự án"));
+
+        if (!"ADMIN".equals(currentUserMember.getRole())) {
+            throw new IllegalAccessException("Bạn không có quyền xóa thành viên");
+        }
+
+        // Kiểm tra không xóa người tạo dự án
+        if (project.getCreatedBy().getId().equals(memberId)) {
+            throw new RuntimeException("Không thể xóa người tạo dự án");
+        }
+
+        ProjectMemberId memberToRemoveId = new ProjectMemberId(memberId, projectId);
+        
+        ProjectMember memberToRemove = projectMemberRepository.findById(memberToRemoveId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thành viên trong dự án"));
+
+        System.out.println("=== Chi tiết thành viên cần xóa ===");
+        System.out.println("ID: userId=" + memberToRemove.getId().getUserId() 
+            + ", projectId=" + memberToRemove.getId().getProjectId());
+        System.out.println("Role: " + memberToRemove.getRole());
+        System.out.println("User: " + (memberToRemove.getUser() != null ? memberToRemove.getUser().getName() : "null"));
+        System.out.println("Project: " + (memberToRemove.getProject() != null ? memberToRemove.getProject().getName() : "null"));
+
+        try {
+            // Xóa thành viên khỏi danh sách trong Project
+            project.getProjectMembers().remove(memberToRemove);
+            
+            // Xóa thành viên trực tiếp
+            projectMemberRepository.delete(memberToRemove);
+            
+            // Flush để đảm bảo thay đổi được lưu xuống database
+            projectMemberRepository.flush();
+            entityManager.clear();
+            
+            System.out.println("=== Xóa thành viên thành công ===");
+        } catch (Exception e) {
+            System.err.println("Lỗi khi xóa thành viên: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi xóa thành viên: " + e.getMessage());
+        }
+    }
 }

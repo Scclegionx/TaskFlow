@@ -14,7 +14,7 @@ public class ProjectResponseDTO {
     private Integer status;
     private Date fromDate;
     private Date toDate;
-    private List<UserDTO> members; // Danh sách thành viên
+    private List<ProjectMemberDTO> members; // Thay đổi kiểu từ UserDTO sang ProjectMemberDTO
     private List<TaskDTO> tasks;
     // tien do, lay so nguyen cho de ve bieu do
     private Integer progress;

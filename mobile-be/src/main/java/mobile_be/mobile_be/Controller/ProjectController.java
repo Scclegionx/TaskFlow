@@ -3,12 +3,13 @@ package mobile_be.mobile_be.Controller;
 import lombok.RequiredArgsConstructor;
 import mobile_be.mobile_be.DTO.CreateProjectRequest;
 import mobile_be.mobile_be.DTO.response.ProjectResponseDTO;
+import mobile_be.mobile_be.DTO.request.UpdateProjectRequest;
 import mobile_be.mobile_be.Model.Project;
 import mobile_be.mobile_be.Service.ProjectService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
@@ -80,6 +81,83 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getAllMemberInProject(projectId, textSearch));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProject(
+            @PathVariable Integer id,
+            @RequestBody UpdateProjectRequest request,
+            @RequestParam Integer userId) {
+        try {
+            System.out.println(request);
+            ProjectResponseDTO updatedProject = projectService.updateProject(id, request, userId);
+            return ResponseEntity.ok(updatedProject);
+        } catch (IllegalAccessException e) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body("Bạn không có quyền sửa dự án này");
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Không tìm thấy dự án");
+        }
+    }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProject(
+            @PathVariable Integer id,
+            @RequestParam Integer userId) {
+        try {
+            projectService.deleteProject(id, userId);
+            return ResponseEntity.ok("Xóa dự án thành công");
+        } catch (IllegalAccessException e) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body("Bạn không có quyền xóa dự án này");
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Không tìm thấy dự án");
+        }
+    }
 
+    @PostMapping("/{projectId}/members")
+    public ResponseEntity<?> addProjectMember(
+            @PathVariable Integer projectId,
+            @RequestBody Map<String, Integer> request) {
+        try {
+            Integer userId = request.get("userId");
+            projectService.addProjectMember(projectId, userId);
+            return ResponseEntity.ok("Thêm thành viên thành công");
+        } catch (IllegalAccessException e) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body("Bạn không có quyền thêm thành viên vào dự án này");
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{projectId}/members/{memberId}")
+    public ResponseEntity<?> removeProjectMember(
+            @PathVariable Integer projectId,
+            @PathVariable Integer memberId,
+            @RequestParam Integer userId) {
+        try {
+            System.out.println("Removing member: ProjectID=" + projectId + ", MemberID=" + memberId + ", CurrentUserID=" + userId);
+            projectService.removeProjectMember(projectId, memberId, userId);
+            System.out.println("Member removed successfully");
+            return ResponseEntity.ok("Xóa thành viên thành công");
+        } catch (IllegalAccessException e) {
+            System.err.println("Permission error: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(e.getMessage());
+        } catch (RuntimeException e) {
+            System.err.println("Runtime error: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
+    }
 }

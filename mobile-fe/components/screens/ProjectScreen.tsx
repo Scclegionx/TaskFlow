@@ -1,24 +1,25 @@
 import React from "react";
-import { View, Text, FlatList, ActivityIndicator,TouchableOpacity } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert } from "react-native";
 import { useNavigation } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ProjectItem from "../ProjectItem";
 import { styles } from "@/assets/styles/projectStyles";
-import { API_URL_project } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import {AntDesign} from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
+import { getProjects, getStatusText, deleteProject } from "@/hooks/useProjectApi";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface IProject {
-        id: number;
-        name: string;
-        description: string;
-        createdBy: string;
-        status?: string | null;
-        fromDate?: Date | null;
-        toDate?: Date | null;
-        members?: any;
-        tasks?: any;
+    id: number;
+    name: string;
+    description: string;
+    createdBy: string;
+    status: number;
+    fromDate?: Date | null;
+    toDate?: Date | null;
+    members?: any;
+    tasks?: any;
 }
 
 export default function ProjectsScreen() {
@@ -29,37 +30,18 @@ export default function ProjectsScreen() {
 
     const loadProjects = async () => {
         try {
-            const token = await AsyncStorage.getItem("token");
-            if (!token) {
-                console.warn("Không tìm thấy token, yêu cầu đăng nhập!");
-                return;
-            }
-
-            const response = await fetch(`${API_URL_project}/get-project`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error("Không thể lấy dữ liệu dự án!");
-            }
-
-            const data: any[] = await response.json();
-            const formattedData: IProject[] = data.map((item) => ({
+            const data = await getProjects();
+            const formattedData: IProject[] = data.map((item: any) => ({
                 id: item.id,
                 name: item.name,
                 description: item.description,
                 createdBy: item.createdBy,
-                status: item.status || "Đang xử lý",
+                status: item.status,
                 fromDate: item.fromDate ? new Date(item.fromDate) : null,
                 toDate: item.toDate ? new Date(item.toDate) : null,
                 members: item.members,
                 tasks: item.tasks,
             }));
-
             setProjects(formattedData);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
@@ -68,10 +50,22 @@ export default function ProjectsScreen() {
         }
     };
 
-    useEffect(() => {
-        navigation.setOptions({ title: "Dự án" });
-        loadProjects();
-    }, []);
+    const handleDeleteProject = async (projectId: number) => {
+        try {
+            await deleteProject(projectId);
+            Alert.alert("Thành công", "Đã xóa dự án thành công");
+            await loadProjects();
+        } catch (error: any) {
+            Alert.alert("Lỗi", error.response?.data || "Không thể xóa dự án");
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            navigation.setOptions({ title: "Dự án" });
+            loadProjects();
+        }, [])
+    );
 
     if (loading) {
         return <ActivityIndicator size="large" color="#007bff" />;
@@ -85,10 +79,13 @@ export default function ProjectsScreen() {
                 data={projects}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                <TouchableOpacity
-                    onPress={() => router.push({ pathname: "/projectdetail", params: { project: JSON.stringify(item) } })}>
-                    <ProjectItem project={item} />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.push({ pathname: "/projectdetail", params: { project: JSON.stringify(item) } })}>
+                        <ProjectItem 
+                            project={item} 
+                            onDelete={() => handleDeleteProject(item.id)}
+                        />
+                    </TouchableOpacity>
                 )}
             />
             <TouchableOpacity

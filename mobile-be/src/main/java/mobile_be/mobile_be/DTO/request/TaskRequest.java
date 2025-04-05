@@ -19,4 +19,5 @@ public class TaskRequest {
     private LocalDateTime fromDate;
     private LocalDateTime toDate;
     private Integer status;
+    private Integer level;
 }

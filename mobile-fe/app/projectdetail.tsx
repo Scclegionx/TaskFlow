@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
     View, Text, StyleSheet, FlatList, ScrollView, 
     TouchableOpacity, Modal, TextInput, Alert 
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import { useRouter } from 'expo-router';
 import { 
     getProjectById, getStatusText, searchUserByEmail, 
     addProjectMember, removeProjectMember, formatDateTime 
@@ -11,6 +12,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { debounce } from "lodash";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createTask, deleteTask } from "@/hooks/useTaskApi";
 
 interface ItemProject {
     id: number;
@@ -33,20 +35,54 @@ interface IMember {
 
 interface ITask {
     id: number;
+    title: string;
     description: string;
-    status: string; 
+    status: number;
 }
 
 const getStatusColor = (status: number): string => {
     switch (status) {
-        case 0: // Chưa bắt đầu
+        case 1: // Chưa bắt đầu
             return "#A0A0A0";
-        case 1: // Đang thực hiện
+        case 2: // Đang thực hiện
             return "#00AEEF";
-        case 2: // Hoàn thành
+        case 3: // Hoàn thành
             return "#4CAF50";
-        case 3: // Quá hạn
+        case 4: // Quá hạn
             return "#FF4D67";
+        default:
+            return "#A0A0A0";
+    }
+};
+
+const getTaskStatusText = (status: string | number): string => {
+    // Chuyển status về dạng số để so sánh
+    const statusNumber = Number(status);
+    switch (statusNumber) {
+        case 1:
+            return "Chưa được giao";
+        case 2:
+            return "Đang xử lý";
+        case 3:
+            return "Hoàn thành";
+        case 4:
+            return "Quá hạn";
+        default:
+            return "Không xác định";
+    }
+};
+
+const getTaskStatusColor = (status: string | number): string => {
+    const statusNumber = Number(status);
+    switch (statusNumber) {
+        case 1:
+            return "#A0A0A0"; // Màu xám cho chưa được giao
+        case 2:
+            return "#00AEEF"; // Màu xanh dương cho đang xử lý
+        case 3:
+            return "#4CAF50"; // Màu xanh lá cho hoàn thành
+        case 4:
+            return "#FF4D67"; // Màu đỏ cho quá hạn
         default:
             return "#A0A0A0";
     }
@@ -55,6 +91,7 @@ const getStatusColor = (status: number): string => {
 export default function ProjectDetail() {
     const navigation = useNavigation();
     const route = useRoute();
+    const router = useRouter();
     const [ItemProject, setItemProject] = useState<ItemProject>();
     const [loading, setLoading] = useState(true);
     const [showAddMember, setShowAddMember] = useState(false);
@@ -63,11 +100,15 @@ export default function ProjectDetail() {
     const project = route.params?.project ? JSON.parse(route.params.project) : null;
     const [userRole, setUserRole] = useState<string>("");
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [showAddTask, setShowAddTask] = useState(false);
+    const [newTaskDescription, setNewTaskDescription] = useState("");
 
-    useEffect(() => {
-        loadProjects();
-        getCurrentUserAndRole();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadProjects();
+            getCurrentUserAndRole();
+        }, [])
+    );
 
     const getCurrentUserAndRole = async () => {
         try {
@@ -77,6 +118,7 @@ export default function ProjectDetail() {
                 if (ItemProject?.members) {
                     const currentMember = ItemProject.members.find(m => m.id === Number(userId));
                     if (currentMember) {
+                        console.log("Current user role:", currentMember.role);
                         setUserRole(currentMember.role);
                     }
                 }
@@ -90,6 +132,7 @@ export default function ProjectDetail() {
         if (ItemProject && currentUserId) {
             const currentMember = ItemProject.members.find(m => m.id === currentUserId);
             if (currentMember) {
+                console.log("Current user role:", currentMember.role);
                 setUserRole(currentMember.role);
             }
         }
@@ -149,6 +192,37 @@ export default function ProjectDetail() {
                             Alert.alert("Thành công", "Đã xóa thành viên khỏi dự án");
                         } catch (error: any) {
                             Alert.alert("Lỗi", error.message || "Không thể xóa thành viên");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    
+
+    const handleRemoveTask = async (taskId: number) => {
+        Alert.alert(
+            "Xác nhận xóa",
+            "Bạn có chắc chắn muốn xóa nhiệm vụ này không?",
+            [
+                {
+                    text: "Hủy",
+                    style: "cancel"
+                },
+                {
+                    text: "Xóa",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteTask(taskId);
+                            await loadProjects(); // Reload data
+                            Alert.alert("Thành công", "Đã xóa nhiệm vụ");
+                        } catch (error: any) {
+                            Alert.alert(
+                                "Lỗi",
+                                error.message || "Không thể xóa nhiệm vụ"
+                            );
                         }
                     }
                 }
@@ -250,17 +324,47 @@ export default function ProjectDetail() {
             </Modal>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>📌 Nhiệm vụ:</Text>
-                <FlatList
-                    data={ItemProject?.tasks}
-                    keyExtractor={(task) => task.id.toString()}
-                    renderItem={({ item }) => (
-                        <View style={styles.listItem}>
-                            <Text style={styles.listText}>🔹 {item.description} (Trạng thái: {item.status})</Text>
-                        </View>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>📌 Nhiệm vụ</Text>
+                    {userRole === 'ADMIN' && (
+                        <TouchableOpacity 
+                            onPress={() => router.push({
+                                pathname: '/createTask',
+                                params: { projectId: project.id }
+                            })}
+                        >
+                            <AntDesign name="plus" size={24} color="#007BFF" />
+                        </TouchableOpacity>
                     )}
-                    scrollEnabled={false}
-                />
+                </View>
+                {ItemProject?.tasks && ItemProject.tasks.length > 0 ? (
+                    <FlatList
+                        data={ItemProject.tasks}
+                        keyExtractor={(task) => task.id.toString()}
+                        renderItem={({ item }) => (
+                            <View style={styles.taskItem}>
+                                <View style={styles.taskInfo}>
+                                    <Text style={styles.listText}>
+                                        🔹 {item.title}
+                                    </Text>
+                                    <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
+                                        {getTaskStatusText(item.status)}
+                                    </Text>
+                                </View>
+                                {userRole === 'ADMIN' && (
+                                    <TouchableOpacity onPress={() => handleRemoveTask(item.id)}>
+                                        <AntDesign name="delete" size={20} color="#FF4D67" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+                        scrollEnabled={false}
+                    />
+                ) : (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>Chưa có nhiệm vụ nào</Text>
+                    </View>
+                )}
             </View>
         </ScrollView>
     );
@@ -399,5 +503,61 @@ const styles = StyleSheet.create({
     roleText: {
         fontSize: 12,
         marginTop: 2,
+    },
+    taskItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#EEE',
+    },
+    taskInfo: {
+        flex: 1,
+    },
+    statusText: {
+        fontSize: 12,
+        marginTop: 4,
+    },
+    taskInput: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 15,
+        minHeight: 100,
+        textAlignVertical: 'top',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+    },
+    modalButton: {
+        flex: 1,
+        padding: 10,
+        borderRadius: 8,
+        marginHorizontal: 5,
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#FF4D67',
+    },
+    addButton: {
+        backgroundColor: '#007BFF',
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    emptyContainer: {
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyText: {
+        color: '#666',
+        fontSize: 16,
     },
 });

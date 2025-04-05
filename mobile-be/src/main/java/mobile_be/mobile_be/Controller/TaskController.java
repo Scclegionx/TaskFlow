@@ -6,6 +6,7 @@ import mobile_be.mobile_be.DTO.request.TaskRequest;
 import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -70,5 +71,15 @@ public class TaskController {
         return ResponseEntity.ok(taskService.taskApproveFinish(taskId));
     }
 
-
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<?> deleteTask(@PathVariable Integer taskId) {
+        try {
+            taskService.deleteTask(taskId);
+            return ResponseEntity.ok("Xóa nhiệm vụ thành công");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi xóa nhiệm vụ: " + e.getMessage());
+        }
+    }
 }

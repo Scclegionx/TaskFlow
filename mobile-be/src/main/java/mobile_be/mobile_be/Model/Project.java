@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Date;
 import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "projects")
@@ -30,9 +31,12 @@ public class Project {
 
 
     // dung json ignore de tranh lap , k lay neu ko can thiet
-    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", 
+              fetch = FetchType.LAZY, 
+              cascade = CascadeType.ALL, 
+              orphanRemoval = true)
     @JsonIgnore
-    private Set<ProjectMember> projectMembers;
+    private Set<ProjectMember> projectMembers = new HashSet<>();
 
     private Integer status = 1;
 
@@ -45,7 +49,7 @@ public class Project {
 
     // ngay ket thuc
     private Date toDate;
-    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore 
     private Set<Task> tasks;
 

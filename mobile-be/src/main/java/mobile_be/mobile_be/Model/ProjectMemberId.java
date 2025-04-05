@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class ProjectMemberId implements Serializable {
     private Integer userId;
     private Integer projectId;

@@ -64,7 +64,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
     const handleEdit = () => {
         hidePopupMenu();
         router.push({
-            pathname: "/updateProject",
+            pathname: "/Project/updateProject",
             params: { projectId: project.id }
         });
     };

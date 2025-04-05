@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert } from "react-native";
 import { useNavigation } from "expo-router";
 import { useState } from "react";
-import ProjectItem from "../ProjectItem";
+import ProjectItem from "../../ProjectItem";
 import { styles } from "@/assets/styles/projectStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -80,7 +80,7 @@ export default function ProjectsScreen() {
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                     <TouchableOpacity
-                        onPress={() => router.push({ pathname: "/projectdetail", params: { project: JSON.stringify(item) } })}>
+                        onPress={() => router.push({ pathname: "/Project/projectdetail", params: { project: JSON.stringify(item) } })}>
                         <ProjectItem 
                             project={item} 
                             onDelete={() => handleDeleteProject(item.id)}
@@ -90,7 +90,7 @@ export default function ProjectsScreen() {
             />
             <TouchableOpacity
                 style={styles.fab}
-                onPress={() => router.push("/createProject")}
+                onPress={() => router.push("/Project/createProject")}
             >
                 <AntDesign name="plus" size={24} color="white" />
             </TouchableOpacity>

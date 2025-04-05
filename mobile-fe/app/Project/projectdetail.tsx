@@ -254,7 +254,7 @@ export default function ProjectDetail() {
     const handleTaskPress = (taskId: number) => {
         if (userRole === 'ADMIN') {
             router.push({
-                pathname: '/editTask',
+                pathname: '/Task/editTask',
                 params: { taskId: taskId }
             });
         }
@@ -359,7 +359,7 @@ export default function ProjectDetail() {
                     {userRole === 'ADMIN' && (
                         <TouchableOpacity 
                             onPress={() => router.push({
-                                pathname: '/createTask',
+                                pathname: '/Task/createTask',
                                 params: { projectId: project.id }
                             })}
                         >

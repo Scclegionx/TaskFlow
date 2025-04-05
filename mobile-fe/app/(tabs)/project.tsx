@@ -1,1 +1,1 @@
-export { default } from '../../components/screens/ProjectScreen'
+export { default } from '../../components/screens/ProjectScreen/ProjectScreen'

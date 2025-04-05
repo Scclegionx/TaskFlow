@@ -4,7 +4,7 @@ import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLayoutEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import Header from "../Header";
+import Header from "../../Header";
 import { FontAwesome } from '@expo/vector-icons';
 import { Avatar, Card, IconButton } from "react-native-paper";
 import { API_BASE_URL } from "@/constants/api";

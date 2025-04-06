@@ -13,6 +13,7 @@ import * as IntentLauncher from "expo-intent-launcher";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
 import { Item } from "react-native-paper/lib/typescript/components/Drawer/Drawer";
+import DateTimePickerModal from "@react-native-community/datetimepicker";
 
 
 
@@ -75,10 +76,19 @@ const AllPersonelScreen = () => {
   // profile để hiển thị ảnh
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const date = new Date();
+    date.setDate(1); // Đặt ngày về 1 (đầu tháng)
+    return date;
+  }); // khởi tạo ngày đầu tháng
+  const [endDate, setEndDate] = useState<Date>(new Date()); // khởi tạo ngày hiện tại
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
   // Lấy danh sách user từ API
 
   useEffect(() => {
-    fetchKPIByMonth("", "");
+    fetchKPIByMonth(startDate, endDate, "");
     fetchProfile(); // Chỉ gọi API lấy profile khi component mount
   }, []);
 
@@ -109,11 +119,17 @@ const AllPersonelScreen = () => {
     }
   };
 
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Thêm 1 vào tháng vì tháng bắt đầu từ 0
+    const day = date.getDate().toString().padStart(2, '0'); // Đảm bảo ngày có 2 chữ số
+
+    return `${year}-${month}-${day}`;
+  };
 
 
-
-  const fetchKPIByMonth = async (time: string,
-    textSearch: string) => {
+  const fetchKPIByMonth = async (startDate: Date | null, endDate: Date | null,
+    searchText: string) => {
     try {
       const authToken = await AsyncStorage.getItem("token");
       if (!authToken) {
@@ -121,9 +137,22 @@ const AllPersonelScreen = () => {
         return;
       }
 
+      let isFirstParam = true;  // Biến flag để kiểm tra xem đây có phải là tham số đầu tiên không
+
       let kpiMonthUrl = `${API_BASE_URL}/kpi/get-kpi-by-month`;
-      if (textSearch.trim()) {
+      if (searchText.trim()) {
         kpiMonthUrl += `?textSearch=${encodeURIComponent(searchText)}`;
+        isFirstParam = false;
+      }
+
+      if (startDate) {
+        kpiMonthUrl += `${isFirstParam ? '?' : '&'}startDate=${formatDate(startDate)}`;
+        isFirstParam = false;
+      }
+
+      if (endDate) {
+        kpiMonthUrl += `${isFirstParam ? '?' : '&'}endDate=${formatDate(endDate)}`;
+        isFirstParam = false;
       }
 
 
@@ -159,7 +188,7 @@ const AllPersonelScreen = () => {
       setLoading(true);
       const authToken = await AsyncStorage.getItem("token");
 
-      const response = await fetch(`${API_BASE_URL}/document/download`, {
+      const response = await fetch(`${API_BASE_URL}/document/download-excel-kpi`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -321,7 +350,7 @@ const AllPersonelScreen = () => {
 
 
   const handleSearch = () => {
-    fetchKPIByMonth(time, searchText);
+    fetchKPIByMonth(startDate, endDate, searchText); // Gọi API với từ khóa tìm kiếm
   };
 
 
@@ -346,7 +375,7 @@ const AllPersonelScreen = () => {
       Alert.alert("Thất bại ", "Bạn đã đăng ký KPI cho tháng này trước đó rồi!");
     }
 
-    fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI sau khi đăng ký
+    fetchKPIByMonth(startDate, endDate, ""); // Lấy lại dữ liệu KPI sau khi đăng ký
 
     // Ẩn popup sau khi gửi API
     setModalVisible(false);
@@ -386,7 +415,7 @@ const AllPersonelScreen = () => {
     }
 
 
-    fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI
+    fetchKPIByMonth(startDate, endDate, ""); // Lấy lại dữ liệu KPI
 
     // Ẩn popup sau khi gửi API
     setModalVisible(false);
@@ -443,13 +472,30 @@ const AllPersonelScreen = () => {
             } else {
               Alert.alert("Thất bại ", "Bạn không có quyền xoá KPI này");
             }
-            fetchKPIByMonth("", ""); // Lấy lại dữ liệu KPI sau khi xoa
+            fetchKPIByMonth(startDate, endDate, ""); // Lấy lại dữ liệu KPI sau khi xoa
           }
         }
       ]
     );
   };
 
+
+  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+    setShowStartPicker(false);
+    if (selectedDate) {
+      setStartDate(selectedDate);
+      // fetchKPIByMonth(formatDate(selectedDate), searchText);
+    }
+  };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    setShowEndPicker(false);
+    if (selectedDate) {
+      setEndDate(selectedDate);
+      fetchKPIByMonth(startDate, selectedDate, "");
+    }
+    
+  };
 
 
 
@@ -475,6 +521,45 @@ const AllPersonelScreen = () => {
           <FontAwesome name="download" size={20} color="white" />
         </TouchableOpacity>
       </View>
+
+      {/* // Trong phần JSX, thêm các nút chọn thời gian: */}
+      <View style={styles.dateContainer}>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowStartPicker(true)}
+        >
+          <Text style={styles.dateButtonText}>
+            Từ: {startDate ? startDate.toLocaleDateString() : "Chọn ngày"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowEndPicker(true)}
+        >
+          <Text style={styles.dateButtonText}>
+            Đến: {endDate ? endDate.toLocaleDateString() : "Chọn ngày"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {showStartPicker && (
+        <DateTimePickerModal
+          value={startDate}
+          mode="date"
+          display="spinner"
+          onChange={handleStartDateChange}
+        />
+      )}
+
+      {showEndPicker && (
+        <DateTimePickerModal
+          value={endDate}
+          mode="date"
+          display="spinner"
+          onChange={handleEndDateChange}
+        />
+      )}
 
 
       {/* Kiểm tra nếu đang load dữ liệu */}
@@ -576,7 +661,7 @@ const AllPersonelScreen = () => {
                     style={{ marginRight: 15 }}
                   />
 
-                  
+
 
                   {/* Thông tin chính */}
                   <View style={{ flex: 1 }}>
@@ -674,6 +759,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 10,
     backgroundColor: "#f1f1f1"
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  dateButton: {
+    backgroundColor: '#E0E0E0',
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  dateButtonText: {
+    textAlign: 'center',
+    color: '#333',
   },
   searchInput: {
     flex: 1,

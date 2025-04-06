@@ -54,6 +54,9 @@ public class Task {
     // trang thai cho duyet hoan thanh
     private Integer waitFinish;
 
+    // tien trinh bao nhieu phan tram
+    private Integer progress;
+
 
 }
 

@@ -82,6 +82,12 @@ public class TaskController {
                     .body("Lỗi khi xóa nhiệm vụ: " + e.getMessage());
         }
     }
+    @PutMapping("/update-progress")
+    public ResponseEntity<?> updateProgress(@RequestParam(value = "taskId", required = false) Integer taskId,
+                                            @RequestParam(value = "progress", required = false) Integer progress) {
+        return ResponseEntity.ok(taskService.updateProgress(taskId, progress));
+    }
+
 
     @PutMapping("/assign")
     public ResponseEntity<?> assignTask(

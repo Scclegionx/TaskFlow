@@ -289,4 +289,15 @@ public class TaskService {
 
         return taskRepository.save(task);
     }
+
+    public Task updateProgress(Integer taskId, Integer progress) {
+        log.info("Task ID: {}", taskId);
+        log.info("Progress: {}", progress);
+        Task task = taskRepository.findById(taskId);
+        if (task != null) {
+            task.setProgress(progress);
+            taskRepository.save(task);
+        }
+        return task;
+    }
 }

@@ -64,7 +64,7 @@ public class DocumentController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=data.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Nhân_sự.xlsx")
                 .body(resource);
     }
 
@@ -77,7 +77,7 @@ public class DocumentController {
         LocalDate today = LocalDate.now();
         time = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
-        List<Kpi> kpis = kpiRepository.getKpiByMonth(time, "");
+        List<Kpi> kpis = kpiRepository.getKpiByMonth(null, null, "");
         List<String[]> data = Arrays.asList(
                 kpis.stream().map(kpi -> new String[]{
 
@@ -97,7 +97,7 @@ public class DocumentController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=data.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=KPI.xlsx")
                 .body(resource);
     }
 
@@ -129,7 +129,7 @@ public class DocumentController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=data.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ChamCong.xlsx")
                 .body(resource);
     }
 

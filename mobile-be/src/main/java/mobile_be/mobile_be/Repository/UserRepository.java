@@ -17,10 +17,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "u.date_of_birth, k.total_point, k.kpi_registry, " +
             "COALESCE(SUM(t.total_hours), 0)  ,  u.avatar " +
             "FROM users u " +
-            "JOIN kpi k ON k.user_id = u.id " +
-            "JOIN tydstate t ON t.user_id = u.id " +
+            "LEFT JOIN kpi k ON k.user_id = u.id " +
+            "LEFT JOIN tydstate t ON t.user_id = u.id " +
             "WHERE u.id = :userId " +
-            "AND t.checkin BETWEEN :startDate AND :endDate " +
+            "AND (:startDate IS NULL OR t.checkin >= :startDate) " +
+            "AND (:endDate IS NULL OR t.checkin <= :endDate) " +
             "GROUP BY u.id, u.name, u.email, u.gender, u.date_of_birth, k.total_point, k.kpi_registry, u.avatar " +
             "LIMIT 1",
             nativeQuery = true)

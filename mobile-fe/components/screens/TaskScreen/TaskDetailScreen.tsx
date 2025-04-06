@@ -1,5 +1,6 @@
 import React, { useState, useEffect , useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image, Alert, PanResponder  } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, Modal ,
+  TextInput, FlatList, Image, Alert, PanResponder  } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect } from "react";
@@ -69,6 +70,10 @@ const TaskDetailScreen = () => {
   const [newComment, setNewComment] = useState('');
 
   const [currentUserId, setCurrentUserId] = useState(Number);  // id của người đang đăng nhập
+
+  // Thêm các state mới
+const [showProgressModal, setShowProgressModal] = useState(false);
+const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
 
 
   useLayoutEffect(() => {
@@ -471,8 +476,38 @@ const TaskDetailScreen = () => {
 
 
         
-        <View style={styles.progressContainer}>
+        {/* <View style={styles.progressContainer}>
           <Text style={styles.progressLabel}>Tiến độ công việc</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${jobData.progress}%`,
+                  backgroundColor: getProgressColor(jobData.progress)
+                }
+              ]}
+            />
+            <Text style={styles.progressText}>{jobData.progress}%</Text>
+          </View>
+        </View> */}
+
+
+<View style={styles.progressHeader}>
+  <Text style={styles.progressLabel}>Tiến độ công việc</Text>
+  {jobData.assignees.some(a => a.id === currentUserId) && (
+    <TouchableOpacity 
+      onPress={() => setShowProgressModal(true)}
+      style={styles.editButton}
+    >
+      <Icon name="edit" size={16} color="#3B82F6" />
+    </TouchableOpacity>
+  )}
+  
+</View>
+
+<View style={styles.progressContainer}>
+          
           <View style={styles.progressBar}>
             <View
               style={[
@@ -487,6 +522,49 @@ const TaskDetailScreen = () => {
           </View>
         </View>
 
+{/* Thêm cuối phần return */}
+<Modal
+  visible={showProgressModal}
+  animationType="slide"
+  transparent
+  onRequestClose={() => setShowProgressModal(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Cập nhật tiến độ</Text>
+      
+      <TextInput
+        style={styles.progressInput}
+        keyboardType="numeric"
+        value={tempProgress.toString()}
+        onChangeText={(text) => {
+          const value = Math.min(100, Math.max(0, parseInt(text) || 0));
+          setTempProgress(value);
+        }}
+        placeholder="Nhập % tiến độ (0-100)"
+      />
+
+      <View style={styles.modalButtons}>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.cancelButton]}
+          onPress={() => setShowProgressModal(false)}
+        >
+          <Text style={styles.buttonText}>Hủy</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.modalButton, styles.confirmButton]}
+          onPress={async () => {
+            await updateProgress(tempProgress);
+            setShowProgressModal(false);
+          }}
+        >
+          <Text style={styles.buttonText}>Cập nhật</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
 
 
 
@@ -504,6 +582,16 @@ const TaskDetailScreen = () => {
           </TouchableOpacity>
         )}
 
+
+{jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
+          <TouchableOpacity
+            style={styles.refuseButton}
+            onPress={handleMarkComplete}
+          >
+            <Icon name="check" size={20} color="#fff" />
+            <Text style={styles.completeButtonText}>Từ chối</Text>
+          </TouchableOpacity>
+        )}
 
 
         {jobData.waitFinish === 1 && (
@@ -595,6 +683,64 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
   },
+
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  editButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  progressInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#e0e0e0',
+  },
+  confirmButton: {
+    backgroundColor: '#3B82F6',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '500',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -626,6 +772,16 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     justifyContent: 'center',
+  },
+
+  refuseButton: {
+    flexDirection: 'row', // Căn icon + text theo chiều ngang
+    alignItems: 'center', // Căn giữa theo chiều dọc
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 10,
   },
   completeButtonText: {
     color: '#fff',
@@ -667,13 +823,14 @@ const styles = StyleSheet.create({
   },
 
   progressContainer: {
-    marginTop: 15,
+    marginTop: 5,
     marginBottom: 10,
   },
   progressLabel: {
     fontSize: 16,
     color: '#666',
     marginBottom: 8,
+    marginTop : 8,
   },
   progressBar: {
     height: 20,

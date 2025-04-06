@@ -9,6 +9,8 @@ import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
+import axios from 'axios'; // Cần cài đặt axios hoặc sử dụng fetch
+
 
 
 
@@ -34,6 +36,13 @@ interface TaskDetail {
   }>;
   waitFinish: number;
   progress: number;
+}
+
+interface RejectReason {
+  id: number;
+  name: string;
+  description: string | null;
+  other: string | null;
 }
 
 interface User {
@@ -75,12 +84,23 @@ const TaskDetailScreen = () => {
 const [showProgressModal, setShowProgressModal] = useState(false);
 const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
 
+const [showRejectModal, setShowRejectModal] = useState(false);
+const [rejectReasons, setRejectReasons] = useState<RejectReason[]>([]); // Dữ liệu lý do từ API
+const [selectedReason, setSelectedReason] = useState('');  // chon cai gi 
+const [rejectReason, setRejectReason] = useState('');
+
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Chi tiết công việc" }); // Cập nhật tiêu đề
   }, [navigation]);
 
 
+
+  useEffect(() => {
+    
+    fetchRejectReasons();
+   
+  }, []);
 
 
   useEffect(() => {
@@ -224,6 +244,34 @@ const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
     }
   };
 
+  const fetchRejectReasons = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) throw new Error("Vui lòng đăng nhập");
+
+      const response = await fetch(
+        `${API_BASE_URL}/reason/get-all-reason`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Không tải được dữ liệu");
+      const data = await response.json();
+      setRejectReasons(data);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message); // Safely access the message property
+      } else {
+        setError("Đã xảy ra lỗi không xác định"); // Handle non-Error types
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const fetchTask_Detail = async () => {
     try {
@@ -278,6 +326,44 @@ const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
     }
   };
 
+
+  // Hàm xử lý từ chối
+const handleRejectTask = async () => {
+  const finalReason = selectedReason === "Lý do khác" ? rejectReason : selectedReason;
+
+  
+  
+  if (!finalReason) {
+    Alert.alert("Lỗi", "Vui lòng chọn hoặc nhập lý do từ chối");
+    return;
+  }
+
+  try {
+    console.log("Selected reason:", selectedReason);
+    const authToken = await AsyncStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/tasks/reject-task?taskId=${taskId}&reasonId=${selectedReason.valueOf()}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        taskId,
+        reason: finalReason
+      })
+    });
+
+    if (response.ok) {
+      Alert.alert("Thành công", "Đã từ chối công việc thành công");
+      fetchTask_Detail();
+      setShowRejectModal(false);
+    } else {
+      throw new Error("Từ chối thất bại");
+    }
+  } catch (error) {
+    Alert.alert("Lỗi", error instanceof Error ? error.message : "Lỗi không xác định");
+  }
+};
 
 
 
@@ -567,6 +653,69 @@ const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
 </Modal>
 
 
+<Modal
+  visible={showRejectModal}
+  animationType="slide"
+  transparent
+  onRequestClose={() => setShowRejectModal(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Chọn lý do từ chối</Text>
+      
+      <FlatList
+        data={rejectReasons}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.reasonItem}
+            onPress={() => {
+              // if (item === "Lý do khác") {
+              //   setSelectedReason(item);
+              //   setRejectReason('');
+              // } else {
+              //   setSelectedReason(item.id.toString());
+              //   setRejectReason(item.id.toString());
+              // }
+              setSelectedReason(item.id.toString());
+              setRejectReason(item.name.toString());
+            }}
+          >
+            <Text>{item.name}</Text>
+            {selectedReason === item.id.toString() && <Icon name="check" size={16} color="green" />}
+          </TouchableOpacity>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+      />
+
+      {selectedReason === "Lý do khác" && (
+        <TextInput
+          style={styles.reasonInput}
+          placeholder="Nhập lý do cụ thể"
+          value={rejectReason}
+          onChangeText={setRejectReason}
+          multiline
+        />
+      )}
+
+      <View style={styles.modalButtons}>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.cancelButton]}
+          onPress={() => setShowRejectModal(false)}
+        >
+          <Text style={styles.buttonText}>Hủy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.confirmButton]}
+          onPress={handleRejectTask}
+        >
+          <Text style={styles.buttonText}>Xác nhận</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
+
 
         {/* Thêm nút ở đây */}
         {/* đang xử lý , mà chưa chọn xác nhận hoàn thành */}
@@ -584,14 +733,14 @@ const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
 
 
 {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
-          <TouchableOpacity
-            style={styles.refuseButton}
-            onPress={handleMarkComplete}
-          >
-            <Icon name="check" size={20} color="#fff" />
-            <Text style={styles.completeButtonText}>Từ chối</Text>
-          </TouchableOpacity>
-        )}
+  <TouchableOpacity
+    style={styles.refuseButton}
+    onPress={() => setShowRejectModal(true)}
+  >
+    <Icon name="times" size={20} color="#fff" />
+    <Text style={styles.completeButtonText}>Từ chối</Text>
+  </TouchableOpacity>
+)}
 
 
         {jobData.waitFinish === 1 && (
@@ -682,6 +831,23 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 16,
+  },
+
+  reasonItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  reasonInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    marginVertical: 10,
+    minHeight: 100,
   },
 
   progressHeader: {

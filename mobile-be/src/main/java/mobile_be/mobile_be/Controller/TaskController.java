@@ -114,4 +114,12 @@ public class TaskController {
                     .body("Lỗi khi cập nhật nhiệm vụ: " + e.getMessage());
         }
     }
+
+    @PutMapping("/reject-task")
+    public ResponseEntity<?> rejectTask(@RequestParam(value = "taskId", required = false) Integer taskId,
+                                        @RequestParam(value = "reasonId", required = false) Integer reasonId) {
+        return ResponseEntity.ok(taskService.rejectTask(taskId, reasonId));
+    }
+
+
 }

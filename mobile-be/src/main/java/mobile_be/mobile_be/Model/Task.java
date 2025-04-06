@@ -58,5 +58,12 @@ public class Task {
     private Integer progress;
 
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "task_reasons",
+            joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "reason_id")
+    )
+    private List<Reason> reasons;
 }
 

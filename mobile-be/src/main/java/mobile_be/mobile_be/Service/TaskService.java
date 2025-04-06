@@ -40,6 +40,9 @@ public class TaskService {
     @Autowired
     private ProjectMemberRepository projectMemberRepository;
 
+    @Autowired
+    private ReasonRespository reasonRepository;
+
 
     // type == null la lay tat ca cac trang thai
     // type == 0 la giao
@@ -132,6 +135,7 @@ public class TaskService {
         Task task = taskRepository.findById(taskId);
         if (task != null) {
             task.setWaitFinish(1);
+            task.setProgress(100);
             taskRepository.save(task);
         }
         return task;
@@ -142,6 +146,7 @@ public class TaskService {
         if (task != null) {
             task.setStatus(enum_taskStatus.COMPLETED.getValue());
             task.setWaitFinish(0);
+            task.setProgress(100);
 
             LocalDateTime localDateTime = task.getCreatedAt();
 
@@ -297,6 +302,45 @@ public class TaskService {
         if (task != null) {
             task.setProgress(progress);
             taskRepository.save(task);
+        }
+        return task;
+    }
+
+    public Task rejectTask(Integer taskId, Integer reasonId) {
+        Task task = taskRepository.findById(taskId);
+        if (task != null) {
+            LocalDateTime localDateTime = task.getCreatedAt();
+
+            String time = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            Integer minusPoint = 1;
+
+            List<User> listUser = task.getAssignees();
+            if(listUser != null){
+                for (User user : listUser) {
+                    Kpi kpi =  kpiRepository.getByUserIdAndTime(user.getId(), time);
+
+                    if (kpi != null){
+                        // diem hien tai + diem task
+                        kpi.setMinusPoint(kpi.getMinusPoint() + minusPoint);
+
+                        // diem cong - diem tru
+                        // lay gia tri vua set vào
+                        kpi.setTotalPoint(kpi.getPlusPoint() - kpi.getMinusPoint());
+                        if(kpi.getTotalPoint() >= kpi.getKpiRegistry()){
+                            kpi.setStatus(enum_status_kpi.Du.getValue());
+                        }
+                        kpiRepository.save(kpi);
+                    }
+                }
+            }
+
+            Reason reason = reasonRepository.findById(reasonId).orElse(null);
+            if (reason != null){
+                task.setStatus(enum_taskStatus.CANCELLED.getValue());
+                task.getReasons().add(reason);
+                taskRepository.save(task);
+            }
+
         }
         return task;
     }

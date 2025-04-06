@@ -300,7 +300,7 @@ const AllTaskScreen = () => {
             }
 
             renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => router.push({ pathname: "/taskDetail",  params: { taskId: item.id.toString() } })}>
+            <TouchableOpacity onPress={() => router.push({ pathname: "/Task/taskDetail",  params: { taskId: item.id.toString() } })}>
 
   
               <Card style={{ marginVertical: 8, backgroundColor: '#D9D9D9', borderRadius: 15, marginHorizontal: 20 }}>

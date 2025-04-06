@@ -59,12 +59,9 @@ public class KpiService {
         return ResponseEntity.ok("đăng ký KPI thành công");
     }
 
-    public ResponseEntity<?> getKpiByMonth(String time, String textSearch) {
-        if (time == null) {
-            LocalDate today = LocalDate.now();
-            time = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
-        }
-        List<Kpi> listKpi = kpiRepository.getKpiByMonth(time, textSearch);
+    public ResponseEntity<?> getKpiByMonth(String startDate, String endDate, String textSearch) {
+
+        List<Kpi> listKpi = kpiRepository.getKpiByMonth(startDate, endDate , textSearch);
 
         List<KpiResponseDTO> results = listKpi.stream().map(kpi -> {
             KpiResponseDTO kpiResponseDTO = KpiMapper.INSTANCE.toDTO(kpi);

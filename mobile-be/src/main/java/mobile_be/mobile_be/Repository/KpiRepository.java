@@ -18,11 +18,12 @@ public interface KpiRepository extends JpaRepository<Kpi, Integer> {
     // k.* la lay tat ca cac truong cua bang kpi
     @Query(value = "SELECT k.* FROM kpi k " +
             " join users u on u.id = k.user_id " +
-            " WHERE DATE_FORMAT(time, '%Y-%m') = :time " +
+            " WHERE (:startTime is null or k.time >= :startTime ) " +
+            " and (:endTime is  null or  k.time <= :endTime )" +
             " AND (:textSearch is null or u.name LIKE %:textSearch% ) " +
             "order by k.total_point desc ",
             nativeQuery = true)
-    List<Kpi> getKpiByMonth(String time, String textSearch);
+    List<Kpi> getKpiByMonth(String startTime, String endTime, String textSearch);
 
     List<Kpi> findByUserId(Integer userId);
 

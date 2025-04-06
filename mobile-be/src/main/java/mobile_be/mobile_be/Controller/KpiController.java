@@ -25,9 +25,10 @@ public class KpiController {
 
     // api lay ra kpi  theo thang
     @GetMapping("/get-kpi-by-month")
-    public ResponseEntity<?> getKpiByMonth(@RequestParam (value = "time", required = false) String time,
+    public ResponseEntity<?> getKpiByMonth(@RequestParam (value = "startDate", required = false) String startDate,
+                                           @RequestParam ( value = "endDate", required = false) String endDate,
                                            @RequestParam ( value = "textSearch", required = false) String textSearch) {
-        return kpiService.getKpiByMonth( time, textSearch);
+        return kpiService.getKpiByMonth( startDate, endDate, textSearch);
     }
 
     // api sửa kpi

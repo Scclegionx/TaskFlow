@@ -116,7 +116,7 @@ const ChamCongScreen = () => {
       setLoading(true);
       const authToken = await AsyncStorage.getItem("token");
 
-      const response = await fetch(`${API_BASE_URL}/document/download`, {
+      const response = await fetch(`${API_BASE_URL}/document/download-excel-cham-cong`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -214,7 +214,7 @@ const ChamCongScreen = () => {
 
         setChamCongData(cham_cong);
       } else {
-        console.error("Lỗi khi lấy danh sách thành viên.");
+        console.error("Lỗi khi lấy danh sách thành viên. dashBoard");
       }
     } catch (error) {
       console.error("Lỗi khi gọi API danh sách thành viên:", error);
@@ -244,7 +244,7 @@ const ChamCongScreen = () => {
     setShowEndPicker(false);
     if (selectedDate) {
       setEndDate(selectedDate);
-      fetchChamCong(searchText, startDate, endDate);
+      fetchChamCong(searchText, selectedDate, endDate);
     }
   };
 

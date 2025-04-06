@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState , useCallback  } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
+import { useFocusEffect } from '@react-navigation/native';
 
 import Icon from "react-native-vector-icons/FontAwesome"; // Import icon
 import { Dimensions } from 'react-native';
@@ -59,6 +60,20 @@ const HomeScreen = () => {
 
 
 
+    // hàm này sẽ chạy mỗi khi tab được focus (tức là bấm vào lại)
+    useFocusEffect(
+        useCallback(() => {
+            // Hàm này sẽ chạy mỗi khi tab được focus (tức là bấm vào lại)
+            fetchData();
+
+            return () => {
+                // Optional: cleanup nếu cần
+            };
+        }, [])
+    );
+
+
+
     const fetchData = async (
         taskType: number | null = null,
         projectType: number | null = null) => {
@@ -67,6 +82,7 @@ const HomeScreen = () => {
         const userId = await AsyncStorage.getItem("userId");  //  Lấy userId từ AsyncStorage
 
         console.log("Token:", authToken);
+        console.log("phamtu haha  UserId: ", userId);
 
         if (!authToken) {
             console.error("No token found! Please log in.");

@@ -70,5 +70,11 @@ public class TaskController {
         return ResponseEntity.ok(taskService.taskApproveFinish(taskId));
     }
 
+    @PutMapping("/update-progress")
+    public ResponseEntity<?> updateProgress(@RequestParam(value = "taskId", required = false) Integer taskId,
+                                            @RequestParam(value = "progress", required = false) Integer progress) {
+        return ResponseEntity.ok(taskService.updateProgress(taskId, progress));
+    }
+
 
 }

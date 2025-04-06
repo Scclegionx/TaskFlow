@@ -135,7 +135,7 @@ const AllPersonelScreen = () => {
       setLoading(true);
       const authToken = await AsyncStorage.getItem("token");
 
-      const response = await fetch(`${API_BASE_URL}/document/download`, {
+      const response = await fetch(`${API_BASE_URL}/document/download-excel-user`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },

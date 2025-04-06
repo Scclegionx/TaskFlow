@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image, Alert } from 'react-native';
+import React, { useState, useEffect , useRef } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image, Alert, PanResponder  } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect } from "react";
@@ -7,6 +7,7 @@ import { API_BASE_URL } from "@/constants/api";
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
+
 
 
 
@@ -31,6 +32,7 @@ interface TaskDetail {
     name: string;
   }>;
   waitFinish: number;
+  progress: number;
 }
 
 interface User {
@@ -69,10 +71,10 @@ const TaskDetailScreen = () => {
   const [currentUserId, setCurrentUserId] = useState(Number);  // id của người đang đăng nhập
 
 
-
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Chi tiết công việc" }); // Cập nhật tiêu đề
   }, [navigation]);
+
 
 
 
@@ -246,6 +248,32 @@ const TaskDetailScreen = () => {
     }
   };
 
+  // Hàm gọi API CẦN ĐẶT TRƯỚC panResponder
+  const updateProgress = async (newProgress: number) => {
+    try {
+      const authToken = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/tasks/update-progress?taskId=${taskId}&progress=${newProgress}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        // body: JSON.stringify({
+        //   taskId,
+        //   progress: newProgress,
+        // }),
+      });
+
+      if (!response.ok) throw new Error('Cập nhật thất bại');
+      
+      // Cập nhật lại state chính thức sau khi API thành công
+      setJobData(prev => prev ? {...prev, progress: newProgress} : null);
+    } catch (error) {
+      Alert.alert('Lỗi', error instanceof Error ? error.message : 'Lỗi không xác định');
+    }
+  };
+
+
 
 
   const handleMarkComplete = async () => {
@@ -397,6 +425,16 @@ const TaskDetailScreen = () => {
     </View>
   );
 
+  const getProgressColor = (progress: number | null) => {
+    // Xử lý trường hợp null hoặc undefined
+    if (progress === null || progress === undefined) return '#ff4444';
+
+    // Xử lý các trường hợp số
+    if (progress < 30) return '#ff4444';    // Đỏ
+    if (progress < 70) return '#ffbb33';    // Cam/Vàng
+    return '#00C851';                       // Xanh lá
+  };
+
 
 
   return (
@@ -429,6 +467,28 @@ const TaskDetailScreen = () => {
           label="Dự án"
           value={jobData.project?.name || 'Không có'}
         />
+
+
+
+        
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressLabel}>Tiến độ công việc</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${jobData.progress}%`,
+                  backgroundColor: getProgressColor(jobData.progress)
+                }
+              ]}
+            />
+            <Text style={styles.progressText}>{jobData.progress}%</Text>
+          </View>
+        </View>
+
+
+
 
         {/* Thêm nút ở đây */}
         {/* đang xử lý , mà chưa chọn xác nhận hoàn thành */}
@@ -604,6 +664,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
+  },
+
+  progressContainer: {
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  progressLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+
+  progressText: {
+    position: 'absolute',
+    right: 8,
+    top: 2,
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 
   duyetButtonText: {

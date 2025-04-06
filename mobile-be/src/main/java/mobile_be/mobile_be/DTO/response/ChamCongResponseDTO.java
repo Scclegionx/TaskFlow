@@ -24,4 +24,6 @@ public class ChamCongResponseDTO {
     private float total_hours;
 
     private String username;
+
+    private String avatar;
 }

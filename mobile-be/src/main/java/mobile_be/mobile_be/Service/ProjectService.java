@@ -194,6 +194,7 @@ public class ProjectService {
         List<User> results = projectRepository.getAllMemberInProject(projectId, textSearch);
         return results.stream().map(user -> {
                             UserResponseDTO dto = userMapper.toDTO(user);
+                            dto.setAvatar(user.getAvatar());
                            return dto;
         }).collect(Collectors.toList());
     }

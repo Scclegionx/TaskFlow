@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, Button, Modal } from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, Button, Modal, Image } from "react-native";
 import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -36,6 +36,7 @@ interface KPIEntry {
   minusPoint: number | null;
   time: string;
   userName: string;
+  avatar: string;
 }
 
 
@@ -55,13 +56,13 @@ const AllPersonelScreen = () => {
 
   const [loading, setLoading] = useState(true);
 
-  const [editModalVisible, setEditModalVisible] = useState(false);
+
   const [selectedKpi, setSelectedKpi] = useState<KPIEntry | null>(null); //  null là đăng ký mới, có dữ liệu là sửa
 
 
   const [searchText, setSearchText] = useState("");
 
-  const [time, setTime] = useState<string>("");
+
 
   const [modalVisible, setModalVisible] = useState(false); // popup đăng ký KPI
   const [kpiValue, setKpiValue] = useState(""); // Giá trị nhập trong ô input
@@ -84,6 +85,11 @@ const AllPersonelScreen = () => {
   const [endDate, setEndDate] = useState<Date>(new Date()); // khởi tạo ngày hiện tại
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+
+  const [registerModalVisible, setRegisterModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const colors = ["#ADDCE3", "#D1E7DD", "#FEE2E2", "#EDEBDE", "#FDE8C9"]; // danh sách màu
+
 
   // Lấy danh sách user từ API
 
@@ -434,7 +440,7 @@ const AllPersonelScreen = () => {
     setkpi_Id(kpi.id);
     setSelectedKpi(kpi); // Lưu KPI đang chọn vào state
     setKpiValue(kpi.kpiRegistry.toString()); // Điền giá trị hiện tại vào input
-    setModalVisible(true); // Mở popup
+    setEditModalVisible(true); // Mở popup sửa // Mở popup
 
   };
 
@@ -494,7 +500,7 @@ const AllPersonelScreen = () => {
       setEndDate(selectedDate);
       fetchKPIByMonth(startDate, selectedDate, "");
     }
-    
+
   };
 
 
@@ -582,7 +588,7 @@ const AllPersonelScreen = () => {
               onPress={() => {
                 setSelectedKpi(null); // Reset selected KPI
                 setKpiValue(""); // Xóa giá trị cũ
-                setModalVisible(true); // Mở popup
+                setRegisterModalVisible(true); // Mở popup
               }}
             >
               <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>Đăng ký</Text>
@@ -590,60 +596,83 @@ const AllPersonelScreen = () => {
           </View>
 
 
-          {/* Popup nhập KPI */}
-          <Modal visible={modalVisible} transparent animationType="slide">
+          <Modal visible={registerModalVisible} transparent animationType="slide">
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
               <View style={{ backgroundColor: "white", padding: 20, borderRadius: 10, width: 300, alignItems: "center" }}>
-                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
-                  {selectedKpi ? "Chỉnh sửa KPI" : "Đăng ký KPI mới"}
-                </Text>
+                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Đăng ký KPI mới </Text>
                 <TextInput
-                  style={{
-                    width: "100%",
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    borderRadius: 5,
-                    padding: 10,
-                    fontSize: 16,
-                    marginBottom: 15,
-                    textAlign: "center",
-                  }}
+                  style={styles.modalInput}
                   keyboardType="numeric"
                   placeholder="Nhập số KPI..."
                   value={kpiValue}
                   onChangeText={setKpiValue}
                 />
-                <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
+                <View style={styles.modalButtonContainer}>
                   <TouchableOpacity
-                    style={{ backgroundColor: "red", padding: 10, borderRadius: 5, flex: 1, marginRight: 10 }}
+                    style={[styles.modalButton, styles.cancelButton]}
                     onPress={() => {
-                      setModalVisible(false);
-                      setSelectedKpi(null);
+                      setRegisterModalVisible(false);
+                      setKpiValue("");
                     }}
                   >
-                    <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>Hủy</Text>
+                    <Text style={styles.buttonText}>Hủy</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: "green", padding: 10, borderRadius: 5, flex: 1 }}
-                    onPress={selectedKpi ? handleEditKpi : handleRegisterKpi}
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleRegisterKpi}
                   >
-                    <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>
-                      {selectedKpi ? "Cập nhật" : "Đăng ký"}
-                    </Text>
+                    <Text style={styles.buttonText}>Đăng ký</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </View>
           </Modal>
 
+
+          <Modal visible={editModalVisible} transparent animationType="slide">
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+              <View style={{ backgroundColor: "white", padding: 20, borderRadius: 10, width: 300, alignItems: "center" }}>
+                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Chỉnh sửa KPI</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  keyboardType="numeric"
+                  placeholder="Nhập số KPI..."
+                  value={kpiValue}
+                  onChangeText={setKpiValue}
+                />
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => {
+                      setEditModalVisible(false);
+                      setKpiValue("");
+                      setSelectedKpi(null);
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Hủy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleEditKpi}
+                  >
+                    <Text style={styles.buttonText}>Cập nhật</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+
+
+
           {/* Danh sách KPI */}
           <FlatList
             data={kpiData}
             keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#CECECE", // xám nhạt
+                  backgroundColor: colors[index % colors.length], // đổi màu theo index
                   padding: 16,
                   borderRadius: 12,
                   marginBottom: 10,
@@ -654,14 +683,19 @@ const AllPersonelScreen = () => {
               >
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   {/* Icon người dùng */}
-                  <Icon
-                    name="user-circle"
-                    size={32}
-                    color="#4CAF50"
-                    style={{ marginRight: 15 }}
+                  <Image
+                    source={{
+                      uri: item.avatar
+                        ? item.avatar
+                        : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s' // link ảnh mặc định
+                    }}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      marginRight: 10,
+                    }}
                   />
-
-
 
                   {/* Thông tin chính */}
                   <View style={{ flex: 1 }}>
@@ -758,7 +792,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    backgroundColor: "#f1f1f1"
+    backgroundColor: "#ADDCE3",
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+
+  modalInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  modalButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  modalButton: {
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: "red",
+  },
+  confirmButton: {
+    backgroundColor: "green",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
   },
   dateContainer: {
     flexDirection: 'row',
@@ -766,7 +835,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dateButton: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#FB958D',
     padding: 10,
     borderRadius: 8,
     flex: 1,
@@ -774,7 +843,7 @@ const styles = StyleSheet.create({
   },
   dateButtonText: {
     textAlign: 'center',
-    color: '#333',
+    color: 'black',
   },
   searchInput: {
     flex: 1,
@@ -788,7 +857,7 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     // backgroundColor: "#007BFF",
-    backgroundColor: "#D3D3D3",
+    backgroundColor: "#8384F8",
     padding: 10,
     borderRadius: 8
   },

@@ -617,7 +617,7 @@ const handleRejectTask = async () => {
 >
   <View style={styles.modalOverlay}>
     <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Cập nhật tiến độ</Text>
+      <Text style={styles.modalTitle}>Cập nhập tiến độ</Text>
       
       <TextInput
         style={styles.progressInput}
@@ -898,13 +898,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#F8B0A9',
   },
   confirmButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#87ECAF',
   },
   buttonText: {
-    color: 'white',
+    color: 'black',
     fontWeight: '500',
   },
   header: {
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   section: {
-    backgroundColor: '#D9D9D9',
+    backgroundColor: '#DEECEC',
     borderRadius: 8,
     padding: 16,
   },
@@ -1044,8 +1044,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 15,
     padding: 10,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    backgroundColor: '#F8B0A9',
+    borderRadius: 15,
   },
   avatar: {
     width: 40,

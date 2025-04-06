@@ -1,4 +1,4 @@
-import React, { useEffect, useState , useCallback  } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -52,7 +52,8 @@ const HomeScreen = () => {
     // bieu do tron     du an
     const [projectStatusData, setProjectStatusData] = useState<ProjectStatusData>(null);
 
-    const [showCategoryFilter, setShowCategoryFilter] = useState(false); // Hiển thị dropdown "Phân loại"
+    const [showTaskCategoryFilter, setShowTaskCategoryFilter] = useState(false);
+    const [showProjectCategoryFilter, setShowProjectCategoryFilter] = useState(false);
 
     const [taskType, setTaskType] = useState<number | null>(null);// Lưu loại công việc
 
@@ -216,7 +217,7 @@ const HomeScreen = () => {
             <View style={styles.filterContainer}>
                 <TouchableOpacity
                     style={styles.filterButton}
-                    onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+                    onPress={() => setShowTaskCategoryFilter(!showTaskCategoryFilter)} // Sửa thành setShowTaskCategoryFilter
                 >
                     <Text style={styles.filterText}>Phân loại</Text>
                 </TouchableOpacity>
@@ -227,14 +228,14 @@ const HomeScreen = () => {
             </View>
 
             {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
-            {showCategoryFilter && (
+            {showTaskCategoryFilter && (
                 <View style={styles.dropdown}>
                     <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => {
                             setTaskType(0); // Gọi API với type = 0
                             fetchData(0, projectType);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                            setShowTaskCategoryFilter(false);
                         }}
                     >
                         <Text>Giao</Text>
@@ -244,7 +245,7 @@ const HomeScreen = () => {
                         onPress={() => {
                             setTaskType(1); // Gọi API với type = 1
                             fetchData(1, projectType);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                            setShowTaskCategoryFilter(false);
                         }}
                     >
                         <Text>Được giao</Text>
@@ -255,7 +256,7 @@ const HomeScreen = () => {
                         onPress={() => {
                             setTaskType(null);
                             fetchData(null, projectType);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                            setShowTaskCategoryFilter(false);
                         }}
                     >
                         <Text>Tất cả</Text>
@@ -290,7 +291,7 @@ const HomeScreen = () => {
             <View style={styles.filterContainer}>
                 <TouchableOpacity
                     style={styles.filterButton}
-                    onPress={() => setShowCategoryFilter(!showCategoryFilter)}
+                    onPress={() => setShowProjectCategoryFilter(!showProjectCategoryFilter)} // Sửa thành setShowProjectCategoryFilter
                 >
                     <Text style={styles.filterText}>Phân loại</Text>
                 </TouchableOpacity>
@@ -301,14 +302,14 @@ const HomeScreen = () => {
             </View>
 
             {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
-            {showCategoryFilter && (
+            {showProjectCategoryFilter && (
                 <View style={styles.dropdown}>
                     <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => {
                             setProjectType(0); // Gọi API với type = 0
                             fetchData(taskType, 0);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                            setShowProjectCategoryFilter(false);
                         }}
                     >
                         <Text>Giao</Text>
@@ -318,7 +319,7 @@ const HomeScreen = () => {
                         onPress={() => {
                             setProjectType(1); // Gọi API với type = 1
                             fetchData(taskType, 1);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                            setShowProjectCategoryFilter(false);
                         }}
                     >
                         <Text>Được giao</Text>
@@ -329,7 +330,7 @@ const HomeScreen = () => {
                         onPress={() => {
                             setProjectType(null);
                             fetchData(taskType, null);    // Gọi API ngay khi chọn
-                            setShowCategoryFilter(false);
+                            setShowProjectCategoryFilter(false);
                         }}
                     >
                         <Text>Tất cả</Text>
@@ -364,12 +365,6 @@ const HomeScreen = () => {
     );
 };
 
-// const chartConfig = {
-//     backgroundGradientFrom: "#fff",
-//     backgroundGradientTo: "#fff",
-//     decimalPlaces: 0,
-//     color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-// };
 
 const chartConfig = {
     backgroundGradientFrom: "#fff",
@@ -446,7 +441,7 @@ const styles = StyleSheet.create({
         borderColor: "#ccc",
         borderRadius: 8,
         marginRight: 10,
-        backgroundColor: "#f9f9f9",
+        backgroundColor: "#FB958D",
     },
 
     filterText: {

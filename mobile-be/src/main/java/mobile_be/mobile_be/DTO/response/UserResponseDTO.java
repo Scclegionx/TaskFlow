@@ -9,5 +9,6 @@ public class UserResponseDTO {
     private String name;
     private String email;
     private boolean isActive;
+    private String avatar;
 
 }

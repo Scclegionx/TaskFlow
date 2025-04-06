@@ -137,6 +137,7 @@ public class UserService {
 
                 User user = userRepository.findById(tydstate.getUser_id()).orElseThrow(() -> new RuntimeException("User not found"));
                 chamCongResponseDTO.setUsername(user.getName());
+                chamCongResponseDTO.setAvatar(user.getAvatar());
                 return chamCongResponseDTO;
             }).toList();
 

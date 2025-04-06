@@ -85,7 +85,7 @@ const PersonelDetailScreen  = () => {
       {/* Thêm Image ở đây */}
       <Image
         style={styles.avatar}
-        source={{ uri: inforPersonData?.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s' }} // Đường dẫn đến ảnh
+        source={{ uri: inforPersonData?.avatar || 'https://img.lovepik.com/png/20231028/Japanese-social-media-male-user-avatar-characters-anime_394434_wh860.png' }} // Đường dẫn đến ảnh
         resizeMode="cover"
       />
 
@@ -95,7 +95,7 @@ const PersonelDetailScreen  = () => {
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.label}>email : </Text>
+        <Text style={styles.label}>Email : </Text>
         <Text style={styles.value}>{inforPersonData?.email}</Text>
       </View>
 
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   card: {
-    backgroundColor: '#D9D9D9',
+    backgroundColor: '#96C9D1',
     borderRadius: 8,
     padding: 16,
     shadowColor: '#000',

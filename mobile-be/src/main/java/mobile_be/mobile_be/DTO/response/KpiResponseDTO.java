@@ -15,5 +15,6 @@ public class KpiResponseDTO {
     private Integer status;
     private LocalDate time;
     private String userName;
+    private String avatar;
 
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, Image } from "react-native";
 import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -33,6 +33,7 @@ interface ChamCong {
   status: number;
   total_hours: number;
   username: string;
+  avatar: string;
 }
 
 
@@ -66,6 +67,8 @@ const ChamCongScreen = () => {
   const [endDate, setEndDate] = useState<Date>(new Date()); // khởi tạo ngày hiện tại
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+
+  const colors = ["#ADDCE3", "#D1E7DD", "#FEE2E2", "#EDEBDE", "#FDE8C9"]; // danh sách màu
 
 
   // profile để hiển thị ảnh
@@ -261,17 +264,17 @@ const ChamCongScreen = () => {
   const getStatusLabel = (status: number): string => {
     switch (status) {
       case 0:
-        return "Đủ công";
+        return "Đủ công ";
       case 1:
-        return "Đi muộn";
+        return "Đi muộn ";
       case 2:
-        return "Về sớm";
+        return "Về sớm ";
       case 3:
-        return "Đi muộn về sớm";
+        return "Đi muộn về sớm ";
       case 4:
-        return "Nghỉ phép";
+        return "Nghỉ phép ";
       default:
-        return "Không xác định";
+        return "Không xác định ";
     }
   };
 
@@ -367,12 +370,12 @@ const ChamCongScreen = () => {
           <FlatList
             data={chamCongData}
             keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <TouchableOpacity
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  backgroundColor: "#DEE2E6",
+                  backgroundColor: colors[index % colors.length], // đổi màu theo index
                   padding: 12,
                   borderRadius: 10,
                   marginBottom: 8,
@@ -380,15 +383,22 @@ const ChamCongScreen = () => {
                 onPress={() =>
                   router.push({
                     pathname: "/personelDetail",
-                    params: { project: JSON.stringify(item) },
+                    params: { userId: item.user_id },
                   })
                 }
               >
-                <Icon
-                  name="user-circle"
-                  size={24}
-                  color="red"
-                  style={{ marginRight: 10 }}
+                <Image
+                  source={{
+                    uri: item.avatar
+                      ? item.avatar
+                      : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s' // link ảnh mặc định
+                  }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    marginRight: 10,
+                  }}
                 />
                 <View>
                   <Text style={{ fontSize: 16, fontWeight: "bold" }}>
@@ -408,6 +418,12 @@ const ChamCongScreen = () => {
                     <Text style={{ color: getStatusColor(item.status) }}>
                       {getStatusLabel(item.status)}
                     </Text>
+                    <Icon
+                      name={item.status === 0 ? 'check-circle' : 'close'}
+                      size={18}
+                      color={item.status === 0 ? 'green' : 'red'}
+                      style={{ marginLeft: 5 }}
+                    />
                   </Text>
 
                 </View>
@@ -427,7 +443,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    backgroundColor: "#f1f1f1"
+    backgroundColor: "#ADDCE3",
+    borderRadius: 10,
+    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
@@ -447,7 +465,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dateButton: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#FB958D',
     padding: 10,
     borderRadius: 8,
     flex: 1,
@@ -455,12 +473,12 @@ const styles = StyleSheet.create({
   },
   dateButtonText: {
     textAlign: 'center',
-    color: '#333',
+    color: 'black',
   },
 
   searchButton: {
     // backgroundColor: "#007BFF",
-    backgroundColor: "#D3D3D3",
+    backgroundColor: "#8384F8",
     padding: 10,
     borderRadius: 8
   },

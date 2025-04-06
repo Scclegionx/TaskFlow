@@ -68,6 +68,7 @@ public class KpiService {
             Optional<User> user = userRepository.findById(kpi.getUserId());
             if (user.isPresent()) {
                 kpiResponseDTO.setUserName(user.get().getName());
+                kpiResponseDTO.setAvatar(user.get().getAvatar());
             }
             return kpiResponseDTO;
         }).collect(Collectors.toList());

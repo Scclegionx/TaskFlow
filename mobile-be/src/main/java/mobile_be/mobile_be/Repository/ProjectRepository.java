@@ -124,7 +124,6 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     List<Task> getAllTaskInProject(Integer projectId, String textSearch);
 
 
-
     @Query(value = "SELECT * FROM tasks t WHERE " +
             "(:projectId  is null or t.project_id = :projectId)  and  " +
             " t.created_by = :userId " +
@@ -132,6 +131,40 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             " order by t.created_at desc ",
             nativeQuery = true)
     List<Task> getAllTaskInProjectGiao(Integer projectId, Integer userId, String textSearch);
+
+    @Query(value = "SELECT * FROM tasks t " +
+            " left join task_assignees ta on ta.task_id = t.id" +
+            " WHERE " +
+            "( ta.user_id = :userId or :userId = t.created_by )  and  " +
+            "( :projectId  is null or project_id = :projectId )" +
+            " AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))" +
+            " and ( t.status = 0 or t.wait_finish = 1 ) " +
+            " ORDER BY t.created_at desc ",
+            nativeQuery = true)
+    List<Task> getAllTaskPending(Integer projectId, Integer userId,  String textSearch);
+
+
+    @Query(value = "SELECT * FROM tasks t" +
+            " join task_assignees ta on ta.task_id = t.id " +
+            " WHERE ta.user_id = :userId and  " +
+            "(:projectId  is null or t.project_id = :projectId)  and  " +
+            " t.created_by = :userId " +
+            "AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))  " +
+            " and ( t.status = 0 ) " +
+            " order by t.created_at desc ",
+            nativeQuery = true)
+    List<Task> getAllTaskPendingNhan(Integer projectId, Integer userId, String textSearch);
+
+    @Query(value = "SELECT * FROM tasks t" +
+            " WHERE t.created_by = :userId and " +
+            "(:projectId  is null or t.project_id = :projectId)  and  " +
+            " t.created_by = :userId " +
+            "AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))  " +
+            " and ( t.status = 1  ) " +
+            "and t.wait_finish = 1 " +
+            " order by t.created_at desc ",
+            nativeQuery = true)
+    List<Task> getAllTaskPendingDuyetHoanThanh(Integer projectId, Integer userId, String textSearch);
 
 
 

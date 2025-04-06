@@ -69,6 +69,7 @@ public class TaskService {
 
         // Chuyển đổi Map<Integer, Integer> -> Map<String, Integer>
         Map<String, Integer> response = new HashMap<>();
+        response.put("PENDING", result.getOrDefault(0, 0));
         response.put("IN_PROGRESS", result.getOrDefault(1, 0));
         response.put("COMPLETED", result.getOrDefault(2, 0));
         response.put("CANCELLED", result.getOrDefault(3, 0));

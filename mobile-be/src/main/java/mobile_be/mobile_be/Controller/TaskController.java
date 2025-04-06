@@ -4,6 +4,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.request.TaskRequest;
 import mobile_be.mobile_be.Model.Task;
+import mobile_be.mobile_be.Service.ProjectService;
 import mobile_be.mobile_be.Service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,9 @@ public class TaskController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private ProjectService projectService;
 
     // xin chao cac ban
     //
@@ -121,5 +125,17 @@ public class TaskController {
         return ResponseEntity.ok(taskService.rejectTask(taskId, reasonId));
     }
 
+    @PutMapping("/accept-task")
+    public ResponseEntity<?> acceptTask(@RequestParam(value = "taskId", required = false) Integer taskId,
+                                        @RequestParam(value = "userId", required = false) Integer userId) {
+
+        try{
+            Task task = projectService.acceptTask(taskId, userId);
+            return ResponseEntity.ok(task);
+        }catch (Exception e){
+            log.info("Error: " + e.getMessage());
+        }
+        return ResponseEntity.badRequest().body("co loi trong qua trinh xu ly");
+    }
 
 }

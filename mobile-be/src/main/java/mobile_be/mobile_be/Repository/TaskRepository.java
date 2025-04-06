@@ -20,7 +20,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "END AS status, " +
             "COUNT(*) as count " +
             "FROM tasks " +
-            "WHERE status IN (1, 2, 3) " +  // Không cần kiểm tra 4 vì nó không tồn tại
+            "WHERE status IN (0,1, 2, 3) " +  // Không cần kiểm tra 4 vì nó không tồn tại
             "GROUP BY CASE " +
             "    WHEN status = 1 AND CURRENT_DATE > to_date THEN 4 " +
             "    ELSE status " +
@@ -37,7 +37,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "            ELSE status " +
             "        END AS status " +
             "    FROM tasks " +
-            "    WHERE created_by = :userId AND status IN (1, 2, 3) " +
+            "    WHERE created_by = :userId AND status IN (0,1, 2, 3) " +
             ") AS subquery " +
             "GROUP BY status",
             nativeQuery = true)
@@ -58,7 +58,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "        END AS status " +
             "    FROM tasks t " +
             "    JOIN task_assignees ta ON t.id = ta.task_id " +
-            "    WHERE ta.user_id = :userId AND t.status IN (1, 2, 3) " +
+            "    WHERE ta.user_id = :userId AND t.status IN (0,1, 2, 3) " +
             ") AS subquery " +
             "GROUP BY status",
             nativeQuery = true)

@@ -27,6 +27,7 @@ type TaskStatusData = {
     CANCELLED: number;
     COMPLETED: number;
     OVERDUE: number;
+    PENDING: number
 } | null;
 
 // bieu do tron trong home
@@ -222,9 +223,7 @@ const HomeScreen = () => {
                     <Text style={styles.filterText}>Phân loại</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.filterButton}>
-                    <Text style={styles.filterText}>Thời gian</Text>
-                </TouchableOpacity>
+
             </View>
 
             {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
@@ -264,27 +263,31 @@ const HomeScreen = () => {
                 </View>
             )}
 
-            <BarChart
-                data={{
-                    labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn"],
-                    datasets: [{
-                        data: [
-                            taskData.IN_PROGRESS || 0,
-                            taskData.COMPLETED || 0,
-                            taskData.CANCELLED || 0,
-                            taskData.OVERDUE || 0
-                        ]
-                    }]
-                }}
-                width={350}
-                height={220}
-                yAxisLabel=""
-                chartConfig={chartConfig}
-                style={styles.chart}
-                yAxisSuffix=""
-                showValuesOnTopOfBars={true} // Hiển thị giá trị trên đầu cột
-            />
 
+            <ScrollView horizontal>
+                <BarChart
+                    data={{
+                        labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn", "Chờ nhận việc"],
+                        datasets: [{
+                            data: [
+                                taskData.IN_PROGRESS || 0,
+                                taskData.COMPLETED || 0,
+                                taskData.CANCELLED || 0,
+                                taskData.OVERDUE || 0,
+                                taskData.PENDING || 0
+                            ]
+                        }]
+                    }}
+                    width={430}
+                    height={220}
+                    yAxisLabel=""
+                    chartConfig={chartConfig}
+                    style={styles.chart}
+                    yAxisSuffix=""
+                    showValuesOnTopOfBars={true} // Hiển thị giá trị trên đầu cột
+                />
+
+            </ScrollView>
             {/* Pie Chart (Donut) */}
             <Text style={styles.chartTitle}>Dự án</Text>
             {/* Bộ lọc */}
@@ -296,9 +299,7 @@ const HomeScreen = () => {
                     <Text style={styles.filterText}>Phân loại</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.filterButton}>
-                    <Text style={styles.filterText}>Thời gian</Text>
-                </TouchableOpacity>
+
             </View>
 
             {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
         borderColor: "#ccc",
         borderRadius: 8,
         marginRight: 10,
-        backgroundColor: "#FB958D",
+        backgroundColor: "#ADDCE3",
     },
 
     filterText: {

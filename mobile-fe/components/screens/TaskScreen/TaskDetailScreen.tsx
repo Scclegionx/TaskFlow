@@ -1,6 +1,8 @@
-import React, { useState, useEffect , useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, Modal ,
-  TextInput, FlatList, Image, Alert, PanResponder  } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, Modal,
+  TextInput, FlatList, Image, Alert, PanResponder
+} from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect } from "react";
@@ -81,13 +83,13 @@ const TaskDetailScreen = () => {
   const [currentUserId, setCurrentUserId] = useState(Number);  // id của người đang đăng nhập
 
   // Thêm các state mới
-const [showProgressModal, setShowProgressModal] = useState(false);
-const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [tempProgress, setTempProgress] = useState(jobData?.progress || 0);
 
-const [showRejectModal, setShowRejectModal] = useState(false);
-const [rejectReasons, setRejectReasons] = useState<RejectReason[]>([]); // Dữ liệu lý do từ API
-const [selectedReason, setSelectedReason] = useState('');  // chon cai gi 
-const [rejectReason, setRejectReason] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReasons, setRejectReasons] = useState<RejectReason[]>([]); // Dữ liệu lý do từ API
+  const [selectedReason, setSelectedReason] = useState('');  // chon cai gi 
+  const [rejectReason, setRejectReason] = useState('');
 
 
   useLayoutEffect(() => {
@@ -97,9 +99,9 @@ const [rejectReason, setRejectReason] = useState('');
 
 
   useEffect(() => {
-    
+
     fetchRejectReasons();
-   
+
   }, []);
 
 
@@ -214,6 +216,33 @@ const [rejectReason, setRejectReason] = useState('');
     }
   };
 
+  const fetchAccepTask = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) throw new Error("Vui lòng đăng nhập");
+
+      const response = await fetch(
+        `${API_BASE_URL}/tasks/accept-task?taskId=${taskId}&userId=${currentUserId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Bạn không có quyền thực hiện hành động này");
+
+      const data = await response.json();
+      setJobData(data);
+      Alert.alert("Thành công", "Bạn đã nhận việc này thành công");
+    } catch (err) {
+      Alert.alert("Thất bại", "Bạn không có quyền thực hiện hành động này");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const fetchApproveComplete = async () => {
     try {
@@ -318,9 +347,9 @@ const [rejectReason, setRejectReason] = useState('');
       });
 
       if (!response.ok) throw new Error('Cập nhật thất bại');
-      
+
       // Cập nhật lại state chính thức sau khi API thành công
-      setJobData(prev => prev ? {...prev, progress: newProgress} : null);
+      setJobData(prev => prev ? { ...prev, progress: newProgress } : null);
     } catch (error) {
       Alert.alert('Lỗi', error instanceof Error ? error.message : 'Lỗi không xác định');
     }
@@ -328,42 +357,42 @@ const [rejectReason, setRejectReason] = useState('');
 
 
   // Hàm xử lý từ chối
-const handleRejectTask = async () => {
-  const finalReason = selectedReason === "Lý do khác" ? rejectReason : selectedReason;
+  const handleRejectTask = async () => {
+    const finalReason = selectedReason === "Lý do khác" ? rejectReason : selectedReason;
 
-  
-  
-  if (!finalReason) {
-    Alert.alert("Lỗi", "Vui lòng chọn hoặc nhập lý do từ chối");
-    return;
-  }
 
-  try {
-    console.log("Selected reason:", selectedReason);
-    const authToken = await AsyncStorage.getItem("token");
-    const response = await fetch(`${API_BASE_URL}/tasks/reject-task?taskId=${taskId}&reasonId=${selectedReason.valueOf()}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        taskId,
-        reason: finalReason
-      })
-    });
 
-    if (response.ok) {
-      Alert.alert("Thành công", "Đã từ chối công việc thành công");
-      fetchTask_Detail();
-      setShowRejectModal(false);
-    } else {
-      throw new Error("Từ chối thất bại");
+    if (!finalReason) {
+      Alert.alert("Lỗi", "Vui lòng chọn hoặc nhập lý do từ chối");
+      return;
     }
-  } catch (error) {
-    Alert.alert("Lỗi", error instanceof Error ? error.message : "Lỗi không xác định");
-  }
-};
+
+    try {
+      console.log("Selected reason:", selectedReason);
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/tasks/reject-task?taskId=${taskId}&reasonId=${selectedReason.valueOf()}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          taskId,
+          reason: finalReason
+        })
+      });
+
+      if (response.ok) {
+        Alert.alert("Thành công", "Đã từ chối công việc thành công");
+        fetchTask_Detail();
+        setShowRejectModal(false);
+      } else {
+        throw new Error("Từ chối thất bại");
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", error instanceof Error ? error.message : "Lỗi không xác định");
+    }
+  };
 
 
 
@@ -387,6 +416,26 @@ const handleRejectTask = async () => {
     );
   };
 
+
+  const handleAcceptTask = async () => {
+    Alert.alert(
+      "Thông báo",
+      "Bạn có muốn nhận công việc này không ?",
+      [
+        {
+          text: "Không",
+          style: "cancel", // Đóng hộp thoại mà không làm gì
+        },
+        {
+          text: "Có",
+          onPress: async () => {
+            await fetchAccepTask();// Gọi API xác nhận
+            await fetchTask_Detail(); // Cập nhật lại dữ liệu
+          },
+        },
+      ]
+    );
+  };
 
 
   const handleApproveComplete = async () => {
@@ -474,6 +523,7 @@ const handleRejectTask = async () => {
   };
 
   const statusMap: { [key: number]: string } = {
+    0: 'Chờ nhận việc',
     1: 'Đang xử lý',
     2: 'Hoàn thành',
     3: 'Từ chối',
@@ -482,6 +532,7 @@ const handleRejectTask = async () => {
   };
 
   const statusColorMap: { [key: number]: string } = {
+    0: 'white',    //  cho trạng thái "Chờ duyệt"
     1: 'white',    //  cho trạng thái "Đang xử lý"
     2: 'white',    //   cho trạng thái "Hoàn thành"
     3: 'white',    //  cho trạng thái "Từ chối"
@@ -489,6 +540,7 @@ const handleRejectTask = async () => {
   };
 
   const statusBackgroundMap: { [key: number]: string } = {
+    0: '#3B82F6',    // Nền xanh nhạt
     1: '#F59E0B',    // Nền cam nhạt.
     2: '#2ecc71',    // Nền xanh lá nhạt 
     3: '#e74c3c',    // Nền đỏ nhạt
@@ -535,7 +587,7 @@ const handleRejectTask = async () => {
         <Text style={styles.title}>{jobData.title}</Text>
         <View style={[styles.statusBadge, { backgroundColor: statusBackgroundMap[jobData.status] }]}>
           <Text style={[styles.statusText, { color: statusColorMap[jobData.status] }]}>
-            {statusMap[jobData.status] || 'Không xác định'}
+            {statusMap[jobData.status] || 'Chờ nhận việc'}
           </Text>
         </View>
       </View>
@@ -561,7 +613,7 @@ const handleRejectTask = async () => {
 
 
 
-        
+
         {/* <View style={styles.progressContainer}>
           <Text style={styles.progressLabel}>Tiến độ công việc</Text>
           <View style={styles.progressBar}>
@@ -579,21 +631,21 @@ const handleRejectTask = async () => {
         </View> */}
 
 
-<View style={styles.progressHeader}>
-  <Text style={styles.progressLabel}>Tiến độ công việc</Text>
-  {jobData.assignees.some(a => a.id === currentUserId) && (
-    <TouchableOpacity 
-      onPress={() => setShowProgressModal(true)}
-      style={styles.editButton}
-    >
-      <Icon name="edit" size={16} color="#3B82F6" />
-    </TouchableOpacity>
-  )}
-  
-</View>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>Tiến độ công việc</Text>
+          {jobData.assignees.some(a => a.id === currentUserId) && (
+            <TouchableOpacity
+              onPress={() => setShowProgressModal(true)}
+              style={styles.editButton}
+            >
+              <Icon name="edit" size={16} color="#3B82F6" />
+            </TouchableOpacity>
+          )}
 
-<View style={styles.progressContainer}>
-          
+        </View>
+
+        <View style={styles.progressContainer}>
+
           <View style={styles.progressBar}>
             <View
               style={[
@@ -608,112 +660,112 @@ const handleRejectTask = async () => {
           </View>
         </View>
 
-{/* Thêm cuối phần return */}
-<Modal
-  visible={showProgressModal}
-  animationType="slide"
-  transparent
-  onRequestClose={() => setShowProgressModal(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Cập nhập tiến độ</Text>
-      
-      <TextInput
-        style={styles.progressInput}
-        keyboardType="numeric"
-        value={tempProgress.toString()}
-        onChangeText={(text) => {
-          const value = Math.min(100, Math.max(0, parseInt(text) || 0));
-          setTempProgress(value);
-        }}
-        placeholder="Nhập % tiến độ (0-100)"
-      />
-
-      <View style={styles.modalButtons}>
-        <TouchableOpacity
-          style={[styles.modalButton, styles.cancelButton]}
-          onPress={() => setShowProgressModal(false)}
+        {/* Thêm cuối phần return */}
+        <Modal
+          visible={showProgressModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowProgressModal(false)}
         >
-          <Text style={styles.buttonText}>Hủy</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.modalButton, styles.confirmButton]}
-          onPress={async () => {
-            await updateProgress(tempProgress);
-            setShowProgressModal(false);
-          }}
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Cập nhập tiến độ</Text>
+
+              <TextInput
+                style={styles.progressInput}
+                keyboardType="numeric"
+                value={tempProgress.toString()}
+                onChangeText={(text) => {
+                  const value = Math.min(100, Math.max(0, parseInt(text) || 0));
+                  setTempProgress(value);
+                }}
+                placeholder="Nhập % tiến độ (0-100)"
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowProgressModal(false)}
+                >
+                  <Text style={styles.buttonText}>Hủy</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={async () => {
+                    await updateProgress(tempProgress);
+                    setShowProgressModal(false);
+                  }}
+                >
+                  <Text style={styles.buttonText}>Cập nhật</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+
+        <Modal
+          visible={showRejectModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowRejectModal(false)}
         >
-          <Text style={styles.buttonText}>Cập nhật</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Chọn lý do từ chối</Text>
 
+              <FlatList
+                data={rejectReasons}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.reasonItem}
+                    onPress={() => {
+                      // if (item === "Lý do khác") {
+                      //   setSelectedReason(item);
+                      //   setRejectReason('');
+                      // } else {
+                      //   setSelectedReason(item.id.toString());
+                      //   setRejectReason(item.id.toString());
+                      // }
+                      setSelectedReason(item.id.toString());
+                      setRejectReason(item.name.toString());
+                    }}
+                  >
+                    <Text>{item.name}</Text>
+                    {selectedReason === item.id.toString() && <Icon name="check" size={16} color="green" />}
+                  </TouchableOpacity>
+                )}
+                keyExtractor={(item) => item.id.toString()}
+              />
 
-<Modal
-  visible={showRejectModal}
-  animationType="slide"
-  transparent
-  onRequestClose={() => setShowRejectModal(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Chọn lý do từ chối</Text>
-      
-      <FlatList
-        data={rejectReasons}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.reasonItem}
-            onPress={() => {
-              // if (item === "Lý do khác") {
-              //   setSelectedReason(item);
-              //   setRejectReason('');
-              // } else {
-              //   setSelectedReason(item.id.toString());
-              //   setRejectReason(item.id.toString());
-              // }
-              setSelectedReason(item.id.toString());
-              setRejectReason(item.name.toString());
-            }}
-          >
-            <Text>{item.name}</Text>
-            {selectedReason === item.id.toString() && <Icon name="check" size={16} color="green" />}
-          </TouchableOpacity>
-        )}
-        keyExtractor={(item) => item.id.toString()}
-      />
+              {selectedReason === "Lý do khác" && (
+                <TextInput
+                  style={styles.reasonInput}
+                  placeholder="Nhập lý do cụ thể"
+                  value={rejectReason}
+                  onChangeText={setRejectReason}
+                  multiline
+                />
+              )}
 
-      {selectedReason === "Lý do khác" && (
-        <TextInput
-          style={styles.reasonInput}
-          placeholder="Nhập lý do cụ thể"
-          value={rejectReason}
-          onChangeText={setRejectReason}
-          multiline
-        />
-      )}
-
-      <View style={styles.modalButtons}>
-        <TouchableOpacity
-          style={[styles.modalButton, styles.cancelButton]}
-          onPress={() => setShowRejectModal(false)}
-        >
-          <Text style={styles.buttonText}>Hủy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modalButton, styles.confirmButton]}
-          onPress={handleRejectTask}
-        >
-          <Text style={styles.buttonText}>Xác nhận</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowRejectModal(false)}
+                >
+                  <Text style={styles.buttonText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleRejectTask}
+                >
+                  <Text style={styles.buttonText}>Xác nhận</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
 
 
@@ -721,7 +773,7 @@ const handleRejectTask = async () => {
         {/* đang xử lý , mà chưa chọn xác nhận hoàn thành */}
         {/* chỉ có  người thực hiện mới được quyền */}
         {/* status = 1 là trạng thái chờ duyệt */}
-        {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
+        {/* {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
           <TouchableOpacity
             style={styles.completeButton}
             onPress={handleMarkComplete}
@@ -729,10 +781,28 @@ const handleRejectTask = async () => {
             <Icon name="check" size={20} color="#fff" />
             <Text style={styles.completeButtonText}>Đánh dấu hoàn thành</Text>
           </TouchableOpacity>
+        )} */}
+
+        {jobData.status === 0 && (
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.acceptButton}
+              onPress={handleAcceptTask}
+            >
+              <Text style={styles.buttonText}>Nhận việc</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.rejecReceiveButton}
+              onPress={() => setShowRejectModal(true)}
+            >
+              <Text style={styles.buttonText}>Từ chối nhận</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
 
-{jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
+        {/* {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
   <TouchableOpacity
     style={styles.refuseButton}
     onPress={() => setShowRejectModal(true)}
@@ -740,7 +810,29 @@ const handleRejectTask = async () => {
     <Icon name="times" size={20} color="#fff" />
     <Text style={styles.completeButtonText}>Từ chối</Text>
   </TouchableOpacity>
-)}
+)} */}
+
+        {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
+          <View style={styles.buttonRow}>
+            {/* Nút Đánh dấu hoàn thành */}
+            <TouchableOpacity
+              style={[styles.actionButton, styles.completeButton]}
+              onPress={handleMarkComplete}
+            >
+              <Icon name="check" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Hoàn thành</Text>
+            </TouchableOpacity>
+
+            {/* Nút Từ chối */}
+            <TouchableOpacity
+              style={[styles.actionButton, styles.refuseButton]}
+              onPress={() => setShowRejectModal(true)}
+            >
+              <Icon name="times" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Từ chối</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
 
         {jobData.waitFinish === 1 && (
@@ -947,7 +1039,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     justifyContent: 'center',
-    marginTop: 10,
+
+    flex: 1,
   },
   completeButtonText: {
     color: '#fff',
@@ -996,7 +1089,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 8,
-    marginTop : 8,
+    marginTop: 8,
   },
   progressBar: {
     height: 20,
@@ -1092,6 +1185,14 @@ const styles = StyleSheet.create({
     minHeight: 40,
     maxHeight: 100,
   },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+  },
   sendButton: {
     backgroundColor: '#3B82F6',
     width: 40,
@@ -1100,6 +1201,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+    gap: 10,
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: '#3B82F6',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  rejecReceiveButton: {
+    flex: 1,
+    backgroundColor: '#e74c3c',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+
   emptyComment: {
     textAlign: 'center',
     color: '#666',

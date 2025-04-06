@@ -11,6 +11,7 @@ import mobile_be.mobile_be.Mapper.UserMapper;
 import mobile_be.mobile_be.Model.*;
 import mobile_be.mobile_be.Repository.ProjectMemberRepository;
 import mobile_be.mobile_be.Repository.ProjectRepository;
+import mobile_be.mobile_be.Repository.TaskRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import mobile_be.mobile_be.Exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,8 @@ public class ProjectService {
     private TaskMapper taskMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private TaskRepository taskRepository;
 
     @Transactional
     public Project createProject(CreateProjectRequest request) {
@@ -188,6 +191,52 @@ public class ProjectService {
             return dto;
         }).collect(Collectors.toList());
     }
+
+
+    public List<TaskResponseDTO> getTaskPending(Integer projectId, Integer userId, Integer type, String textSearch) {
+
+        List<Task> results = new ArrayList<>();
+        if(type == null){
+            results = projectRepository.getAllTaskPending(projectId,userId, textSearch);
+        }else if (type == 0 ){
+            // chờ nhận
+            results = projectRepository.getAllTaskPendingNhan(projectId, userId, textSearch);
+        }else if (type ==  1){
+            //chờ xác nhận hoàn thành
+            results = projectRepository.getAllTaskPendingDuyetHoanThanh(projectId, userId, textSearch);
+        }
+
+        return results.stream().map(task -> {
+            TaskResponseDTO dto = taskMapper.toDTO(task);
+
+            if(task.getCreatedBy() != null){
+                User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                if (user != null){
+                    dto.setNameCreatedBy(user.getName());
+                }
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+
+    @Transactional
+    public Task acceptTask(Integer taskId, Integer userId) {
+        try {
+            Task task = taskRepository.getTaskDetail(taskId);
+
+            // Cập nhật trạng thái công việc
+            task.setStatus(enum_taskStatus.IN_PROGRESS.getValue());
+            task.setWaitFinish(0);
+            task.setProgress(0);
+            return taskRepository.save(task);
+        }catch(Exception e)
+        {
+            throw new RuntimeException("Có lỗi xảy ra khi cập nhật trạng thái công việc: " + e.getMessage());
+        }
+    }
+
 
     @Transactional
     public List<UserResponseDTO> getAllMemberInProject(Integer projectId, String textSearch) {

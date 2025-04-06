@@ -1,10 +1,12 @@
 package mobile_be.mobile_be.Controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.CreateProjectRequest;
 import mobile_be.mobile_be.DTO.response.ProjectResponseDTO;
 import mobile_be.mobile_be.DTO.request.UpdateProjectRequest;
 import mobile_be.mobile_be.Model.Project;
+import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Service.ProjectService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
+@Slf4j
 public class ProjectController {
     private final ProjectService projectService;
 
@@ -67,6 +70,18 @@ public class ProjectController {
                                                  @RequestParam(value = "textSearch", required = false) String textSearch) {
         return ResponseEntity.ok(projectService.getAllTaskInProject(projectId, userId, type, textSearch));
     }
+
+
+
+    @GetMapping("/get-task-pending")
+    public ResponseEntity<?> getTaskPending(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                                 @RequestParam(value = "userId", required = false) Integer userId,
+                                                 @RequestParam(value = "type", required = false) Integer type,
+                                                 @RequestParam(value = "textSearch", required = false) String textSearch) {
+        return ResponseEntity.ok(projectService.getTaskPending(projectId, userId, type, textSearch));
+    }
+
+
 
     @GetMapping("/get-project")
         public ResponseEntity<?> getProject() {

@@ -28,7 +28,6 @@ type TaskStatusData = {
   CANCELLED: number;
   COMPLETED: number;
   OVERDUE: number;
-  PENDING : number;
 } | null;
 
 
@@ -38,7 +37,7 @@ interface TaskStatus {
   COMPLETED?: number;
 }
 
-const AllTaskScreen = () => {
+const TaskPendingScreen = () => {
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -48,7 +47,7 @@ const AllTaskScreen = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: "Tất cả công việc" }); // Cập nhật tiêu đề
+    navigation.setOptions({ title: "Công việc chờ duyệt" }); // Cập nhật tiêu đề
   }, [navigation]);
 
 
@@ -87,7 +86,7 @@ const AllTaskScreen = () => {
 
 
     // api lay danh sach task
-    let tasktUrl = `${API_BASE_URL}/projects/get-all-task-in-project?userId=${userId}`;
+    let tasktUrl = `${API_BASE_URL}/projects/get-task-pending?userId=${userId}`;
     if (taskType !== null) {
       tasktUrl += `&type=${taskType}`;
     }
@@ -210,50 +209,7 @@ const AllTaskScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Dải màu vàng cho chữ "Đang xử lý" */}
-            <View style={styles.statusContainer}>
-              <Text>Tiến độ công việc</Text>
-              <View style={[
-                styles.processingTag,
-                taskStatus?.IN_PROGRESS === 1 ? styles.inProgress : styles.completed
-              ]}>
-                <Text style={styles.processingText}>
-                  {taskStatus?.IN_PROGRESS === 1 ? "Đang xử lý" : "Hoàn thành"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Pie Chart (Donut) */}
-            <View style={styles.pieWrapper}>
-              <View style={styles.pieContainer}>
-                <PieChart
-                  data={[
-                    { name: "Hoàn thành", population: numberTaskStatusData.COMPLETED || 0, color: "#40A737", legendFontColor: "#222", legendFontSize: 12 },
-                    { name: "Đang xử lý", population: numberTaskStatusData.IN_PROGRESS || 0, color: "#FFA500", legendFontColor: "#222", legendFontSize: 12 },
-                    { name: "Quá hạn", population: numberTaskStatusData.OVERDUE || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
-                    { name: "Từ chối", population: numberTaskStatusData.CANCELLED || 0, color: "red", legendFontColor: "#222", legendFontSize: 12 },
-                    { name: "Chờ nhận việc", population: numberTaskStatusData.PENDING || 0, color: "#8384F8", legendFontColor: "#222", legendFontSize: 12 },
-                  ]}
-                  width={400}
-                  height={250}
-                  chartConfig={chartConfig}
-                  accessor="population"
-                  backgroundColor="transparent"
-                  paddingLeft="0"
-                  absolute
-                />
-                {/* Vòng tròn trắng ở giữa */}
-                <View style={styles.innerCircle}>
-                  <Text style={styles.innerCircleText}>Tổng số</Text>
-                  <Text style={styles.innerCircleNumber}>{numberTaskStatusData.CANCELLED +
-                    numberTaskStatusData.COMPLETED +
-                    numberTaskStatusData.IN_PROGRESS +
-                    numberTaskStatusData.PENDING +
-                    numberTaskStatusData.OVERDUE}</Text>
-                </View>
-              </View>
-            </View>
-
+          
             {/* Header danh sách công việc */}
             <View style={{ padding: 20, backgroundColor: '#C8D9CF', marginBottom: - 5 , borderRadius: 15  }}>
               <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>
@@ -277,7 +233,7 @@ const AllTaskScreen = () => {
                       setShowCategoryFilter(false);
                     }}
                   >
-                    <Text>Giao</Text>
+                    <Text>Chờ nhận việc</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.dropdownItem}
@@ -287,7 +243,7 @@ const AllTaskScreen = () => {
                       setShowCategoryFilter(false);
                     }}
                   >
-                    <Text>Được giao</Text>
+                    <Text>Chờ duyệt hoàn thành</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.dropdownItem}
@@ -333,7 +289,7 @@ const AllTaskScreen = () => {
                   <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5, color: "#000000" }}>{item.title}</Text>
                   <Text style={{ fontSize: 14, color: 'black', marginVertical: 5 }}>📅 {item.date}</Text>
                   {item.waitFinish === 1 && (
-                    <Text style={{ fontSize: 14, color: 'green', marginVertical: 5 }}>⏳ Chờ duyệt hoàn thành</Text>
+                    <Text style={{ fontSize: 14, color: 'green', marginVertical: 5 }}>⏳ Chờ duyệt </Text>
                   )}
                 </View>
                 <IconButton icon="star-outline" size={24} />
@@ -371,7 +327,7 @@ const getStatusColor = (status: number): string => {
     case 4:
       return "#3B82F6"; //  xanh dương
     default:
-      return "#8384F8"; // Mặc định
+      return "#CCFF33"; // Mặc định
   }
 };
 
@@ -507,4 +463,4 @@ const styles = StyleSheet.create({
 
 });
 
-export default AllTaskScreen;
+export default TaskPendingScreen;

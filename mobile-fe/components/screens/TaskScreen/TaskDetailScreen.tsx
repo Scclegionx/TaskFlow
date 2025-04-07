@@ -796,7 +796,7 @@ const TaskDetailScreen = () => {
           </TouchableOpacity>
         )} */}
 
-        {jobData.status === 0 && (
+        {jobData.status === 0 && jobData.assignees && jobData.assignees.some(assignee => assignee.id === currentUserId) && (
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={styles.acceptButton}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Image, Modal, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Image, Modal, TouchableOpacity, FlatList, TextInput, Alert } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect } from "react";
@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@/constants/api";
 import { useLocalSearchParams } from 'expo-router';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { set } from 'lodash';
 
 
 interface DetailRowProps {
@@ -55,6 +56,15 @@ const PersonelDetailScreen = () => {
   const [reviewText, setReviewText] = useState('');
   const [reviews, setReviews] = useState<Review[]>([]);
 
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [isActionModalVisible, setIsActionModalVisible] = useState(false);
+
+  const [checkEdit, setCheckEdit] = useState(false);
+
+  const [ratingEditId, setRatingEditId] = useState<number | null>(null);
+
+  const [currentUser_id, setCurrentUser_id] = useState<number | null>(null);
+
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Thông tin nhân sự" }); // Cập nhật tiêu đề
@@ -68,6 +78,8 @@ const PersonelDetailScreen = () => {
   const fetchListReviews = async () => {
     try {
 
+      const currentUser_id = await AsyncStorage.getItem("userId");
+      setCurrentUser_id(Number(currentUser_id));
       const authToken = await AsyncStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/users/get-rating-user?userId=${userId}`, {
         headers: {
@@ -124,13 +136,30 @@ const PersonelDetailScreen = () => {
       const authToken = await AsyncStorage.getItem("token");
       const currentUser_id = await AsyncStorage.getItem("userId");
 
-      const response = await fetch(`${API_BASE_URL}/users/rating-user?userId=${userId}&star=${rating}&comment=${reviewText}&createdBy=${currentUser_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      let response; // Khởi tạo biến response ở bên ngoài
+      console.log("checkEdit  ", checkEdit)
+      console.log("ratingEditId ", ratingEditId)
+
+      if (checkEdit === false && ratingEditId) {
+        console.log("nhay vao tạo mới")
+        response = await fetch(`${API_BASE_URL}/users/rating-user?userId=${userId}&star=${rating}&comment=${reviewText}&createdBy=${currentUser_id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+      } else {
+        console.log("nhay vao sửa")
+        response = await fetch(`${API_BASE_URL}/users/update-rating?userId=${userId}&star=${rating}&comment=${reviewText}&createdBy=${currentUser_id}&editRatingid=${ratingEditId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+      }
+
 
       if (response.ok) {
         const newReview = await response.json();
@@ -138,12 +167,66 @@ const PersonelDetailScreen = () => {
         setIsRatingModalVisible(false);
         setRating(0);
         setReviewText('');
+        Alert.alert("Thông báo", "Thực hiện thành công");
+      } else {
+        Alert.alert("Thông báo", "Thực hiện thất b");
       }
     } catch (error) {
       console.error('Lỗi khi gửi đánh giá:', error);
     } finally {
       fetchListReviews();
+      setCheckEdit(false);
+      setRatingEditId(null);
     }
+  };
+
+  const handleDeleteRating = async (ratingId: number) => {
+
+    Alert.alert(
+      'Xác nhận',
+      'Bạn có chắc chắn muốn xóa đánh giá này không?',
+      [
+        {
+          text: 'Không',
+          style: 'cancel',
+        },
+        {
+          text: 'Có',
+          onPress: async () => {
+            try {
+              const authToken = await AsyncStorage.getItem('token');
+              const currentUser_id = await AsyncStorage.getItem('userId');
+              console.log('ID cần xoá', ratingId);
+
+              const response = await fetch(`${API_BASE_URL}/users/delete-rating?ratingId=${ratingId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${authToken}`,
+                },
+              });
+
+              if (response.ok) {
+                fetchListReviews();
+                setIsRatingModalVisible(false);
+                setRating(0);
+                setReviewText('');
+                Alert.alert('Thông báo', 'Xoá đánh giá thành công');
+              } else {
+                Alert.alert('Thông báo', 'Xoá đánh giá thất bại');
+              }
+            } catch (error) {
+              console.error('Lỗi khi xoá đánh giá:', error);
+            } finally {
+              fetchListReviews();
+              setCheckEdit(false);
+              setRatingEditId(null);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const renderStars = (rating: number) => {
@@ -158,6 +241,11 @@ const PersonelDetailScreen = () => {
   };
 
   const COMMENT_COLORS = ["#FEE2E2", "#D1E7DD", "#EDEBDE", "#ADDCE3"];
+
+  const handleReviewPress = (review: Review) => {
+    setSelectedReview(review);
+    setIsActionModalVisible(true);
+  };
 
 
 
@@ -228,8 +316,8 @@ const PersonelDetailScreen = () => {
         <FlatList
           data={reviews}
           renderItem={({ item, index }) => (
-            <View
-              // style={styles.reviewItemContainer }
+            <TouchableOpacity
+              onPress={() => handleReviewPress(item)}
               style={[
                 styles.reviewItemContainer,
                 { backgroundColor: COMMENT_COLORS[index % COMMENT_COLORS.length] }
@@ -253,14 +341,86 @@ const PersonelDetailScreen = () => {
 
                 <Text style={styles.reviewItemText}>{item.content}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => `${item.id}_${index}`}
         />
 
 
 
       </View>
+
+
+      <Modal
+        visible={isActionModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsActionModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsActionModalVisible(false)}
+        >
+          <View style={styles.actionModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chi tiết đánh giá</Text>
+            </View>
+
+            {selectedReview && (
+              <>
+                <View style={styles.reviewInfo}>
+                  <Text>Tác giả: {selectedReview.createdByName}</Text>
+                  <Text>Ngày: {selectedReview.createdAt}</Text>
+                  <View style={styles.starContainer}>
+                    {renderStars(selectedReview.star)}
+                  </View>
+                  <Text>Nội dung: {selectedReview.content}</Text>
+                </View>
+
+                {/* Chỉ hiển thị nút sửa và xoá nếu selectedReview.id === 1 */}
+                {selectedReview.createdBy === currentUser_id && (
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => setIsActionModalVisible(false)}
+                    >
+                      <Text>Huỷ</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => {
+                        // Xử lý xoá ở đây
+                        handleDeleteRating(selectedReview.id);
+                        setIsActionModalVisible(false);
+                      }}
+                    >
+                      <Text style={styles.deleteButtonText}>Xoá</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={() => {
+                        // Xử lý sửa ở đây
+                        setIsActionModalVisible(false);
+                        setIsRatingModalVisible(true);
+                        setRating(selectedReview.star);
+                        setReviewText(selectedReview.content);
+                        setCheckEdit(true);
+                        setRatingEditId(selectedReview.id);
+                      }}
+                    >
+                      <Text style={styles.editButtonText}>Sửa</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
 
 
 
@@ -331,6 +491,52 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f5f5',
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionModalContent: {
+    backgroundColor: 'white',
+    width: '80%',
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalHeader: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    paddingBottom: 10,
+    marginBottom: 15,
+  },
+
+  reviewInfo: {
+    marginBottom: 20,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 15,
+  },
+
+  deleteButton: {
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: '#ff4444',
+  },
+  deleteButtonText: {
+    color: 'white',
+  },
+  editButton: {
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: '#4CAF50',
+  },
+  editButtonText: {
+    color: 'white',
   },
   sectionHeader: {
     flexDirection: 'row',

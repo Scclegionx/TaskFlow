@@ -236,6 +236,26 @@ public class UserService {
         }
     }
 
+    public ResponseEntity<?> updateRating(Integer userId, Integer star, String comment , Integer createdBy, Integer editRatingid) {
+        try {
+            log.info("haha nhay vao day");
+
+
+            Rating rating = ratingRepository.findById(editRatingid).orElseThrow(() -> new RuntimeException("Rating not found"));
+            rating.setUserId(userId);
+            rating.setStar(star);
+            rating.setContent(comment);
+            rating.setCreatedBy(createdBy);
+            rating.setCreatedAt(LocalDate.now());
+            var result = ratingRepository.save(rating);
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
+        }
+    }
+
     public ResponseEntity<?> getRatingUser( Integer userId){
         try {
             var listRating = ratingRepository.getRatingUser(userId);
@@ -262,6 +282,17 @@ public class UserService {
         } catch (Exception e) {
             log.error("Error: " + e.getMessage());
             return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
+        }
+    }
+
+    public ResponseEntity<?> deleteRating(Integer ratingId) {
+        try {
+            Rating rating = ratingRepository.findById(ratingId).orElseThrow(() -> new RuntimeException("Rating not found"));
+            ratingRepository.delete(rating);
+            return ResponseEntity.ok("Xoa thanh cong");
+        } catch (Exception e) {
+            log.error("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("co loi trong qua trinh xoa du lieu");
         }
     }
 }

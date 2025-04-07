@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,9 +26,14 @@ public class Chat {
     private String chatName;
 
     private Boolean isGroup;
+    private String avatarUrl;
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    private User admin;
 
-    @ManyToMany
-    @JsonIgnore
+    private String lastMessage;
+    private LocalDateTime lastMessageTime;
+    @ManyToMany(fetch = FetchType.EAGER)
     private Set<User> users = new HashSet<>();
 
     private Integer createdBy;
@@ -36,5 +42,13 @@ public class Chat {
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<Message> messages = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "deleted_chats",
+            joinColumns = @JoinColumn(name = "chat_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<User> deletedForUsers = new HashSet<>();
 
 }

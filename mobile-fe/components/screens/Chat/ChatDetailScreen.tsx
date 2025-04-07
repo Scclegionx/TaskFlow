@@ -1,3 +1,4 @@
+//@ts-nocheck
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -22,6 +23,9 @@ import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as FileSystem from "expo-file-system";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as Sharing from "expo-sharing";
 const ChatDetailScreen = () => {
   const { chatId, chatName } = useLocalSearchParams();
   const [chatDetail, setChatDetail] = useState<any>(null);
@@ -29,6 +33,7 @@ const ChatDetailScreen = () => {
   const [userId, setUserId] = useState<number | null>(null);
   const [selectedTab, setSelectedTab] = useState("image");
   const [tabFiles, setTabFiles] = useState<any[]>([]);
+  const [fileStatus, setFileStatus] = useState<string | null>(null);
   const [loadingTab, setLoadingTab] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [isAddMemberModalVisible, setAddMemberModalVisible] = useState(false);
@@ -37,7 +42,10 @@ const ChatDetailScreen = () => {
   const router = useRouter(); // Sử dụng router từ expo-router
   const handleLeaveGroup = async () => {
     if (chatDetail?.admin?.id === userId) {
-      Alert.alert("Thông báo", "Bạn là admin, không thể rời nhóm. Vui lòng chuyển quyền admin trước.");
+      Alert.alert(
+        "Thông báo",
+        "Bạn là admin, không thể rời nhóm. Vui lòng chuyển quyền admin trước."
+      );
       return;
     }
     Alert.alert("Xác nhận", "Bạn có chắc chắn muốn rời nhóm?", [
@@ -69,7 +77,6 @@ const ChatDetailScreen = () => {
             // Điều hướng về màn hình danh sách chat
             router.push({
               pathname: "/(tabs)/message",
-
             });
           } catch (error) {
             console.error("❌ Lỗi khi gọi API rời nhóm:", error);
@@ -122,6 +129,13 @@ const ChatDetailScreen = () => {
     ]);
   };
   useEffect(() => {
+    navigation.setOptions({
+      title: chatName,
+      headerTitleStyle: {
+        fontSize: 20,
+        fontWeight: "bold",
+      },
+    });
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
@@ -180,160 +194,169 @@ const ChatDetailScreen = () => {
     fetchChatDetail();
   }, [chatId]);
 
-const handleAvatarPress = async () => {
-  let imageUrl = "";
+  const handleAvatarPress = async () => {
+    let imageUrl = "";
 
-  if (chatDetail.isGroup) {
-    imageUrl = chatDetail.avatarUrl;
-    console.log("group", chatDetail.avatarUrl);
-  } else {
-    const otherUser = chatDetail.users.find((u: any) => u.id !== userId);
-    imageUrl = otherUser?.avatar;
-    console.log("otherUser", otherUser);
-  }
-
-  // Kiểm tra quyền admin và trạng thái nhóm
-  if (chatDetail.isGroup && chatDetail.admin?.id === userId) {
-    // Admin group
-    Alert.alert("Ảnh đại diện", "Bạn muốn làm gì?", [
-      {
-        text: "Xem ảnh",
-        onPress: () => {
-          if (imageUrl) {
-            handleImagePress(imageUrl);
-          } else {
-            Alert.alert("Thông báo", "Không có ảnh để hiển thị.");
-          }
-        },
-      },
-      {
-        text: "Đổi ảnh",
-        onPress: async () => {
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-          });
-
-          if (!result.canceled) {
-            const selectedImage = result.assets[0].uri;
-            console.log("Ảnh đã chọn:", selectedImage);
-            await handleChangeAvatar(selectedImage);
-          } else {
-            console.log("Người dùng đã hủy chọn ảnh.");
-          }
-        },
-      },
-      {
-        text: "Huỷ",
-        style: "cancel",
-      },
-    ]);
-  } else {
-    // Không phải admin hoặc là chat 1-1
-    Alert.alert("Ảnh đại diện", "Bạn muốn làm gì?", [
-      {
-        text: "Xem ảnh",
-        onPress: () => {
-          if (imageUrl) {
-            handleImagePress(imageUrl);
-          } else {
-            Alert.alert("Thông báo", "Không có ảnh để hiển thị.");
-          }
-        },
-      },
-      {
-        text: "Huỷ",
-        style: "cancel",
-      },
-    ]);
-  }
-};
-
-const handleChangeAvatar = async (imageUri: string) => {
-  try {
-    const token = await AsyncStorage.getItem("token");
-    if (!token) {
-      Alert.alert("Lỗi", "Không tìm thấy token.");
-      return;
+    if (chatDetail.isGroup) {
+      imageUrl = chatDetail.avatarUrl;
+      console.log("group", chatDetail.avatarUrl);
+    } else {
+      const otherUser = chatDetail.users.find((u: any) => u.id !== userId);
+      imageUrl = otherUser?.avatar;
+      console.log("otherUser", otherUser);
     }
 
-    const formData = new FormData();
-    formData.append("avatar", {
-      uri: imageUri,
-      name: "avatar.jpg",
-      type: "image/jpeg",
-    });
-
-    const response = await fetch(`${API_BASE_URL}/chat/${chatId}/change-avatar`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Lỗi khi đổi ảnh:", errorText);
-      Alert.alert("Lỗi", "Không thể đổi ảnh. Vui lòng thử lại.");
-      return;
-    }
-
-    const updatedChat = await response.json();
-    setChatDetail(updatedChat); // Cập nhật chi tiết nhóm với ảnh mới
-    Alert.alert("Thành công", "Ảnh đại diện đã được cập nhật.");
-  } catch (error) {
-    console.error("❌ Lỗi khi gọi API đổi ảnh:", error);
-    Alert.alert("Lỗi", "Không thể đổi ảnh. Vui lòng thử lại.");
-  }
-};
-  
-const handleChangeAdmin = async (newAdminId: number) => {
-  Alert.alert("Xác nhận", "Bạn có chắc chắn muốn chuyển quyền admin?", [
-    {
-      text: "Chuyển quyền",
-      onPress: async () => {
-        try {
-          const token = await AsyncStorage.getItem("token");
-          if (!token) {
-            Alert.alert("Lỗi", "Không tìm thấy token.");
-            return;
-          }
-
-          const response = await fetch(
-            `${API_BASE_URL}/chat/${chatId}/change-admin`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({ newAdminId }),
+    // Kiểm tra quyền admin và trạng thái nhóm
+    if (chatDetail.isGroup && chatDetail.admin?.id === userId) {
+      // Admin group
+      Alert.alert("Ảnh đại diện", "Bạn muốn làm gì?", [
+        {
+          text: "Xem ảnh",
+          onPress: () => {
+            if (imageUrl) {
+              handleImagePress(imageUrl);
+            } else {
+              Alert.alert("Thông báo", "Không có ảnh để hiển thị.");
             }
-          );
+          },
+        },
+        {
+          text: "Đổi ảnh",
+          onPress: async () => {
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 1,
+            });
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error("❌ Lỗi khi chuyển quyền admin:", errorText);
-            Alert.alert("Lỗi", "Không thể chuyển quyền admin. Vui lòng thử lại.");
-            return;
-          }
+            if (!result.canceled) {
+              const selectedImage = result.assets[0].uri;
+              console.log("Ảnh đã chọn:", selectedImage);
+              await handleChangeAvatar(selectedImage);
+            } else {
+              console.log("Người dùng đã hủy chọn ảnh.");
+            }
+          },
+        },
+        {
+          text: "Huỷ",
+          style: "cancel",
+        },
+      ]);
+    } else {
+      // Không phải admin hoặc là chat 1-1
+      Alert.alert("Ảnh đại diện", "Bạn muốn làm gì?", [
+        {
+          text: "Xem ảnh",
+          onPress: () => {
+            if (imageUrl) {
+              handleImagePress(imageUrl);
+            } else {
+              Alert.alert("Thông báo", "Không có ảnh để hiển thị.");
+            }
+          },
+        },
+        {
+          text: "Huỷ",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
 
-          const updatedChat = await response.json();
-          setChatDetail(updatedChat); // Cập nhật chi tiết nhóm
-          Alert.alert("Thành công", "Quyền admin đã được chuyển.");
-        } catch (error) {
-          console.error("❌ Lỗi khi gọi API chuyển quyền admin:", error);
-          Alert.alert("Lỗi", "Không thể chuyển quyền admin. Vui lòng thử lại.");
+  const handleChangeAvatar = async (imageUri: string) => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        Alert.alert("Lỗi", "Không tìm thấy token.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("avatar", {
+        uri: imageUri,
+        name: "avatar.jpg",
+        type: "image/jpeg",
+      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/chat/${chatId}/change-avatar`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
         }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Lỗi khi đổi ảnh:", errorText);
+        Alert.alert("Lỗi", "Không thể đổi ảnh. Vui lòng thử lại.");
+        return;
+      }
+
+      const updatedChat = await response.json();
+      setChatDetail(updatedChat); // Cập nhật chi tiết nhóm với ảnh mới
+      Alert.alert("Thành công", "Ảnh đại diện đã được cập nhật.");
+    } catch (error) {
+      console.error("❌ Lỗi khi gọi API đổi ảnh:", error);
+      Alert.alert("Lỗi", "Không thể đổi ảnh. Vui lòng thử lại.");
+    }
+  };
+
+  const handleChangeAdmin = async (newAdminId: number) => {
+    Alert.alert("Xác nhận", "Bạn có chắc chắn muốn chuyển quyền admin?", [
+      {
+        text: "Chuyển quyền",
+        onPress: async () => {
+          try {
+            const token = await AsyncStorage.getItem("token");
+            if (!token) {
+              Alert.alert("Lỗi", "Không tìm thấy token.");
+              return;
+            }
+
+            const response = await fetch(
+              `${API_BASE_URL}/chat/${chatId}/change-admin`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ newAdminId }),
+              }
+            );
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error("❌ Lỗi khi chuyển quyền admin:", errorText);
+              Alert.alert(
+                "Lỗi",
+                "Không thể chuyển quyền admin. Vui lòng thử lại."
+              );
+              return;
+            }
+
+            const updatedChat = await response.json();
+            setChatDetail(updatedChat); // Cập nhật chi tiết nhóm
+            Alert.alert("Thành công", "Quyền admin đã được chuyển.");
+          } catch (error) {
+            console.error("❌ Lỗi khi gọi API chuyển quyền admin:", error);
+            Alert.alert(
+              "Lỗi",
+              "Không thể chuyển quyền admin. Vui lòng thử lại."
+            );
+          }
+        },
       },
-    },
-    { text: "Hủy", style: "cancel" },
-  ]);
-};
+      { text: "Hủy", style: "cancel" },
+    ]);
+  };
   const handleAddMember = async (memberId: number) => {
     try {
       const token = await AsyncStorage.getItem("token");
@@ -453,11 +476,51 @@ const handleChangeAdmin = async (newAdminId: number) => {
       </View>
     );
   }
-  const handleFilePress = (fileUrl: string) => {
-    Linking.openURL(fileUrl).catch((err) =>
-      console.error("Không thể mở file:", err)
+//   const handleFilePress = (fileUrl: string) => {
+//     Linking.openURL(fileUrl).catch((err) =>
+//       console.error("Không thể mở file:", err)
+//     );
+//   };
+
+
+const handleFilePress = async (fileUrl: string) => {
+  try {
+    setFileStatus("Đang tải..."); // Cập nhật trạng thái
+    const fileName = fileUrl.split("/").pop(); // Lấy tên file từ URL
+    const localUri = `${FileSystem.documentDirectory}${fileName}`;
+
+    // Tải file về thiết bị
+    const downloadResumable = FileSystem.createDownloadResumable(
+      fileUrl,
+      localUri
     );
-  };
+
+    const { uri } = await downloadResumable.downloadAsync();
+    console.log("File đã được tải về:", uri);
+
+    setFileStatus("Đã tải xong"); // Cập nhật trạng thái
+
+    // Kiểm tra xem thiết bị có hỗ trợ mở file không
+    if (await Sharing.isAvailableAsync()) {
+      setFileStatus("Đang chia sẻ..."); // Cập nhật trạng thái
+      await Sharing.shareAsync(uri);
+      setFileStatus("Đã chia sẻ xong"); // Cập nhật trạng thái
+    } else {
+      setFileStatus("Đang mở file..."); // Cập nhật trạng thái
+      IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+        data: uri,
+        flags: 1,
+      });
+      setFileStatus("Đã mở file"); // Cập nhật trạng thái
+    }
+  } catch (err) {
+    console.error("Không thể tải hoặc mở file:", err);
+    Alert.alert("Lỗi", "Không thể tải hoặc mở file. Vui lòng thử lại.");
+    setFileStatus("Lỗi khi tải file"); // Cập nhật trạng thái
+  } finally {
+    setTimeout(() => setFileStatus(null), 3000); // Ẩn trạng thái sau 3 giây
+  }
+};
   const filteredMembers = chatDetail.users.filter((user: any) =>
     user.name.toLowerCase().includes(searchText.toLowerCase())
   );
@@ -513,53 +576,73 @@ const handleChangeAdmin = async (newAdminId: number) => {
             onChangeText={(text) => setSearchText(text)}
           />
           <ScrollView style={styles.memberScroll}>
-  {filteredMembers.map((user: any) => (
-    <TouchableOpacity
-      key={user.id}
-      style={styles.memberRow}
-      onPress={() => {
-        if (isCurrentUserAdmin) {
-          Alert.alert(
-            "Tùy chọn thành viên",
-            `Bạn muốn làm gì với thành viên ${user.name}?`,
-            [
-              {
-                text: "Chuyển quyền admin",
-                onPress: () => handleChangeAdmin(user.id),
-              },
-              {
-                text: "Xóa thành viên",
-                onPress: () => handleRemoveMember(user.id),
-                style: "destructive",
-              },
-              { text: "Hủy", style: "cancel" },
-            ]
-          );
-        } else {
-          Alert.alert("Thông báo", "Bạn không có quyền thực hiện hành động này.");
-        }
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Image
-          source={{
-            uri: user.avatar || "https://via.placeholder.com/100",
-          }}
-          style={styles.memberAvatar}
-        />
-        <Text style={styles.memberName}>
-          {user.name}
-          {chatDetail.admin?.id === user.id && (
-            <Text style={styles.adminTag}> (admin)</Text>
-          )}
-          {userId === user.id && (
-            <Text style={styles.adminTag}> (bạn)</Text>
-          )}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  ))}
-</ScrollView>
+            {filteredMembers.map((user: any) => (
+              <TouchableOpacity
+                key={user.id}
+                style={styles.memberRow}
+                onPress={() => {
+                  if (isCurrentUserAdmin && user.id !== userId) {
+                    Alert.alert(
+                      "Tùy chọn thành viên",
+                      `Bạn muốn làm gì với thành viên ${user.name}?`,
+                      [
+                        {
+                          text: "Chuyển quyền admin",
+                          onPress: () => handleChangeAdmin(user.id),
+                        },
+                        {
+                          text: "Xóa thành viên",
+                          onPress: () => handleRemoveMember(user.id),
+                          style: "destructive",
+                        },
+                        { text: "Hủy", style: "cancel" },
+                      ]
+                    );
+                  } else if (user.id === userId) {
+                    Alert.alert(
+                      "Thông báo",
+                      "Bạn không thể thực hiện hành động này với chính mình."
+                    );
+                  } else {
+                    Alert.alert(
+                      "Thông báo",
+                      "Bạn không có quyền thực hiện hành động này."
+                    );
+                  }
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Image
+                    source={{
+                      uri: user.avatar || "https://via.placeholder.com/100",
+                    }}
+                    style={styles.memberAvatar}
+                  />
+                  <Text style={styles.memberName}>
+                    {user.name}
+                    {chatDetail.admin?.id === user.id && (
+                      <Text style={styles.adminTag}> (admin)</Text>
+                    )}
+                    {userId === user.id && (
+                      <Text style={styles.adminTag}> (bạn)</Text>
+                    )}
+                  </Text>
+                  {/* Hiển thị nút Xóa nếu không phải chính mình */}
+                </View>
+                {isCurrentUserAdmin && user.id !== userId && (
+                  <TouchableOpacity onPress={() => handleRemoveMember(user.id)}>
+                    <Text style={styles.removeText}>Xóa</Text>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
           {isCurrentUserAdmin && (
             <TouchableOpacity
@@ -571,7 +654,11 @@ const handleChangeAdmin = async (newAdminId: number) => {
           )}
         </View>
       )}
-
+    {fileStatus && (
+  <View style={styles.fileStatusContainer}>
+    <Text style={styles.fileStatusText}>{fileStatus}</Text>
+  </View>
+)}
       <View style={styles.tabSection}>
         <View style={styles.tabRow}>
           {["image", "video", "pdf", "raw"].map((type) => (
@@ -802,5 +889,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     marginBottom: 10,
+  },
+  fileStatusContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+  },
+  fileStatusText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

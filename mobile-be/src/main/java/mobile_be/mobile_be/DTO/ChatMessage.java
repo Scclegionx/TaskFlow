@@ -13,4 +13,6 @@ public class ChatMessage {
     private int senderId;
     private String content;
     private LocalDateTime timestamp;
+    private String attachmentUrl;
+    private String attachmentType;
 }

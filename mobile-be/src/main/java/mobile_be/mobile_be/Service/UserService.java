@@ -3,8 +3,12 @@ package mobile_be.mobile_be.Service;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.response.ChamCongResponseDTO;
 import mobile_be.mobile_be.DTO.response.InfoUserResponseDTO;
+import mobile_be.mobile_be.DTO.response.RatingResponseDTO;
+import mobile_be.mobile_be.Mapper.RatingMapper;
+import mobile_be.mobile_be.Model.Rating;
 import mobile_be.mobile_be.Model.Tydstate;
 import mobile_be.mobile_be.Model.User;
+import mobile_be.mobile_be.Repository.RatingRepository;
 import mobile_be.mobile_be.Repository.TydstateRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +25,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import mobile_be.mobile_be.contains.enum_tydstate;
 import org.springframework.web.servlet.View;
@@ -34,8 +39,12 @@ public class UserService {
 
     @Autowired
     private TydstateRepository tydstateRepository;
+
     @Autowired
-    private View error;
+    private RatingRepository ratingRepository;
+
+    @Autowired
+    private RatingMapper ratingMapper;
 
     public ResponseEntity<?> checkIn(Integer userId) {
 
@@ -144,7 +153,7 @@ public class UserService {
 
            return chamCongResponseDTOList;
         } catch (Exception e) {
-            log.info(error.toString());
+            log.info(e.getMessage());
             return Arrays.asList();
         }
     }
@@ -204,6 +213,53 @@ public class UserService {
 
             return ResponseEntity.ok(infoUserResponseDTO);
         }catch (Exception e){
+            log.error("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
+        }
+    }
+
+    public ResponseEntity<?> ratingUser(Integer userId, Integer star, String comment , Integer createdBy) {
+        try {
+
+            Rating rating = new Rating();
+            rating.setUserId(userId);
+            rating.setStar(star);
+            rating.setContent(comment);
+            rating.setCreatedBy(createdBy);
+            rating.setCreatedAt(LocalDate.now());
+            var result = ratingRepository.save(rating);
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
+        }
+    }
+
+    public ResponseEntity<?> getRatingUser( Integer userId){
+        try {
+            var listRating = ratingRepository.getRatingUser(userId);
+            int totalStar = listRating.stream().mapToInt(r -> r.getStar()).sum();
+            float averageStar = (float) totalStar / listRating.size();
+            averageStar = Math.round(averageStar * 10f) / 10f;
+
+            float finalAverageStar = averageStar;
+
+            List<RatingResponseDTO> results = listRating.stream().map(rating ->{
+                RatingResponseDTO ratingResponseDTO = ratingMapper.INSTANCE.toDTO(rating);
+                User user = userRepository.findById(rating.getCreatedBy()).orElseThrow(() -> new RuntimeException("User not found"));
+                ratingResponseDTO.setCreatedByName(user.getName());
+                ratingResponseDTO.setAvatar(user.getAvatar());
+                ratingResponseDTO.setAverageStar(finalAverageStar);
+
+
+                return ratingResponseDTO;
+            }).collect(Collectors.toList());
+
+
+
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
             log.error("Error: " + e.getMessage());
             return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
         }

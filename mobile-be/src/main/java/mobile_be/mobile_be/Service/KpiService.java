@@ -30,13 +30,12 @@ public class KpiService {
     private UserRepository userRepository;
 
 
-    public ResponseEntity<?> registerKpi(Integer userId, Integer point_kpi) {
+    public ResponseEntity<?> registerKpi(Integer userId, Integer point_kpi, String time) {
 
-        // Lấy ngày hiện tại
-        LocalDate today = LocalDate.now();
+        LocalDate date = LocalDate.parse(time);  // tự động dùng định dạng yyyy-MM-dd
 
-        // Định dạng thành yyyy-MM
-        String formattedDate = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        // Chuyển về định dạng "yyyy-MM"
+        String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
         // check kpi ton tai
         List<Kpi> kpiExist = kpiRepository.findByUserIdAndTime(userId, formattedDate);
@@ -48,7 +47,7 @@ public class KpiService {
         Kpi newKpi = new Kpi();
         newKpi.setUserId(userId);
         newKpi.setKpiRegistry(point_kpi);
-        newKpi.setTime(today);
+        newKpi.setTime(date);
         newKpi.setMinusPoint(0);
         newKpi.setPlusPoint(0);
         newKpi.setTotalPoint(0);
@@ -93,17 +92,24 @@ public class KpiService {
         return ResponseEntity.ok("Xóa KPI thành công");
     }
 
-    public ResponseEntity<?> editKpi(Integer kpiId, Integer point_kpi) {
+    public ResponseEntity<?> editKpi(Integer kpiId, Integer point_kpi, String time, Integer userId) {
         // Lấy ngày hiện tại
-        LocalDate today = LocalDate.now();
+        LocalDate date = LocalDate.parse(time);
+        // Chuyển về định dạng "yyyy-MM"
+        String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
-        // Định dạng thành yyyy-MM
-        String formattedDate = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        // check kpi ton tai
+        List<Kpi> kpiExist = kpiRepository.findByUserIdAndTime(userId, formattedDate);
+        if (kpiExist != null && !kpiExist.isEmpty()) {
+            log.info("kpiExist: " + kpiExist);
+            return ResponseEntity.badRequest().body("Bạn đã đăng ký KPI cho tháng này rồi  ");
+        }
 
         Kpi kpi = kpiRepository.findById(kpiId).orElse(null);
         if (kpi == null) {
             return ResponseEntity.badRequest().body("KPI không tồn tại");
         }
+        kpi.setTime(date);
         kpi.setKpiRegistry(point_kpi);
         kpiRepository.save(kpi);
         return ResponseEntity.ok("Sửa KPI thành công");

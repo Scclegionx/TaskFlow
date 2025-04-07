@@ -77,6 +77,9 @@ const AllPersonelScreen = () => {
   // profile để hiển thị ảnh
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
+
+  const [profileUserKPI, setProfileUserKPI] = useState<UserProfile | null>(null);
+
   const [startDate, setStartDate] = useState<Date>(() => {
     const date = new Date();
     date.setDate(1); // Đặt ngày về 1 (đầu tháng)
@@ -88,6 +91,9 @@ const AllPersonelScreen = () => {
 
   const [registerModalVisible, setRegisterModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [kpiDate, setKpiDate] = useState(new Date()); // Thêm state cho ngày KPI
+  const [showDatePicker, setShowDatePicker] = useState(false); // Hiển thị date picker
+
   const colors = ["#ADDCE3", "#D1E7DD", "#FEE2E2", "#EDEBDE", "#FDE8C9"]; // danh sách màu
 
 
@@ -122,6 +128,37 @@ const AllPersonelScreen = () => {
       }
     } catch (error) {
       console.error("Lỗi khi gọi API profile:", error);
+    }
+  };
+
+
+
+  const fetchInforUserKPI = async (user_id: number) => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) {
+        console.error("Không tìm thấy token! Vui lòng đăng nhập.");
+        return;
+      }
+
+      let infoUrl = `${API_BASE_URL}/users/get-user-by-id?userId=${user_id}`;
+
+      const response = await fetch(infoUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const inforUser = await response.json();
+        setProfileUserKPI(inforUser);
+      } else {
+        console.error("Lỗi khi lấy danh sách thành viên. personDailtail");
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API danh sách thành viên:", error);
     }
   };
 
@@ -249,15 +286,16 @@ const AllPersonelScreen = () => {
 
 
 
-  const fetchRegistryKPI = async (pointKpi: number) => {
+  const fetchRegistryKPI = async (pointKpi: number, date: Date) => {
     try {
+      const formattedDate = formatDate(date); // Sử dụng hàm formatDate đã có
       const authToken = await AsyncStorage.getItem("token");
       if (!authToken) {
         console.error("Không tìm thấy token! Vui lòng đăng nhập.");
         return;
       }
 
-      let kpiRegistryUrl = `${API_BASE_URL}/kpi/register-kpi?userId=${profile?.id}&pointKpi=${pointKpi}`;
+      let kpiRegistryUrl = `${API_BASE_URL}/kpi/register-kpi?userId=${profile?.id}&pointKpi=${pointKpi}&time=${formattedDate}`;
 
       const response = await fetch(
         kpiRegistryUrl,
@@ -317,16 +355,17 @@ const AllPersonelScreen = () => {
 
 
 
-  const fetchEditKPI = async (kpiId: number, total_point: number) => {
+  const fetchEditKPI = async (userId: number, kpiId: number, total_point: number, date: Date) => {
     console.log("hahaah")
     try {
+      const formattedDate = formatDate(date); // Sử dụng hàm formatDate đã có
       const authToken = await AsyncStorage.getItem("token");
       if (!authToken) {
         console.error("Không tìm thấy token! Vui lòng đăng nhập.");
         return;
       }
 
-      let kpiDeleteUrl = `${API_BASE_URL}/kpi/edit-kpi?kpiId=${kpiId}&pointKpi=${total_point}`;
+      let kpiDeleteUrl = `${API_BASE_URL}/kpi/edit-kpi?kpiId=${kpiId}&pointKpi=${total_point}&time=${formattedDate}$userId=${userId}`;
 
       const response = await fetch(
         kpiDeleteUrl,
@@ -338,6 +377,7 @@ const AllPersonelScreen = () => {
           },
         }
       );
+
 
       return response;
 
@@ -371,15 +411,18 @@ const AllPersonelScreen = () => {
 
 
     // Gọi API đăng ký KPI
-    const response = await fetchRegistryKPI(Number(kpiValue)); // Gọi API và chờ kết quả
+    const response = await fetchRegistryKPI(Number(kpiValue), kpiDate); // Gọi API và chờ kết quả
 
     if (response && response?.status === 200) {
       Alert.alert("Thành công", "Đăng ký KPI thành công!");
       setModalVisible(false); // Đóng popup
       setKpiValue(""); // Reset input
     } else {
-      Alert.alert("Thất bại ", "Bạn đã đăng ký KPI cho tháng này trước đó rồi!");
+      const formattedDate = formatDate(kpiDate);
+      Alert.alert("Thất bại ", `Bạn đã đăng ký KPI cho tháng ${formattedDate} trước đó rồi!`);
     }
+
+    setKpiDate(new Date()); // set lai ngay hien tai
 
     fetchKPIByMonth(startDate, endDate, ""); // Lấy lại dữ liệu KPI sau khi đăng ký
 
@@ -387,6 +430,7 @@ const AllPersonelScreen = () => {
     setModalVisible(false);
     setSelectedKpi(null); // Reset selected KPI
     setKpiValue(""); // Reset input
+
   };
 
 
@@ -405,20 +449,24 @@ const AllPersonelScreen = () => {
       console.log('bắt đầu Xóa KPI với userID:', user_Id);
 
 
-      const response = await fetchEditKPI(kpi_Id, Number(kpiValue)); // Gọi API và chờ kết quả
+      const response = await fetchEditKPI(profile?.id, kpi_Id, Number(kpiValue), kpiDate); // Gọi API và chờ kết quả
 
 
       if (response && response?.status === 200) {
         Alert.alert("Thành công", "Sửa KPI thành công!");
         setModalVisible(false); // Đóng popup
         setKpiValue(""); // Reset input
+
       } else {
-        Alert.alert("Thất bại ", "Bạn không có quyền sửa KPI này");
+        const formattedDate = formatDate(kpiDate);
+        Alert.alert("Thất bại ", `Bạn đã có KPI cho tháng ${formattedDate} rồi`);
       }
     } else {
       console.log("lỗi khi sửa kpi");
       Alert.alert("Thất bại ", "Bạn không có quyền sửa KPI này");
     }
+
+    setKpiDate(new Date()); // set lai ngay hien tai
 
 
     fetchKPIByMonth(startDate, endDate, ""); // Lấy lại dữ liệu KPI
@@ -436,12 +484,12 @@ const AllPersonelScreen = () => {
 
   // Xử lý sửa
   const handleEdit = (kpi: KPIEntry) => {
+    fetchInforUserKPI(kpi.userId); // Lấy thông tin người dùng từ API
     setuser_Id(kpi.userId ? kpi.userId : 0);
     setkpi_Id(kpi.id);
     setSelectedKpi(kpi); // Lưu KPI đang chọn vào state
     setKpiValue(kpi.kpiRegistry.toString()); // Điền giá trị hiện tại vào input
     setEditModalVisible(true); // Mở popup sửa // Mở popup
-
   };
 
 
@@ -589,6 +637,7 @@ const AllPersonelScreen = () => {
                 setSelectedKpi(null); // Reset selected KPI
                 setKpiValue(""); // Xóa giá trị cũ
                 setRegisterModalVisible(true); // Mở popup
+
               }}
             >
               <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>Đăng ký</Text>
@@ -596,10 +645,37 @@ const AllPersonelScreen = () => {
           </View>
 
 
+
           <Modal visible={registerModalVisible} transparent animationType="slide">
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
               <View style={{ backgroundColor: "white", padding: 20, borderRadius: 10, width: 300, alignItems: "center" }}>
-                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Đăng ký KPI mới </Text>
+                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Đăng ký KPI mới</Text>
+
+                <Text style={{ fontSize: 18, marginBottom: 10, color: "red" }}>Thông tin : {profile?.name} </Text>
+
+                {/* Input chọn ngày */}
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text>Thời gian: {kpiDate.toLocaleDateString()}</Text>
+                </TouchableOpacity>
+
+                {/* Date Picker */}
+                {showDatePicker && (
+                  <DateTimePickerModal
+                    value={kpiDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={(event, selectedDate) => {
+                      setShowDatePicker(false);
+                      if (selectedDate) {
+                        setKpiDate(selectedDate);
+                      }
+                    }}
+                  />
+                )}
+
                 <TextInput
                   style={styles.modalInput}
                   keyboardType="numeric"
@@ -607,12 +683,15 @@ const AllPersonelScreen = () => {
                   value={kpiValue}
                   onChangeText={setKpiValue}
                 />
+
                 <View style={styles.modalButtonContainer}>
                   <TouchableOpacity
                     style={[styles.modalButton, styles.cancelButton]}
                     onPress={() => {
                       setRegisterModalVisible(false);
                       setKpiValue("");
+                      setKpiDate(new Date());
+
                     }}
                   >
                     <Text style={styles.buttonText}>Hủy</Text>
@@ -633,6 +712,30 @@ const AllPersonelScreen = () => {
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
               <View style={{ backgroundColor: "white", padding: 20, borderRadius: 10, width: 300, alignItems: "center" }}>
                 <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Chỉnh sửa KPI</Text>
+                <Text style={{ fontSize: 18, marginBottom: 10, color: "red" }}>Thông tin : {profileUserKPI?.name} </Text>
+                {/* Input chọn ngày */}
+
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text>Thời gian: {kpiDate.toLocaleDateString()}</Text>
+                </TouchableOpacity>
+
+                {/* Date Picker */}
+                {showDatePicker && (
+                  <DateTimePickerModal
+                    value={kpiDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={(event, selectedDate) => {
+                      setShowDatePicker(false);
+                      if (selectedDate) {
+                        setKpiDate(selectedDate);
+                      }
+                    }}
+                  />
+                )}
                 <TextInput
                   style={styles.modalInput}
                   keyboardType="numeric"
@@ -647,6 +750,8 @@ const AllPersonelScreen = () => {
                       setEditModalVisible(false);
                       setKpiValue("");
                       setSelectedKpi(null);
+                      setKpiDate(new Date());
+
                     }}
                   >
                     <Text style={styles.buttonText}>Hủy</Text>
@@ -795,6 +900,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#ADDCE3",
     borderRadius: 10,
     marginBottom: 10,
+  },
+
+  dateInput: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 15,
+    alignItems: 'center',
   },
 
   modalInput: {

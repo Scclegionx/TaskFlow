@@ -248,6 +248,21 @@ public class UserController {
     }
 
 
+    // api danh gia nhan su
+    @PostMapping("/rating-user")
+    public ResponseEntity<?> ratingUser(@RequestParam(value = "userId", required = false) Integer userId,
+                                        @RequestParam(value = "star", required = false) Integer star,
+                                        @RequestParam(value = "comment", required = false) String comment,
+                                        @RequestParam ( value = "createdBy", required = false) Integer createdBy )  {
+        return userService.ratingUser(userId, star, comment, createdBy);
+    }
+
+    // api lay danh sach danh gia nhan su
+    @GetMapping("/get-rating-user")
+    public ResponseEntity<?> getRatingUser(@RequestParam(value = "userId", required = false) Integer userId) {
+        return userService.getRatingUser(userId);
+    }
+
 }
 
 

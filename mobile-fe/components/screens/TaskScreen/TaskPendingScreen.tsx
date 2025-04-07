@@ -69,125 +69,134 @@ const TaskPendingScreen = () => {
 
 
 
+  const fetchTasks = async (taskType: number | null = null, searchText: string = "") => {
+    const authToken = await AsyncStorage.getItem("token");
+    const userId = await AsyncStorage.getItem("userId");
 
-  const fetchData = async (taskType: number | null = null,
-    searchText: string = ""
-  ) => {
-    const authToken = await AsyncStorage.getItem("token"); // Lấy token từ bộ nhớ
+    if (!authToken) return;
 
-    const userId = await AsyncStorage.getItem("userId");  //  Lấy userId từ AsyncStorage
-
-    console.log("Token:", authToken);
-
-    if (!authToken) {
-      console.error("No token found! Please log in.");
-      return;
-    }
-
-
-    // api lay danh sach task
-    let tasktUrl = `${API_BASE_URL}/projects/get-task-pending?userId=${userId}`;
-    if (taskType !== null) {
-      tasktUrl += `&type=${taskType}`;
-    }
-
-    if (searchText.trim()) {
-      tasktUrl += `&textSearch=${encodeURIComponent(searchText)}`;
-    }
-
-    // api lay so luong task ơ bieu do tron
-    let numberTasktUrl = `${API_BASE_URL}/tasks/get-task-count-by-status?userId=${userId}`;
-    if (taskType !== null) {
-      numberTasktUrl += `&type=${taskType}`;
-    }
+    let url = `${API_BASE_URL}/tasks/get-task-pending?userId=${userId}`;
+    if (taskType !== null) url += `&type=${taskType}`;
+    if (searchText.trim()) url += `&textSearch=${encodeURIComponent(searchText)}`;
 
     try {
-      // danh sach task , bieu doi tron
-      const [taskRes, numberTaskStatusResponse, taskStatusResponse] = await Promise.all([
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${authToken}`,
+          "Content-Type": "application/json"
+        }
+      });
 
-        fetch(tasktUrl, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${authToken}`,
-            "Content-Type": "application/json"
-          }
-        }),
-
-
-        fetch(numberTasktUrl, {
-          method: "GET",
-          headers: { "Authorization": `Bearer ${authToken}`, "Content-Type": "application/json" }
-        }),
-
-        fetch(`${API_BASE_URL}/tasks/get-status-all-tasks`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${authToken}`,
-            "Content-Type": "application/json"
-          }
-        })
-      ]);
-
-
-
-
-      // Xử lý dữ liệu công việc (tasks)
-      if (taskRes.ok) {
-        const taskData: Task[] = await taskRes.json();
+      if (response.ok) {
+        const taskData: Task[] = await response.json();
         setTasks(taskData.map((task, index) => ({
           id: task.id || String(index),
           title: task.title,
           date: task.toDate || "Không có ngày hết hạn",
           status: task.status,
           waitFinish: task.waitFinish
-
-
         })));
-      } else {
-        console.error("Lỗi lấy danh sách công việc.");
       }
-
-      const taskStatusData = await taskStatusResponse.json();
-      setTaskStatus(taskStatusData); // Lưu kết quả API vào state
-
-
-      if (numberTaskStatusResponse.ok) setNumberTaskStatusData(await numberTaskStatusResponse.json());
-      else console.error("Failed to fetch project status data.");
-
-
     } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching tasks:", error);
+    }
+  };
+
+  // Tách hàm fetch số liệu thống kê
+  const fetchTaskCount = async (taskType: number | null = null) => {
+    const authToken = await AsyncStorage.getItem("token");
+    const userId = await AsyncStorage.getItem("userId");
+
+    if (!authToken) return;
+
+    let url = `${API_BASE_URL}/tasks/get-task-count-by-status?userId=${userId}`;
+    if (taskType !== null) url += `&type=${taskType}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${authToken}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNumberTaskStatusData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  // Tách hàm fetch trạng thái công việc
+  const fetchTaskStatus = async () => {
+    const authToken = await AsyncStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/get-status-all-tasks`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${authToken}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTaskStatus(data);
+      }
+    } catch (error) {
+      console.error("Error fetching task status:", error);
     }
   };
 
 
-  // Gọi API khi component mount lần đầu
+
+  // Gọi API khi component mount
   useEffect(() => {
-    fetchData();
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchTasks(),
+          fetchTaskCount(),
+          fetchTaskStatus()
+        ]);
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
   }, []);
 
-  // Gọi API lại mỗi khi taskType thay đổi
-  useEffect(() => {
-    if (taskType !== null) {
-      fetchData(taskType, searchText);
-    }
-  }, [taskType, searchText]);
+  // // Gọi API khi có thay đổi filter
+  // useEffect(() => {
+  //   const loadFilteredData = async () => {
+  //     setLoading(true);
+  //     try {
+  //       await Promise.all([
+  //         fetchTasks(taskType, searchText),
+  //         fetchTaskCount(taskType)
+  //       ]);
+  //     } catch (error) {
+  //       console.error("Error loading filtered data:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        {/* <ActivityIndicator size="large" color="#1E90FF" /> */}
-        <Text>Đang tải dữ liệu...</Text>
-      </View>
-    );
-  }
+
+
+  //   if (taskType !== null) loadFilteredData();
+  // }, [taskType, searchText]);
 
   // doan check nay can thiet de khong null
-  if (!numberTaskStatusData) {
-    return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
-  }
+  // if (!numberTaskStatusData) {
+  //   return <Text>Loading...</Text>; // Hoặc hiển thị UI phù hợp
+  // }
 
   return (
     <View style={styles.container}>
@@ -204,14 +213,14 @@ const TaskPendingScreen = () => {
                 value={searchText}
                 onChangeText={setSearchText}
               />
-              <TouchableOpacity onPress={() => fetchData(taskType, searchText)} style={styles.searchButton}>
+              <TouchableOpacity onPress={() => fetchTasks(null, searchText)} style={styles.searchButton}>
                 <FontAwesome name="search" size={20} color="white" />
               </TouchableOpacity>
             </View>
 
-          
+
             {/* Header danh sách công việc */}
-            <View style={{ padding: 20, backgroundColor: '#C8D9CF', marginBottom: - 5 , borderRadius: 15  }}>
+            <View style={{ padding: 20, backgroundColor: '#C8D9CF', marginBottom: - 5, borderRadius: 15 }}>
               <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>
               {/* Bộ lọc */}
               <View style={styles.filterContainer}>
@@ -229,7 +238,7 @@ const TaskPendingScreen = () => {
                     style={styles.dropdownItem}
                     onPress={() => {
                       setTaskType(0);
-                      fetchData(0);
+                      fetchTasks(0, "");
                       setShowCategoryFilter(false);
                     }}
                   >
@@ -239,7 +248,7 @@ const TaskPendingScreen = () => {
                     style={styles.dropdownItem}
                     onPress={() => {
                       setTaskType(1);
-                      fetchData(1);
+                      fetchTasks(1, "");
                       setShowCategoryFilter(false);
                     }}
                   >
@@ -249,7 +258,7 @@ const TaskPendingScreen = () => {
                     style={styles.dropdownItem}
                     onPress={() => {
                       setTaskType(null);
-                      fetchData(null);
+                      fetchTasks(null, "");
                       setShowCategoryFilter(false);
                     }}
                   >

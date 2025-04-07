@@ -75,6 +75,24 @@ public class TaskController {
         return ResponseEntity.ok(taskService.taskApproveFinish(taskId));
     }
 
+
+    @GetMapping("/get-task-pending")
+    public ResponseEntity<?> getTaskPending(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                            @RequestParam(value = "userId", required = false) Integer userId,
+                                            @RequestParam(value = "type", required = false) Integer type,
+                                            @RequestParam(value = "textSearch", required = false) String textSearch) {
+        return ResponseEntity.ok(projectService.getTaskPending(projectId, userId, type, textSearch));
+    }
+
+
+    @GetMapping("/get-my-task")
+    public ResponseEntity<?> getMyTask(@RequestParam(value = "projectId", required = false) Integer projectId,
+                                            @RequestParam(value = "userId", required = false) Integer userId,
+                                            @RequestParam(value = "type", required = false) Integer type,
+                                            @RequestParam(value = "textSearch", required = false) String textSearch) {
+        return ResponseEntity.ok(projectService.getMyTask(projectId, userId, type, textSearch));
+    }
+
     @DeleteMapping("/{taskId}")
     public ResponseEntity<?> deleteTask(@PathVariable Integer taskId) {
         try {

@@ -72,17 +72,6 @@ public class ProjectController {
     }
 
 
-
-    @GetMapping("/get-task-pending")
-    public ResponseEntity<?> getTaskPending(@RequestParam(value = "projectId", required = false) Integer projectId,
-                                                 @RequestParam(value = "userId", required = false) Integer userId,
-                                                 @RequestParam(value = "type", required = false) Integer type,
-                                                 @RequestParam(value = "textSearch", required = false) String textSearch) {
-        return ResponseEntity.ok(projectService.getTaskPending(projectId, userId, type, textSearch));
-    }
-
-
-
     @GetMapping("/get-project")
         public ResponseEntity<?> getProject() {
             return ResponseEntity.ok(projectService.getProject());

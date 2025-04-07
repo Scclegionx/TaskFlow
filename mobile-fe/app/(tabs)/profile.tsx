@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Text,
   Image,
-  Alert,
+  Alert, ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
@@ -113,15 +113,16 @@ const Profile = () => {
         )}
       </TouchableOpacity>
 
-            <View style={styles.profileInfo}>
+            <ScrollView style={styles.profileInfo}>
                 <ProfileItem icon="👤" label="Thông tin cá nhân" onPress={() => router.push('/account-info')} />
                 <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
                 <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
                 <ProfileItem icon="🏆" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
-                <ProfileItem icon="⏳" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
+                <ProfileItem icon="📅" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
                 <ProfileItem icon="⏳" label="Công việc chờ duyệt"  onPress={() => router.push('/Task/taskPending')}  />
+                <ProfileItem icon="📋" label="Công việc của tôi"  onPress={() => router.push('/Task/myTask')}  />
                 {roles.includes("ADMIN") && <ProfileItem icon="👤" label="Quyền Admin" onPress={() => router.push('/Admin')}/>}
-            </View>
+            </ScrollView>
 
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.logoutText}>Đăng xuất</Text>

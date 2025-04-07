@@ -547,10 +547,23 @@ const TaskDetailScreen = () => {
     4: '#3B82F6'     // xanh
   };
 
+  const COMMENT_COLORS = [
+    '#F0F8FF', // AliceBlue
+    '#FFF0F5', // LavenderBlush
+    '#F0FFF0', // Honeydew
+    '#FFF8DC', // Cornsilk
+    '#F5F5F5', // WhiteSmoke
+  ];
+
 
   // Thêm phần render bình luận
-  const renderComment = ({ item }: { item: Comment }) => (
-    <View style={styles.commentItem}>
+  const renderComment = ({ item, index }: { item: Comment, index: number }) => (
+    <View
+      style={[
+        styles.commentItem,
+        { backgroundColor: COMMENT_COLORS[index % COMMENT_COLORS.length] }
+      ]}
+    >
       <Image
         source={{ uri: 'http://res.cloudinary.com/doah3bdw6/image/upload/v1743153165/r0nulby5tat56nq1q394.png' }} // Thay bằng avatar thực tế nếu có
         style={styles.avatar}

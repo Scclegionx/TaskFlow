@@ -221,6 +221,108 @@ public class ProjectService {
     }
 
 
+    public List<TaskResponseDTO> getMyTask(Integer projectId, Integer userId, Integer type, String textSearch) {
+
+        List<Task> results = new ArrayList<>();
+
+        results = projectRepository.getMyTask(projectId,userId, textSearch);
+
+        // lay all
+        if (type == null){
+            return results.stream().map(task -> {
+                TaskResponseDTO dto = taskMapper.toDTO(task);
+
+                if(task.getCreatedBy() != null){
+                    User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                    if (user != null){
+                        dto.setNameCreatedBy(user.getName());
+                    }
+                }
+
+                return dto;
+            }).collect(Collectors.toList());
+        }
+
+        if (type == enum_taskStatus.IN_PROGRESS.getValue()){
+            return results.stream()
+                    .filter(task -> task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue())
+                    .map(task -> {
+                TaskResponseDTO dto = taskMapper.toDTO(task);
+
+                if(task.getCreatedBy() != null){
+                    User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                    if (user != null){
+                        dto.setNameCreatedBy(user.getName());
+                    }
+                }
+
+                return dto;
+            }).collect(Collectors.toList());
+        }
+
+        if (type == enum_taskStatus.COMPLETED.getValue()){
+            return results.stream()
+                    .filter(task -> task.getStatus() == enum_taskStatus.COMPLETED.getValue())
+                    .map(task -> {
+                        TaskResponseDTO dto = taskMapper.toDTO(task);
+
+                        if(task.getCreatedBy() != null){
+                            User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                            if (user != null){
+                                dto.setNameCreatedBy(user.getName());
+                            }
+                        }
+
+                        return dto;
+                    }).collect(Collectors.toList());
+        }
+
+        if (type == enum_taskStatus.OVERDUE.getValue()){
+            LocalDateTime currentDate = LocalDateTime.now();
+            return results.stream()
+                    .filter(task ->
+                            task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue() &&
+                                    task.getToDate() != null &&
+                                    currentDate.isAfter(task.getToDate())
+                    )
+                    .map(task -> {
+                        TaskResponseDTO dto = taskMapper.toDTO(task);
+
+                        if(task.getCreatedBy() != null){
+                            User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                            if (user != null){
+                                dto.setNameCreatedBy(user.getName());
+                            }
+                            dto.setStatus(enum_taskStatus.OVERDUE.getValue());
+                        }
+
+                        return dto;
+                    }).collect(Collectors.toList());
+        }
+
+        if (type == enum_taskStatus.CANCELLED.getValue()){
+            return results.stream()
+                    .filter(task -> task.getStatus() == enum_taskStatus.CANCELLED.getValue())
+                    .map(task -> {
+                        TaskResponseDTO dto = taskMapper.toDTO(task);
+
+                        if(task.getCreatedBy() != null){
+                            User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                            if (user != null){
+                                dto.setNameCreatedBy(user.getName());
+                            }
+                        }
+
+                        return dto;
+                    }).collect(Collectors.toList());
+        }
+
+
+        // return all
+        return null;
+    }
+
+
     @Transactional
     public Task acceptTask(Integer taskId, Integer userId) {
         try {

@@ -135,13 +135,24 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     @Query(value = "SELECT * FROM tasks t " +
             " left join task_assignees ta on ta.task_id = t.id" +
             " WHERE " +
-            "( ta.user_id = :userId or :userId = t.created_by )  and  " +
+            " ( (ta.user_id = :userId and t.status = 0) or ( t.created_by = :userId and t.wait_finish = 1) ) and " +
             "( :projectId  is null or project_id = :projectId )" +
             " AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))" +
-            " and ( t.status = 0 or t.wait_finish = 1 ) " +
             " ORDER BY t.created_at desc ",
             nativeQuery = true)
     List<Task> getAllTaskPending(Integer projectId, Integer userId,  String textSearch);
+
+
+    @Query(value = "SELECT * FROM tasks t " +
+            " left join task_assignees ta on ta.task_id = t.id" +
+            " WHERE " +
+            " ta.user_id = :userId and " +
+            " t.status != 0 and " +
+            "( :projectId  is null or project_id = :projectId )" +
+            " AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))" +
+            " ORDER BY t.created_at desc ",
+            nativeQuery = true)
+    List<Task> getMyTask(Integer projectId, Integer userId,  String textSearch);
 
 
     @Query(value = "SELECT * FROM tasks t" +

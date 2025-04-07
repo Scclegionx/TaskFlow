@@ -17,9 +17,10 @@ public class KpiController {
     // api dang ky kpi
     @PostMapping("/register-kpi")
     public ResponseEntity<?> registerKpi(@RequestParam (value = "userId", required = false) Integer userId,
-                                         @RequestParam (value = "pointKpi", required = false) Integer pointKpi) {
+                                         @RequestParam (value = "pointKpi", required = false) Integer pointKpi,
+                                         @RequestParam (value = "time", required = false) String time) {
 
-       return kpiService.registerKpi(userId, pointKpi);
+       return kpiService.registerKpi(userId, pointKpi, time);
 
     }
 
@@ -34,8 +35,10 @@ public class KpiController {
     // api sửa kpi
     @PutMapping("/edit-kpi")
     public ResponseEntity<?> editKpi(@RequestParam (value = "kpiId", required = false) Integer kpiId,
-                                    @RequestParam (value = "pointKpi", required = false) Integer pointKpi) {
-        return kpiService.editKpi(kpiId, pointKpi);
+                                    @RequestParam (value = "pointKpi", required = false) Integer pointKpi ,
+                                     @RequestParam (value = "time", required = false) String time ,
+                                     @RequestParam (value = "userId", required = false) Integer userId) {
+        return kpiService.editKpi(kpiId, pointKpi, time, userId);
     }
 
 

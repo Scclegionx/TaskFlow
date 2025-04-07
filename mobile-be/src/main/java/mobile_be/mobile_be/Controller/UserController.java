@@ -2,6 +2,7 @@ package mobile_be.mobile_be.Controller;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.DTO.UpdateProfileRequest;
@@ -247,6 +248,36 @@ public class UserController {
        return result;
     }
 
+
+    // api danh gia nhan su
+    @PostMapping("/rating-user")
+    public ResponseEntity<?> ratingUser(@RequestParam(value = "userId", required = false) Integer userId,
+                                        @RequestParam(value = "star", required = false) Integer star,
+                                        @RequestParam(value = "comment", required = false) String comment,
+                                        @RequestParam ( value = "createdBy", required = false) Integer createdBy )  {
+        return userService.ratingUser(userId, star, comment, createdBy);
+    }
+
+    @PutMapping("/update-rating")
+    public ResponseEntity<?> updateRating(@RequestParam(value = "userId", required = false) Integer userId,
+                                          @RequestParam(value = "star", required = false) Integer star,
+                                          @RequestParam(value = "comment", required = false) String comment,
+                                          @RequestParam ( value = "createdBy", required = false) Integer createdBy,
+                                          @RequestParam (value = "editRatingid", required = false) Integer editRatingid)  {
+        return userService.updateRating(userId, star, comment, createdBy, editRatingid);
+    }
+
+    // api lay danh sach danh gia nhan su
+    @GetMapping("/get-rating-user")
+    public ResponseEntity<?> getRatingUser(@RequestParam(value = "userId", required = false) Integer userId) {
+        return userService.getRatingUser(userId);
+    }
+
+    @DeleteMapping("/delete-rating")
+    public ResponseEntity<?> deleteRating(@RequestParam(value = "userId", required = false) Integer userId,
+                                          @RequestParam (value = "ratingId", required = false) Integer ratingId)  {
+        return userService.deleteRating( ratingId);
+    }
 
 }
 

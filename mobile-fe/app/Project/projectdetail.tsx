@@ -47,13 +47,13 @@ interface ITask {
 
 const getStatusColor = (status: number): string => {
     switch (status) {
-        case 1: // Chưa bắt đầu
+        case 0: // Chưa bắt đầu
             return "#A0A0A0";
-        case 2: // Đang thực hiện
+        case 1: // Đang thực hiện
             return "#00AEEF";
-        case 3: // Hoàn thành
+        case 2: // Hoàn thành
             return "#4CAF50";
-        case 4: // Quá hạn
+        case 3: // Quá hạn
             return "#FF4D67";
         default:
             return "#A0A0A0";
@@ -64,13 +64,13 @@ const getTaskStatusText = (status: string | number): string => {
     // Chuyển status về dạng số để so sánh
     const statusNumber = Number(status);
     switch (statusNumber) {
-        case 1:
+        case 0:
             return "Chưa được giao";
-        case 2:
+        case 1:
             return "Đang xử lý";
-        case 3:
+        case 2:
             return "Hoàn thành";
-        case 4:
+        case 3:
             return "Quá hạn";
         default:
             return "Không xác định";
@@ -80,13 +80,13 @@ const getTaskStatusText = (status: string | number): string => {
 const getTaskStatusColor = (status: string | number): string => {
     const statusNumber = Number(status);
     switch (statusNumber) {
-        case 1:
+        case 0:
             return "#A0A0A0"; // Màu xám cho chưa được giao
-        case 2:
+        case 1:
             return "#00AEEF"; // Màu xanh dương cho đang xử lý
-        case 3:
+        case 2:
             return "#4CAF50"; // Màu xanh lá cho hoàn thành
-        case 4:
+        case 3:
             return "#FF4D67"; // Màu đỏ cho quá hạn
         default:
             return "#A0A0A0";

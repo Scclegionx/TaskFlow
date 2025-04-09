@@ -60,7 +60,7 @@ public class ProjectService {
         project.setFromDate(request.getFromDate());
         project.setToDate(request.getToDate());
         project.setCreatedAt(new Date());
-        project.setStatus(1);
+        project.setStatus(0);
         Project savedProject = projectRepository.save(project);
 
         // Tạo Set để lưu tất cả thành viên

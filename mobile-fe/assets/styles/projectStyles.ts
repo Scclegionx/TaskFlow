@@ -274,5 +274,8 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
     },
-    
+    userInfo: {
+        flex: 1,
+        marginLeft: 10,
+    },
 });

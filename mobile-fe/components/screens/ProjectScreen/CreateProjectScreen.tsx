@@ -40,8 +40,13 @@ const UserSearchModal = ({ visible, searchResults, onSelectUser, searchInput, on
                                 style={styles.dropdownItem}
                                 onPress={() => onSelectUser(item)}
                             >
-                                <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
-                                <View>
+                                <Image 
+                                    source={{ 
+                                        uri: item.avatar || 'https://your-default-avatar-url.com/default.png'
+                                    }} 
+                                    style={styles.avatar}
+                                />
+                                <View style={styles.userInfo}>
                                     <Text style={styles.userName}>{item.name}</Text>
                                     <Text style={styles.userEmail}>{item.email}</Text>
                                 </View>
@@ -63,8 +68,8 @@ const CreateProjectScreen = () => {
     const [description, setDescription] = useState("");
     const [createdBy, setCreatedBy] = useState<number | null>(null);
     const [searchEmail, setSearchEmail] = useState("");
-    const [searchResults, setSearchResults] = useState<{ id: number, name: string, email: string, avatarUrl: string }[]>([]);
-    const [selectedUsers, setSelectedUsers] = useState<{ id: number, name: string, avatarUrl: string }[]>([]);
+    const [searchResults, setSearchResults] = useState<{ id: number, name: string, email: string, avatar: string }[]>([]);
+    const [selectedUsers, setSelectedUsers] = useState<{ id: number, name: string, avatar: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     const [fromDate, setFromDate] = useState<Date | null>(null);
@@ -75,9 +80,14 @@ const CreateProjectScreen = () => {
     useEffect(() => {
         const fetchUserId = async () => {
             const userId = await AsyncStorage.getItem("userId");
+            const userAvatar = await AsyncStorage.getItem("userAvatar");
             if (userId) {
                 setCreatedBy(Number(userId));
-                setSelectedUsers([{ id: Number(userId), name: "Bạn", avatarUrl: "https://example.com/default-avatar.png" }]); // Thêm chính user đang đăng nhập
+                setSelectedUsers([{
+                    id: Number(userId),
+                    name: "Bạn",
+                    avatar: userAvatar || 'https://your-default-avatar-url.com/default.png'
+                }]);
             }
         };
         fetchUserId();
@@ -108,9 +118,13 @@ const CreateProjectScreen = () => {
         debouncedSearch(email);
     };
 
-    const handleAddUser = (user: { id: number, name: string, avatarUrl: string }) => {
+    const handleAddUser = (user: { id: number, name: string, avatar: string }) => {
         if (!selectedUsers.some(u => u.id === user.id)) {
-            setSelectedUsers([...selectedUsers, user]);
+            setSelectedUsers([...selectedUsers, {
+                id: user.id,
+                name: user.name,
+                avatar: user.avatar || 'https://your-default-avatar-url.com/default.png'
+            }]);
             Toast.show({
                 type: 'success',
                 position: 'top',
@@ -122,6 +136,7 @@ const CreateProjectScreen = () => {
             });
             setSearchEmail("");
             setSearchResults([]);
+            setIsDropdownVisible(false);
         } else {
             Toast.show({
                 type: 'info',
@@ -268,7 +283,7 @@ const CreateProjectScreen = () => {
                         {selectedUsers.map((item) => (
                             <View key={item.id} style={styles.memberCard}>
                                 <View style={styles.memberInfo}>
-                                    <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+                                    <Image source={{ uri: item.avatar }} style={styles.avatar} />
                                     <Text style={styles.userName}>{item.name}</Text>
                                     {item.id !== createdBy && (
                                         <TouchableOpacity 

@@ -31,6 +31,7 @@ interface IMember {
     name: string;
     email: string;
     role: string;
+    avatar: string;
 }
 
 interface ITask {
@@ -296,12 +297,23 @@ export default function ProjectDetail() {
                     renderItem={({ item }) => (
                         <View style={styles.memberItem}>
                             <View style={styles.memberInfo}>
-                                <Text style={styles.listText}>
-                                    ✅ {item.name} ({item.email})
-                                </Text>
-                                <Text style={[styles.roleText, { color: item.role === 'ADMIN' ? '#007BFF' : '#666' }]}>
-                                    {item.role}
-                                </Text>
+                                <View style={styles.memberAvatarContainer}>
+                                    <Image 
+                                        source={{ uri: item.avatar }} 
+                                        style={styles.memberAvatar}
+                                    />
+                                    <View style={styles.memberDetails}>
+                                        <Text style={styles.memberName}>
+                                            {item.name}
+                                        </Text>
+                                        <Text style={styles.memberEmail}>
+                                            {item.email}
+                                        </Text>
+                                        <Text style={[styles.roleText, { color: item.role === 'ADMIN' ? '#007BFF' : '#666' }]}>
+                                            {item.role}
+                                        </Text>
+                                    </View>
+                                </View>
                             </View>
                             {userRole === 'ADMIN' && item.id !== currentUserId && (
                                 <TouchableOpacity onPress={() => handleRemoveMember(item.id)}>
@@ -577,7 +589,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 10,
+        paddingVertical: 12,
         paddingHorizontal: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#EEE',
@@ -626,10 +638,35 @@ const styles = StyleSheet.create({
     },
     memberInfo: {
         flex: 1,
+        justifyContent: 'center',
+    },
+    memberAvatarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    memberAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    memberDetails: {
+        flex: 1,
+    },
+    memberName: {
+        fontSize: 16,
+        color: '#333',
+        fontWeight: '500',
+    },
+    memberEmail: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 2,
     },
     roleText: {
         fontSize: 12,
         marginTop: 2,
+        fontWeight: '500',
     },
     taskItem: {
         padding: 15,

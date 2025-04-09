@@ -390,6 +390,7 @@ public class ProjectService {
                     memberDTO.setName(pm.getUser().getName());
                     memberDTO.setEmail(pm.getUser().getEmail());
                     memberDTO.setRole(pm.getRole());
+                    memberDTO.setAvatar(pm.getUser().getAvatar());
                     return memberDTO;
                 })
                 .collect(Collectors.toList());

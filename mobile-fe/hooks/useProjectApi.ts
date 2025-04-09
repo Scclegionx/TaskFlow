@@ -17,6 +17,7 @@ export const searchUserByEmail = async (email: string) => {
     const response = await axios.get(`${API_URL_USER_URL}/search?email=${email}`, {
         headers: { Authorization: `Bearer ${token}` },
     });
+    console.log(response.data);
     return response.data;
 };
 

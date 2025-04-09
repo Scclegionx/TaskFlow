@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { 
     View, Text, StyleSheet, FlatList, ScrollView, 
-    TouchableOpacity, Modal, TextInput, Alert 
+    TouchableOpacity, Modal, TextInput, Alert, Image 
 } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { useRouter } from 'expo-router';
@@ -37,7 +37,12 @@ interface ITask {
     id: number;
     title: string;
     description: string;
-    status: number;
+    status: string;
+    assignees: {
+        id: number;
+        name: string;
+        avatar: string;
+    }[];
 }
 
 const getStatusColor = (status: number): string => {
@@ -143,7 +148,7 @@ export default function ProjectDetail() {
     const loadProjects = async () => {
         try {
             const data = await getProjectById(project.id);
-            console.log(data);
+            console.log("Task data:", JSON.stringify(data.tasks, null, 2));
             setItemProject(data);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
@@ -355,7 +360,7 @@ export default function ProjectDetail() {
 
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>📌 Nhiệm vụ</Text>
+                    <Text style={styles.sectionTitle}>📌 Công việc</Text>
                     {userRole === 'ADMIN' && (
                         <TouchableOpacity 
                             onPress={() => router.push({
@@ -402,15 +407,42 @@ export default function ProjectDetail() {
                                             {getTaskStatusText(item.status)}
                                         </Text>
                                         {userRole === 'ADMIN' && (
-                                            <TouchableOpacity 
-                                                style={styles.assignButton}
-                                                onPress={(e) => {
-                                                    e.stopPropagation();
-                                                    handleShowAssignModal(item.id);
-                                                }}
-                                            >
-                                                <AntDesign name="adduser" size={20} color="#007BFF" />
-                                            </TouchableOpacity>
+                                            item.assignees && item.assignees.length > 0 ? (
+                                                <TouchableOpacity 
+                                                    style={styles.assigneeContainer}
+                                                    onPress={(e) => {
+                                                        e.stopPropagation();
+                                                        handleShowAssignModal(item.id);
+                                                    }}
+                                                >
+                                                    <View style={styles.assignedAvatar}>
+                                                        <Image 
+                                                            source={{ uri: item.assignees[0].avatar }} 
+                                                            style={styles.avatarImage}
+                                                        />
+                                                        <View style={styles.changeAssignBadge}>
+                                                            <AntDesign name="edit" size={8} color="#FFF" />
+                                                        </View>
+                                                    </View>
+                                                    {item.assignees.length > 1 && (
+                                                        <View style={styles.assigneeCount}>
+                                                            <Text style={styles.assigneeCountText}>
+                                                                +{item.assignees.length - 1}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                </TouchableOpacity>
+                                            ) : (
+                                                <TouchableOpacity 
+                                                    style={styles.assignButton}
+                                                    onPress={(e) => {
+                                                        e.stopPropagation();
+                                                        handleShowAssignModal(item.id);
+                                                    }}
+                                                >
+                                                    <AntDesign name="adduser" size={20} color="#007BFF" />
+                                                </TouchableOpacity>
+                                            )
                                         )}
                                     </View>
                                 </TouchableOpacity>
@@ -668,5 +700,56 @@ const styles = StyleSheet.create({
     },
     taskContent: {
         flex: 1,
+    },
+    assignedAvatar: {
+        position: 'relative',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: '#E8F4FF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 15,
+    },
+    changeAssignBadge: {
+        position: 'absolute',
+        right: -2,
+        bottom: -2,
+        backgroundColor: '#007BFF',
+        borderRadius: 10,
+        width: 14,
+        height: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFF',
+    },
+    assigneeCount: {
+        position: 'absolute',
+        right: -15,
+        top: '50%',
+        transform: [{ translateY: -10 }],
+        backgroundColor: '#007BFF',
+        borderRadius: 10,
+        minWidth: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 5,
+    },
+    assigneeCountText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    assigneeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        position: 'relative',
     },
 });

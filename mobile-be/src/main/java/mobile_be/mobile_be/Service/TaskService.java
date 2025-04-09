@@ -223,7 +223,7 @@ public class TaskService {
     }
 
     @Transactional
-    public void assignTask(Integer taskId, Integer userId) {
+    public Task assignTask(Integer taskId, Integer userId) {
         Task task = taskRepository.findById(taskId);
         if (task == null) {
             throw new RuntimeException("Không tìm thấy nhiệm vụ");
@@ -261,16 +261,18 @@ public class TaskService {
         // Thêm người dùng vào danh sách assignees
         task.getAssignees().add(user);
         
-        // Cập nhật trạng thái task thành "Đang xử lý" nếu đang ở trạng thái "Chưa được giao"
-        if (task.getStatus() == 1) { // 1 là "Chưa được giao"
-            task.setStatus(2); // 2 là "Đang xử lý"
+        // Cập nhật trạng thái task
+        if (task.getStatus() == 1) { // Nếu task đang ở trạng thái chưa được giao
+            task.setStatus(2); // Chuyển sang trạng thái đang xử lý
         }
 
-        taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
 
-        // Gửi thông báo cho người được gán nhiệm vụ
+        // Gửi thông báo
         String slug = "/tasks/" + task.getId();
         notificationService.sendNotification(userId, "Bạn được gán một nhiệm vụ mới: " + task.getTitle(), slug);
+
+        return updatedTask;
     }
 
     @Transactional

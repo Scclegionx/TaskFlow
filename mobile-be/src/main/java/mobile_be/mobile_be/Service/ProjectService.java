@@ -395,8 +395,14 @@ public class ProjectService {
                 .collect(Collectors.toList());
         dto.setMembers(memberDTOs);
 
-        // Map tasks
-        dto.setTasks(projectMapper.mapTasks(new ArrayList<>(project.getTasks())));
+        // Đảm bảo tasks và assignees được load
+        List<Task> tasks = new ArrayList<>(project.getTasks());
+        for (Task task : tasks) {
+            task.getAssignees().size(); // Force load assignees
+        }
+        
+        // Map tasks với assignees
+        dto.setTasks(projectMapper.mapTasks(tasks));
 
         return dto;
     }

@@ -130,17 +130,6 @@ const CalendarScreen = () => {
         handleDelete();
     };
 
-
-
-    // Danh sách công việc mẫu
-    const tasks = [
-        { id: '1', title: 'Làm việc', time: '16:00 - 18:30' },
-        { id: '2', title: 'Đọc sách', time: '16:00 - 18:30' },
-        { id: '3', title: 'Viết báo cáo', time: '10:00 - 12:00' },
-        { id: '4', title: 'Gặp khách hàng', time: '14:00 - 15:30' },
-        { id: '5', title: 'Nghiên cứu dự án', time: '20:00 - 21:00' },
-    ];
-
     const formatTime = (timeString) => {
         if (!timeString) return '';
         return new Date(timeString).toLocaleTimeString('vi-VN', {
@@ -219,18 +208,6 @@ const CalendarScreen = () => {
                     </View>
                 </View>
             </Modal>
-
-
-            {/* Tiêu đề Công việc */}
-            <Text style={styles.sectionTitle}>✅ Công việc cho {selectedDate || 'hôm nay'}</Text>
-            <View style={styles.listContainer}>
-                {tasks.map((item) => (
-                    <View key={item.id} style={styles.itemCard}>
-                        <Text style={styles.itemTitle}>{item.title}</Text>
-                        <Text style={styles.itemTime}>{item.time}</Text>
-                    </View>
-                ))}
-            </View>
         </ScrollView>
     );
 };

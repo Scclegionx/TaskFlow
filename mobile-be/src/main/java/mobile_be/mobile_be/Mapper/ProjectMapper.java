@@ -11,6 +11,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 
 @Mapper(componentModel = "spring")
@@ -36,7 +37,24 @@ public interface ProjectMapper {
             dto.setId(t.getId());
             dto.setTitle(t.getTitle());
             dto.setDescription(t.getDescription());
-            dto.setStatus(t.getStatus().toString()); // Ép kiểu sang String nếu cần
+            dto.setStatus(t.getStatus().toString());
+            
+            // Map thông tin người được assign
+            if (t.getAssignees() != null && !t.getAssignees().isEmpty()) {
+                List<UserDTO> assignees = t.getAssignees().stream()
+                    .map(assignee -> {
+                        UserDTO userDTO = new UserDTO();
+                        userDTO.setId(assignee.getId());
+                        userDTO.setName(assignee.getName());
+                        userDTO.setAvatar(assignee.getAvatar());
+                        return userDTO;
+                    })
+                    .collect(Collectors.toList());
+                dto.setAssignees(assignees);
+            } else {
+                dto.setAssignees(new ArrayList<>());
+            }
+            
             return dto;
         }).collect(Collectors.toList());
     }

@@ -418,33 +418,37 @@ export default function ProjectDetail() {
                                         <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
                                             {getTaskStatusText(item.status)}
                                         </Text>
-                                        {userRole === 'ADMIN' && (
-                                            item.assignees && item.assignees.length > 0 ? (
-                                                <TouchableOpacity 
-                                                    style={styles.assigneeContainer}
-                                                    onPress={(e) => {
-                                                        e.stopPropagation();
-                                                        handleShowAssignModal(item.id);
-                                                    }}
-                                                >
-                                                    <View style={styles.assignedAvatar}>
-                                                        <Image 
-                                                            source={{ uri: item.assignees[0].avatar }} 
-                                                            style={styles.avatarImage}
-                                                        />
-                                                        <View style={styles.changeAssignBadge}>
+                                        {item.assignees && item.assignees.length > 0 ? (
+                                            <View style={styles.assigneeContainer}>
+                                                <View style={styles.assignedAvatar}>
+                                                    <Image 
+                                                        source={{ uri: item.assignees[0].avatar }} 
+                                                        style={styles.avatarImage}
+                                                    />
+                                                    {/* Chỉ hiển thị nút edit cho ADMIN */}
+                                                    {userRole === 'ADMIN' && (
+                                                        <TouchableOpacity 
+                                                            style={styles.changeAssignBadge}
+                                                            onPress={(e) => {
+                                                                e.stopPropagation();
+                                                                handleShowAssignModal(item.id);
+                                                            }}
+                                                        >
                                                             <AntDesign name="edit" size={8} color="#FFF" />
-                                                        </View>
-                                                    </View>
-                                                    {item.assignees.length > 1 && (
-                                                        <View style={styles.assigneeCount}>
-                                                            <Text style={styles.assigneeCountText}>
-                                                                +{item.assignees.length - 1}
-                                                            </Text>
-                                                        </View>
+                                                        </TouchableOpacity>
                                                     )}
-                                                </TouchableOpacity>
-                                            ) : (
+                                                </View>
+                                                {item.assignees.length > 1 && (
+                                                    <View style={styles.assigneeCount}>
+                                                        <Text style={styles.assigneeCountText}>
+                                                            +{item.assignees.length - 1}
+                                                        </Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        ) : (
+                                            // Chỉ ADMIN mới thấy và có thể nhấn nút thêm người
+                                            userRole === 'ADMIN' ? (
                                                 <TouchableOpacity 
                                                     style={styles.assignButton}
                                                     onPress={(e) => {
@@ -454,6 +458,8 @@ export default function ProjectDetail() {
                                                 >
                                                     <AntDesign name="adduser" size={20} color="#007BFF" />
                                                 </TouchableOpacity>
+                                            ) : (
+                                                <Text style={styles.noAssigneeText}>Chưa có người được gán</Text>
                                             )
                                         )}
                                     </View>
@@ -788,5 +794,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         position: 'relative',
+    },
+    noAssigneeText: {
+        fontSize: 12,
+        color: '#666',
+        fontStyle: 'italic',
     },
 });

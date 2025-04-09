@@ -3,7 +3,7 @@ import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import NotificationItem from "../components/NotificationItem";
 import { styles } from "../assets/styles/notificationStyles";
-import { API_URL_cotifi } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface INotifi {
@@ -11,7 +11,7 @@ interface INotifi {
     title: string;
     message: string;
     createdAt: string;
-    slug?: string | null;
+    slug: string;
     read: boolean;
 }
 
@@ -30,7 +30,7 @@ export default function NotificationsScreen() {
                 return;
             }
 
-            const response = await fetch(`${API_URL_cotifi}`, {
+            const response = await fetch(`${API_BASE_URL}/notifications`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { 
     View, Text, StyleSheet, FlatList, ScrollView, 
-    TouchableOpacity, Modal, TextInput, Alert 
+    TouchableOpacity, Modal, TextInput, Alert, Image 
 } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { useRouter } from 'expo-router';
@@ -31,24 +31,30 @@ interface IMember {
     name: string;
     email: string;
     role: string;
+    avatar: string;
 }
 
 interface ITask {
     id: number;
     title: string;
     description: string;
-    status: number;
+    status: string;
+    assignees: {
+        id: number;
+        name: string;
+        avatar: string;
+    }[];
 }
 
 const getStatusColor = (status: number): string => {
     switch (status) {
-        case 1: // Chưa bắt đầu
+        case 0: // Chưa bắt đầu
             return "#A0A0A0";
-        case 2: // Đang thực hiện
+        case 1: // Đang thực hiện
             return "#00AEEF";
-        case 3: // Hoàn thành
+        case 2: // Hoàn thành
             return "#4CAF50";
-        case 4: // Quá hạn
+        case 3: // Quá hạn
             return "#FF4D67";
         default:
             return "#A0A0A0";
@@ -59,13 +65,13 @@ const getTaskStatusText = (status: string | number): string => {
     // Chuyển status về dạng số để so sánh
     const statusNumber = Number(status);
     switch (statusNumber) {
-        case 1:
+        case 0:
             return "Chưa được giao";
-        case 2:
+        case 1:
             return "Đang xử lý";
-        case 3:
+        case 2:
             return "Hoàn thành";
-        case 4:
+        case 3:
             return "Quá hạn";
         default:
             return "Không xác định";
@@ -75,13 +81,13 @@ const getTaskStatusText = (status: string | number): string => {
 const getTaskStatusColor = (status: string | number): string => {
     const statusNumber = Number(status);
     switch (statusNumber) {
-        case 1:
+        case 0:
             return "#A0A0A0"; // Màu xám cho chưa được giao
-        case 2:
+        case 1:
             return "#00AEEF"; // Màu xanh dương cho đang xử lý
-        case 3:
+        case 2:
             return "#4CAF50"; // Màu xanh lá cho hoàn thành
-        case 4:
+        case 3:
             return "#FF4D67"; // Màu đỏ cho quá hạn
         default:
             return "#A0A0A0";
@@ -143,7 +149,7 @@ export default function ProjectDetail() {
     const loadProjects = async () => {
         try {
             const data = await getProjectById(project.id);
-            console.log(data);
+            console.log("Task data:", JSON.stringify(data.tasks, null, 2));
             setItemProject(data);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
@@ -291,12 +297,23 @@ export default function ProjectDetail() {
                     renderItem={({ item }) => (
                         <View style={styles.memberItem}>
                             <View style={styles.memberInfo}>
-                                <Text style={styles.listText}>
-                                    ✅ {item.name} ({item.email})
-                                </Text>
-                                <Text style={[styles.roleText, { color: item.role === 'ADMIN' ? '#007BFF' : '#666' }]}>
-                                    {item.role}
-                                </Text>
+                                <View style={styles.memberAvatarContainer}>
+                                    <Image 
+                                        source={{ uri: item.avatar }} 
+                                        style={styles.memberAvatar}
+                                    />
+                                    <View style={styles.memberDetails}>
+                                        <Text style={styles.memberName}>
+                                            {item.name}
+                                        </Text>
+                                        <Text style={styles.memberEmail}>
+                                            {item.email}
+                                        </Text>
+                                        <Text style={[styles.roleText, { color: item.role === 'ADMIN' ? '#007BFF' : '#666' }]}>
+                                            {item.role}
+                                        </Text>
+                                    </View>
+                                </View>
                             </View>
                             {userRole === 'ADMIN' && item.id !== currentUserId && (
                                 <TouchableOpacity onPress={() => handleRemoveMember(item.id)}>
@@ -355,7 +372,7 @@ export default function ProjectDetail() {
 
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>📌 Nhiệm vụ</Text>
+                    <Text style={styles.sectionTitle}>📌 Công việc</Text>
                     {userRole === 'ADMIN' && (
                         <TouchableOpacity 
                             onPress={() => router.push({
@@ -401,16 +418,49 @@ export default function ProjectDetail() {
                                         <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
                                             {getTaskStatusText(item.status)}
                                         </Text>
-                                        {userRole === 'ADMIN' && (
-                                            <TouchableOpacity 
-                                                style={styles.assignButton}
-                                                onPress={(e) => {
-                                                    e.stopPropagation();
-                                                    handleShowAssignModal(item.id);
-                                                }}
-                                            >
-                                                <AntDesign name="adduser" size={20} color="#007BFF" />
-                                            </TouchableOpacity>
+                                        {item.assignees && item.assignees.length > 0 ? (
+                                            <View style={styles.assigneeContainer}>
+                                                <View style={styles.assignedAvatar}>
+                                                    <Image 
+                                                        source={{ uri: item.assignees[0].avatar }} 
+                                                        style={styles.avatarImage}
+                                                    />
+                                                    {/* Chỉ hiển thị nút edit cho ADMIN */}
+                                                    {userRole === 'ADMIN' && (
+                                                        <TouchableOpacity 
+                                                            style={styles.changeAssignBadge}
+                                                            onPress={(e) => {
+                                                                e.stopPropagation();
+                                                                handleShowAssignModal(item.id);
+                                                            }}
+                                                        >
+                                                            <AntDesign name="edit" size={8} color="#FFF" />
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
+                                                {item.assignees.length > 1 && (
+                                                    <View style={styles.assigneeCount}>
+                                                        <Text style={styles.assigneeCountText}>
+                                                            +{item.assignees.length - 1}
+                                                        </Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        ) : (
+                                            // Chỉ ADMIN mới thấy và có thể nhấn nút thêm người
+                                            userRole === 'ADMIN' ? (
+                                                <TouchableOpacity 
+                                                    style={styles.assignButton}
+                                                    onPress={(e) => {
+                                                        e.stopPropagation();
+                                                        handleShowAssignModal(item.id);
+                                                    }}
+                                                >
+                                                    <AntDesign name="adduser" size={20} color="#007BFF" />
+                                                </TouchableOpacity>
+                                            ) : (
+                                                <Text style={styles.noAssigneeText}>Chưa có người được gán</Text>
+                                            )
                                         )}
                                     </View>
                                 </TouchableOpacity>
@@ -545,7 +595,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 10,
+        paddingVertical: 12,
         paddingHorizontal: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#EEE',
@@ -594,10 +644,35 @@ const styles = StyleSheet.create({
     },
     memberInfo: {
         flex: 1,
+        justifyContent: 'center',
+    },
+    memberAvatarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    memberAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    memberDetails: {
+        flex: 1,
+    },
+    memberName: {
+        fontSize: 16,
+        color: '#333',
+        fontWeight: '500',
+    },
+    memberEmail: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 2,
     },
     roleText: {
         fontSize: 12,
         marginTop: 2,
+        fontWeight: '500',
     },
     taskItem: {
         padding: 15,
@@ -668,5 +743,61 @@ const styles = StyleSheet.create({
     },
     taskContent: {
         flex: 1,
+    },
+    assignedAvatar: {
+        position: 'relative',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: '#E8F4FF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 15,
+    },
+    changeAssignBadge: {
+        position: 'absolute',
+        right: -2,
+        bottom: -2,
+        backgroundColor: '#007BFF',
+        borderRadius: 10,
+        width: 14,
+        height: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFF',
+    },
+    assigneeCount: {
+        position: 'absolute',
+        right: -15,
+        top: '50%',
+        transform: [{ translateY: -10 }],
+        backgroundColor: '#007BFF',
+        borderRadius: 10,
+        minWidth: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 5,
+    },
+    assigneeCountText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    assigneeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    noAssigneeText: {
+        fontSize: 12,
+        color: '#666',
+        fontStyle: 'italic',
     },
 });

@@ -1,11 +1,66 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, TextInput, Button, Alert, FlatList, TouchableOpacity, TouchableWithoutFeedback, Keyboard, Image } from "react-native";
+import { View, Text, TextInput, Button, Alert, FlatList, TouchableOpacity, TouchableWithoutFeedback, Keyboard, Image, ScrollView, Modal } from "react-native";
 import { styles } from "@/assets/styles/projectStyles";
 import { useRouter } from "expo-router";
 import { createProject, searchUserByEmail } from "@/hooks/useProjectApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { debounce } from "lodash";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import Toast from 'react-native-toast-message';
+
+// Tách phần tìm kiếm thành component Modal riêng
+const UserSearchModal = ({ visible, searchResults, onSelectUser, searchInput, onChangeSearch, onClose }) => {
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Nhập email để tìm kiếm"
+                            value={searchInput}
+                            onChangeText={onChangeSearch}
+                            autoFocus={true}
+                        />
+                        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                            <Text style={styles.closeButtonText}>×</Text>
+                        </TouchableOpacity>
+                    </View>
+                    
+                    <FlatList
+                        data={searchResults}
+                        keyExtractor={(item) => item.id.toString()}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => onSelectUser(item)}
+                            >
+                                <Image 
+                                    source={{ 
+                                        uri: item.avatar || 'https://your-default-avatar-url.com/default.png'
+                                    }} 
+                                    style={styles.avatar}
+                                />
+                                <View style={styles.userInfo}>
+                                    <Text style={styles.userName}>{item.name}</Text>
+                                    <Text style={styles.userEmail}>{item.email}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        ListEmptyComponent={() => (
+                            <Text style={styles.noResultText}>Không tìm thấy người dùng</Text>
+                        )}
+                    />
+                </View>
+            </View>
+        </Modal>
+    );
+};
 
 const CreateProjectScreen = () => {
     const router = useRouter();
@@ -13,8 +68,8 @@ const CreateProjectScreen = () => {
     const [description, setDescription] = useState("");
     const [createdBy, setCreatedBy] = useState<number | null>(null);
     const [searchEmail, setSearchEmail] = useState("");
-    const [searchResults, setSearchResults] = useState<{ id: number, name: string, email: string, avatarUrl: string }[]>([]);
-    const [selectedUsers, setSelectedUsers] = useState<{ id: number, name: string, avatarUrl: string }[]>([]);
+    const [searchResults, setSearchResults] = useState<{ id: number, name: string, email: string, avatar: string }[]>([]);
+    const [selectedUsers, setSelectedUsers] = useState<{ id: number, name: string, avatar: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     const [fromDate, setFromDate] = useState<Date | null>(null);
@@ -25,9 +80,14 @@ const CreateProjectScreen = () => {
     useEffect(() => {
         const fetchUserId = async () => {
             const userId = await AsyncStorage.getItem("userId");
+            const userAvatar = await AsyncStorage.getItem("userAvatar");
             if (userId) {
                 setCreatedBy(Number(userId));
-                setSelectedUsers([{ id: Number(userId), name: "Bạn", avatarUrl: "https://example.com/default-avatar.png" }]); // Thêm chính user đang đăng nhập
+                setSelectedUsers([{
+                    id: Number(userId),
+                    name: "Bạn",
+                    avatar: userAvatar || 'https://your-default-avatar-url.com/default.png'
+                }]);
             }
         };
         fetchUserId();
@@ -58,13 +118,36 @@ const CreateProjectScreen = () => {
         debouncedSearch(email);
     };
 
-    const handleAddUser = (user: { id: number, name: string, avatarUrl: string }) => {
+    const handleAddUser = (user: { id: number, name: string, avatar: string }) => {
         if (!selectedUsers.some(u => u.id === user.id)) {
-            setSelectedUsers([...selectedUsers, user]);
+            setSelectedUsers([...selectedUsers, {
+                id: user.id,
+                name: user.name,
+                avatar: user.avatar || 'https://your-default-avatar-url.com/default.png'
+            }]);
+            Toast.show({
+                type: 'success',
+                position: 'top',
+                text1: 'Thêm thành công',
+                text2: `Đã thêm ${user.name} vào dự án`,
+                visibilityTime: 2000,
+                autoHide: true,
+                topOffset: 30,
+            });
+            setSearchEmail("");
+            setSearchResults([]);
+            setIsDropdownVisible(false);
+        } else {
+            Toast.show({
+                type: 'info',
+                position: 'top',
+                text1: 'Thông báo',
+                text2: 'Thành viên này đã được thêm vào dự án',
+                visibilityTime: 2000,
+                autoHide: true,
+                topOffset: 30,
+            });
         }
-        setSearchEmail("");
-        setSearchResults([]);
-        setIsDropdownVisible(false);
     };
 
     const handleRemoveUser = (userId: number) => {
@@ -97,108 +180,135 @@ const CreateProjectScreen = () => {
         }
     };
 
+    // Thêm function để đóng modal
+    const handleCloseModal = () => {
+        setIsDropdownVisible(false);
+        setSearchEmail("");
+        setSearchResults([]);
+    };
 
     return (
-        <TouchableWithoutFeedback onPress={() => setIsDropdownVisible(false)}>
-            <View style={styles.container}>
+        <View style={styles.container}>
+            <ScrollView 
+                contentContainerStyle={styles.scrollContainer}
+                keyboardShouldPersistTaps="handled"
+            >
                 <Text style={styles.header}>Tạo Dự Án</Text>
 
-                <Text style={styles.label}>Tên dự án</Text>
-                <TextInput style={styles.input} placeholder="Nhập tên dự án" value={name} onChangeText={setName} />
-
-                <Text style={styles.label}>Mô tả</Text>
-                <TextInput style={styles.input} placeholder="Nhập mô tả" value={description} onChangeText={setDescription} multiline />
-
-                {/* Ngày bắt đầu */}
-                <Text style={styles.label}>Ngày bắt đầu</Text>
-                <TouchableOpacity onPress={() => setShowFromDatePicker(true)}>
-                    <Text style={styles.dateInput}>{fromDate ? fromDate.toDateString() : "Chọn ngày"}</Text>
-                </TouchableOpacity>
-                {showFromDatePicker && (
-                    <DateTimePicker
-                        value={fromDate || new Date()}
-                        mode="date"
-                        display= "spinner"
-                        onChange={(event, selectedDate) => {
-                            setShowFromDatePicker(false);
-                            if (selectedDate) setFromDate(selectedDate);
-                        }}
-                    />
-                )}
-
-                {/* Ngày kết thúc */}
-                <Text style={styles.label}>Ngày kết thúc</Text>
-                <TouchableOpacity onPress={() => setShowToDatePicker(true)}>
-                    <Text style={styles.dateInput}>{toDate ? toDate.toDateString() : "Chọn ngày"}</Text>
-                </TouchableOpacity>
-                {showToDatePicker && (
-                    <DateTimePicker
-                        value={toDate || new Date()}
-                        mode="date"
-                        display= "spinner"
-                        onChange={(event, selectedDate) => {
-                            setShowToDatePicker(false);
-                            if (selectedDate) setToDate(selectedDate);
-                        }}
-                    />
-                )}
-
-                <Text style={styles.label}>Thêm thành viên (Email)</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nhập email để tìm kiếm"
-                        value={searchEmail}
-                        onChangeText={handleSearch}
-                        onFocus={() => setIsDropdownVisible(true)}
+                <View style={styles.formSection}>
+                    <Text style={styles.label}>Tên dự án</Text>
+                    <TextInput 
+                        style={styles.input} 
+                        placeholder="Nhập tên dự án" 
+                        value={name} 
+                        onChangeText={setName} 
                     />
 
-                    {isDropdownVisible && (
-                        <View style={styles.dropdown}>
-                            {searchResults.length > 0 ? (
-                                <FlatList
-                                    data={searchResults}
-                                    keyExtractor={(item) => item.id.toString()}
-                                    renderItem={({ item }) => (
-                                        <TouchableOpacity
-                                            style={styles.dropdownItem}
-                                            onPress={() => handleAddUser(item)}
+                    <Text style={styles.label}>Mô tả</Text>
+                    <TextInput 
+                        style={[styles.input, { height: 100 }]} 
+                        placeholder="Nhập mô tả" 
+                        value={description} 
+                        onChangeText={setDescription} 
+                        multiline 
+                    />
+
+                    <Text style={styles.label}>Ngày bắt đầu</Text>
+                    <TouchableOpacity onPress={() => setShowFromDatePicker(true)}>
+                        <Text style={styles.dateInput}>
+                            {fromDate 
+                                ? fromDate.toLocaleDateString('vi-VN', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                })
+                                : "Chọn ngày"}
+                        </Text>
+                    </TouchableOpacity>
+                    {showFromDatePicker && (
+                        <DateTimePicker
+                            value={fromDate || new Date()}
+                            mode="date"
+                            display="spinner"
+                            onChange={(event, selectedDate) => {
+                                setShowFromDatePicker(false);
+                                if (selectedDate) setFromDate(selectedDate);
+                            }}
+                        />
+                    )}
+
+                    <Text style={styles.label}>Ngày kết thúc</Text>
+                    <TouchableOpacity onPress={() => setShowToDatePicker(true)}>
+                        <Text style={styles.dateInput}>
+                            {toDate 
+                                ? toDate.toLocaleDateString('vi-VN', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                })
+                                : "Chọn ngày"}
+                        </Text>
+                    </TouchableOpacity>
+                    {showToDatePicker && (
+                        <DateTimePicker
+                            value={toDate || new Date()}
+                            mode="date"
+                            display="spinner"
+                            onChange={(event, selectedDate) => {
+                                setShowToDatePicker(false);
+                                if (selectedDate) setToDate(selectedDate);
+                            }}
+                        />
+                    )}
+
+                    <Text style={styles.label}>Thêm thành viên (Email)</Text>
+                    <TouchableOpacity 
+                        style={styles.addMemberButton}
+                        onPress={() => setIsDropdownVisible(true)}
+                    >
+                        <Text style={styles.addMemberButtonText}>+ Thêm thành viên</Text>
+                    </TouchableOpacity>
+
+                    <UserSearchModal
+                        visible={isDropdownVisible}
+                        searchResults={searchResults}
+                        onSelectUser={handleAddUser}
+                        searchInput={searchEmail}
+                        onChangeSearch={handleSearch}
+                        onClose={handleCloseModal}
+                    />
+
+                    <Text style={styles.label}>Thành viên đã thêm:</Text>
+                    <View style={styles.membersList}>
+                        {selectedUsers.map((item) => (
+                            <View key={item.id} style={styles.memberCard}>
+                                <View style={styles.memberInfo}>
+                                    <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                                    <Text style={styles.userName}>{item.name}</Text>
+                                    {item.id !== createdBy && (
+                                        <TouchableOpacity 
+                                            style={styles.removeButton}
+                                            onPress={() => handleRemoveUser(item.id)}
                                         >
-                                            <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
-                                            <View>
-                                                <Text style={styles.userName}>{item.name}</Text>
-                                                <Text style={styles.userEmail}>{item.email}</Text>
-                                            </View>
+                                            <Text style={styles.removeText}>×</Text>
                                         </TouchableOpacity>
                                     )}
-                                />
-                            ) : (
-                                <Text style={styles.noResultText}>Không tìm thấy người dùng</Text>
-                            )}
-                        </View>
-                    )}
+                                </View>
+                            </View>
+                        ))}
+                    </View>
                 </View>
 
-                <Text style={styles.label}>Thành viên đã thêm:</Text>
-                <FlatList
-                    data={selectedUsers}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <View style={styles.userItem}>
-                            <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
-                            <Text style={styles.userName}>{item.name}</Text>
-                            {item.id !== createdBy && ( // Không xóa chính người tạo dự án
-                                <TouchableOpacity onPress={() => handleRemoveUser(item.id)}>
-                                    <Text style={styles.removeUser}>❌</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    )}
-                />
-
-                <Button title="Tạo dự án" onPress={handleSubmit} />
-            </View>
-        </TouchableWithoutFeedback>
+                <TouchableOpacity 
+                    style={styles.createButton} 
+                    onPress={handleSubmit}
+                >
+                    <Text style={styles.createButtonText}>Tạo dự án</Text>
+                </TouchableOpacity>
+            </ScrollView>
+            
+            <Toast />
+        </View>
     );
 };
 

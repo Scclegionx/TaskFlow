@@ -4,6 +4,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.request.TaskRequest;
 import mobile_be.mobile_be.Model.Task;
+import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Service.ProjectService;
 import mobile_be.mobile_be.Service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -116,8 +119,23 @@ public class TaskController {
             @RequestParam Integer taskId,
             @RequestParam Integer userId) {
         try {
-            taskService.assignTask(taskId, userId);
-            return ResponseEntity.ok("Gán nhiệm vụ thành công");
+            Task updatedTask = taskService.assignTask(taskId, userId);
+            // Tạo response object với thông tin cần thiết
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Gán nhiệm vụ thành công");
+            
+            // Lấy thông tin tất cả người được assign
+            List<Map<String, Object>> assignees = new ArrayList<>();
+            for (User assignee : updatedTask.getAssignees()) {
+                Map<String, Object> assigneeInfo = new HashMap<>();
+                assigneeInfo.put("id", assignee.getId());
+                assigneeInfo.put("name", assignee.getName());
+                assigneeInfo.put("avatar", assignee.getAvatar());
+                assignees.add(assigneeInfo);
+            }
+            response.put("assignees", assignees);
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)

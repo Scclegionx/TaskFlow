@@ -8,4 +8,5 @@ public class ProjectMemberDTO {
     private String name;
     private String email;
     private String role;  // Thêm trường role
+    private String avatar;
 } 

@@ -32,13 +32,13 @@ const CreateTaskScreen = () => {
     const [isToDatePicker, setIsToDatePicker] = useState(true);
     const [isFromTimePickerVisible, setFromTimePickerVisible] = useState(false);
     const [isToTimePickerVisible, setToTimePickerVisible] = useState(false);
-    const [level, setLevel] = useState(1);
+    const [level, setLevel] = useState(0);
     const [showLevelPicker, setShowLevelPicker] = useState(false);
 
     const levelOptions = [
-        { label: 'Thấp', value: 1 },
-        { label: 'Trung bình', value: 2 },
-        { label: 'Cao', value: 3 }
+        { label: 'Thấp', value: 0 },
+        { label: 'Trung bình', value: 1 },
+        { label: 'Cao', value: 2 }
     ];
 
     const getLevelLabel = (value: number) => {
@@ -68,7 +68,7 @@ const CreateTaskScreen = () => {
                 description: description.trim(),
                 fromDate: fromDate.toISOString(),
                 toDate: toDate.toISOString(),
-                status: 1,
+                status: 0,
                 level: level,
                 assignedTo: []
             };

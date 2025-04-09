@@ -60,7 +60,7 @@ public class ProjectService {
         project.setFromDate(request.getFromDate());
         project.setToDate(request.getToDate());
         project.setCreatedAt(new Date());
-        project.setStatus(1);
+        project.setStatus(0);
         Project savedProject = projectRepository.save(project);
 
         // Tạo Set để lưu tất cả thành viên
@@ -390,13 +390,20 @@ public class ProjectService {
                     memberDTO.setName(pm.getUser().getName());
                     memberDTO.setEmail(pm.getUser().getEmail());
                     memberDTO.setRole(pm.getRole());
+                    memberDTO.setAvatar(pm.getUser().getAvatar());
                     return memberDTO;
                 })
                 .collect(Collectors.toList());
         dto.setMembers(memberDTOs);
 
-        // Map tasks
-        dto.setTasks(projectMapper.mapTasks(new ArrayList<>(project.getTasks())));
+        // Đảm bảo tasks và assignees được load
+        List<Task> tasks = new ArrayList<>(project.getTasks());
+        for (Task task : tasks) {
+            task.getAssignees().size(); // Force load assignees
+        }
+        
+        // Map tasks với assignees
+        dto.setTasks(projectMapper.mapTasks(tasks));
 
         return dto;
     }

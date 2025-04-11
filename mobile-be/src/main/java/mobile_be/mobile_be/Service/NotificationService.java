@@ -9,6 +9,7 @@ import mobile_be.mobile_be.Repository.NoticeRepository;
 import mobile_be.mobile_be.Repository.UserNoticeRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,7 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
+    @Async
     @Transactional
     public void sendNotification(Integer userId, String message,String slug) {
         User user = userRepository.findById(userId).orElse(null);

@@ -24,6 +24,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import Attachment from "@/components/Attachment"; // Import component Attachment
 import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 const API_URL = `${API_BASE_URL}`;
 const WEBSOCKET_URL = `${API_URL.replace("/api", "")}/ws-chat`;
 
@@ -39,6 +41,7 @@ const ChatScreen = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [fileStatus, setFileStatus] = useState(null); // Trạng thái tải file
   const navigation = useNavigation();
   const router = useRouter();
   useEffect(() => {
@@ -339,6 +342,38 @@ const ChatScreen = () => {
           console.error("❌ Lỗi khi ẩn tin nhắn:", error);
         }
       };
+      const handleDownloadFile = async (fileUrl) => {
+        try {
+          setFileStatus("Đang tải..."); // Hiển thị trạng thái đang tải
+          const fileName = fileUrl.split("/").pop(); // Lấy tên file từ URL
+          const fileUri = `${FileSystem.documentDirectory}${fileName}`; // Đường dẫn lưu file cục bộ
+      
+          const downloadResumable = FileSystem.createDownloadResumable(
+            fileUrl,
+            fileUri
+          );
+      
+          const { uri } = await downloadResumable.downloadAsync();
+          console.log("✅ File đã được tải về:", uri);
+      
+          setFileStatus("Đã tải xong"); // Cập nhật trạng thái tải xong
+      
+          // Kiểm tra xem thiết bị có hỗ trợ chia sẻ file không
+          if (await Sharing.isAvailableAsync()) {
+            setFileStatus("Đang chia sẻ..."); // Cập nhật trạng thái chia sẻ
+            await Sharing.shareAsync(uri);
+            setFileStatus("Đã chia sẻ xong"); // Cập nhật trạng thái chia sẻ xong
+          } else {
+            Alert.alert("Thông báo", "File đã được tải về thiết bị.");
+          }
+        } catch (error) {
+          console.error("❌ Lỗi khi tải file:", error);
+          Alert.alert("Lỗi", "Không thể tải file. Vui lòng thử lại.");
+          setFileStatus("Lỗi khi tải file"); // Cập nhật trạng thái lỗi
+        } finally {
+          setTimeout(() => setFileStatus(null), 3000); // Ẩn trạng thái sau 3 giây
+        }
+      };
     return (
       <View
         style={[
@@ -357,8 +392,14 @@ const ChatScreen = () => {
         <TouchableOpacity
           style={{ width: "100%"}}
           onPress={() => {
-            if (item.attachmentUrl && item.attachmentType === "image") {
-              setSelectedImage(item.attachmentUrl); // Đặt ảnh được chọn
+            if (item.attachmentUrl) {
+              if (item.attachmentType === "image") {
+                setSelectedImage(item.attachmentUrl); // Hiển thị ảnh
+              } else if (item.attachmentType === "video") {
+                
+              } else {
+                handleDownloadFile(item.attachmentUrl); // Tải file khác
+              }
             }
           }}
           onLongPress={() => {
@@ -426,6 +467,11 @@ const ChatScreen = () => {
           inverted
         />
       )}
+            {fileStatus && (
+  <View style={styles.fileStatusContainer}>
+    <Text style={styles.fileStatusText}>{fileStatus}</Text>
+  </View>
+)}
       {/* Modal hiển thị ảnh toàn màn hình */}
       {selectedImage && (
         <Modal visible={true} transparent={true}>
@@ -565,6 +611,23 @@ const styles = StyleSheet.create({
     width: "90%",
     height: "70%",
     resizeMode: "contain",
+  },
+  fileStatusContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+  },
+  fileStatusText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   closeButton: {
     position: "absolute",

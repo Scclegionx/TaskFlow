@@ -47,6 +47,8 @@ public class ProjectService {
     private UserMapper userMapper;
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private MailService mailService;
 
     @Transactional
     public Project createProject(CreateProjectRequest request) {
@@ -95,6 +97,9 @@ public class ProjectService {
         for (User member : members.stream().map(ProjectMember::getUser).collect(Collectors.toList())) {
             notificationService.sendNotification(member.getId(),
                     "Bạn đã được thêm vào dự án: " + savedProject.getName(),slug);
+            mailService.sendNoticeEmail(member.getEmail(),
+                    "Thông báo dự án mới",
+                    "Bạn đã được thêm vào dự án: " + savedProject.getName());
         }
 
         return savedProject;

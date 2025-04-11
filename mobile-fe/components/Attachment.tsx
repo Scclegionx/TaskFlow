@@ -35,13 +35,13 @@ const Attachment = ({ attachmentUrl, attachmentType, style}) => {
         );
       case "pdf":
         return (
-          <TouchableOpacity onPress={() => openPdf()}>
+          <TouchableOpacity >
             <Text style={styles.pdfLink}>📄 {displayedFileName}</Text>
           </TouchableOpacity>
         );
       case "raw":
         return (
-          <TouchableOpacity onPress={() => handleDownload()}>
+          <TouchableOpacity>
             <Text style={styles.rawFileLink}>📂 {displayedFileName}</Text>
           </TouchableOpacity>
         );
@@ -50,17 +50,7 @@ const Attachment = ({ attachmentUrl, attachmentType, style}) => {
     }
   };
 
-  // Mở PDF trong WebView
-  const openPdf = () => {
-    console.log(`Mở PDF: ${attachmentUrl}`);
-    // Điều hướng tới màn hình hiển thị PDF nếu có
-  };
 
-  // Tải file raw
-  const handleDownload = () => {
-    console.log(`Tải xuống: ${attachmentUrl}`);
-    // Ở React Native, cần sử dụng `expo-file-system` để tải file
-  };
 
   return (
     <View style={styles.attachmentContainer,style}>

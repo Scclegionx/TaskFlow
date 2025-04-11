@@ -5,6 +5,7 @@ import { login } from '@/hooks/useAuthApi';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
+import utf8 from "utf8";
 
 const LoginScreen = () => {
     const navigation = useNavigation();
@@ -33,7 +34,9 @@ const LoginScreen = () => {
             const payload = JSON.parse(atob(token.split('.')[1])); 
 
             await AsyncStorage.setItem('token', token);
-            await AsyncStorage.setItem('username', payload.username);
+            const decodedUsername = utf8.decode(payload.username);
+await AsyncStorage.setItem("username", decodedUsername);
+console.log("Decoded username:", decodedUsername);
             await AsyncStorage.setItem('exp', payload.exp.toString());
             await AsyncStorage.setItem('email', payload.sub);
             await AsyncStorage.setItem('userId', payload.id.toString());

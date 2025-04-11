@@ -49,6 +49,7 @@ export default function RootLayout() {
       }
 
       const isExpired = parseInt(exp) * 1000 < Date.now();
+      console.log('isExpired', isExpired, parseInt(exp) * 1000, Date.now());
       if (isExpired) {
         await AsyncStorage.removeItem('username');
         await AsyncStorage.removeItem('exp');

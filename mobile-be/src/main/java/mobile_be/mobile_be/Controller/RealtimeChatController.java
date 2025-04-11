@@ -245,11 +245,39 @@ public class RealtimeChatController {
 //                .map(MessageDTO::new)
 //                .collect(Collectors.toList());
 //    }
+//    @Transactional
+//    @GetMapping("/{chatId}/messages")
+//    public List<Message> getMessagesByChatId(@PathVariable Long chatId) {
+//        List<Message> messages = messageRepository.findAllByChatId(chatId);
+//
+//        for (Message message : messages) {
+//            Hibernate.initialize(message.getChat().getDeletedForUsers());
+//        }
+//
+//        return messages;
+//    }
     @Transactional
     @GetMapping("/{chatId}/messages")
-    public List<Message> getMessagesByChatId(@PathVariable Long chatId) {
+    public List<Message> getMessagesByChatId(@PathVariable Long chatId, HttpServletRequest request) {
+        // Extract token from Authorization Header
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            throw new RuntimeException("Invalid token");
+        }
+        token = token.substring(7);
+
+        // Decode token to get userId
+        int userId = jwtUtil.extractId(token);
+
+        // Fetch all messages for the chat
         List<Message> messages = messageRepository.findAllByChatId(chatId);
 
+        // Filter out messages deleted by the user
+        messages = messages.stream()
+                .filter(message -> message.getDeletedForUsers().stream().noneMatch(user -> user.getId() == userId))
+                .collect(Collectors.toList());
+
+        // Initialize lazy-loaded collections
         for (Message message : messages) {
             Hibernate.initialize(message.getChat().getDeletedForUsers());
         }
@@ -386,6 +414,7 @@ public class RealtimeChatController {
         // 📌 Lọc danh sách chat mà user tham gia
         return chatRepository.findAll().stream()
                 .filter(chat -> chat.getUsers().stream().anyMatch(user -> user.getId().equals(userId)))
+                .filter(chat -> chat.getDeletedForUsers().stream().noneMatch(user -> user.getId().equals(userId)))
                 .toList();
     }
 

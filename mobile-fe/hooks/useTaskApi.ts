@@ -6,24 +6,20 @@ export const createTask = async (taskData: any) => {
     try {
         const token = await AsyncStorage.getItem('token');
         const userId = await AsyncStorage.getItem('userId');
-        
-        const response = await axios.post(
-            `${API_URL_TASK}/create-task`,
-            {
-                ...taskData,
-                createdBy: parseInt(userId || '0'),
-            },
-            {
-                headers: { 
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+
+        const response = await axios.post(`${API_URL_TASK}/create-task`, {
+            ...taskData,
+            createdBy: Number(userId)
+        }, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
-        );
+        });
+
         return response.data;
     } catch (error: any) {
-        console.error('API Error:', error.response?.data);
-        throw new Error(error.response?.data || 'Lỗi khi tạo nhiệm vụ');
+        console.error('Error creating task:', error);
+        throw new Error(error.response?.data?.message || 'Không thể tạo nhiệm vụ');
     }
 };
 
@@ -98,5 +94,37 @@ export const updateTask = async (taskData: any) => {
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data || 'Không thể cập nhật nhiệm vụ');
+    }
+};
+
+export const getMainTasks = async (projectId: number) => {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        const response = await axios.get(
+            `${API_URL_TASK}/get-main-tasks`,
+            {
+                params: { projectId },
+                headers: { Authorization: `Bearer ${token}` }
+            }
+        );
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data || 'Không thể lấy danh sách công việc chính');
+    }
+};
+
+export const getSubTasks = async (parentId: number) => {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        const response = await axios.get(
+            `${API_URL_TASK}/get-sub-tasks`,
+            {
+                params: { parentId },
+                headers: { Authorization: `Bearer ${token}` }
+            }
+        );
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data || 'Không thể lấy danh sách công việc con');
     }
 };

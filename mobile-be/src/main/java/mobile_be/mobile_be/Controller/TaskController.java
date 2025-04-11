@@ -1,6 +1,5 @@
 package mobile_be.mobile_be.Controller;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.request.TaskRequest;
 import mobile_be.mobile_be.Model.Task;
@@ -17,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/api/tasks")
@@ -42,9 +42,13 @@ public class TaskController {
 
     // tao task ( ai lam thi sua lai)
     @PostMapping("/create-task")
-    public ResponseEntity<?> createTask(@RequestBody TaskRequest taskRequest) {
-        Task task = taskService.createTask(taskRequest);
-        return ResponseEntity.ok("Task created successfully");
+    public ResponseEntity<?> createTask(@RequestBody TaskRequest request) {
+        try {
+            taskService.createTask(request);
+            return ResponseEntity.ok("Tạo nhiệm vụ thành công");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi khi tạo nhiệm vụ: " + e.getMessage());
+        }
     }
 
     // api lay ra tat ca cac cong viec
@@ -174,4 +178,27 @@ public class TaskController {
         return ResponseEntity.badRequest().body("co loi trong qua trinh xu ly");
     }
 
+    @GetMapping("/get-main-tasks")
+    public ResponseEntity<?> getMainTasks(@RequestParam Integer projectId) {
+        try {
+            List<Task> mainTasks = taskService.getMainTasks(projectId);
+            return ResponseEntity.ok(mainTasks);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi lấy danh sách công việc chính: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-sub-tasks")
+    public ResponseEntity<?> getSubTasks(@RequestParam Integer parentId) {
+        try {
+            List<Task> subTasks = taskService.getSubTasks(parentId);
+            return ResponseEntity.ok(subTasks);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi lấy danh sách công việc con: " + e.getMessage());
+        }
+    }
 }

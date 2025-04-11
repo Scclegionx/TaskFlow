@@ -199,4 +199,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             nativeQuery = true)
     List<User> getAllMemberInProject(Integer projectId, String textSearch);
 
+    @Query("SELECT DISTINCT p FROM Project p JOIN p.projectMembers pm WHERE pm.user.id = ?1")
+    List<Project> findByProjectMembersUserId(Integer userId);
+
 }

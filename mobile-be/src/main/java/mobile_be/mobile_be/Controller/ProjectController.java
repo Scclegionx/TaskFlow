@@ -73,9 +73,9 @@ public class ProjectController {
 
 
     @GetMapping("/get-project")
-        public ResponseEntity<?> getProject() {
-            return ResponseEntity.ok(projectService.getProject());
-        }
+    public ResponseEntity<?> getProject(@RequestParam Integer userId) {
+        return ResponseEntity.ok(projectService.getProject(userId));
+    }
 
     // api lay ra  nhan su cua du an
     // api lay ra nhan su cho ca he thong

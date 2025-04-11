@@ -77,33 +77,62 @@ public class TaskService {
         return response;
     }
 
-    public Task createTask(TaskRequest taskRequest) {
-        Task task = new Task();
-        List<User> user = userRepository.findAllById(taskRequest.getAssignedTo());
-        Project project = projectRepository.findById(taskRequest.getProjectId()).orElse(null);
-        task.setTitle(taskRequest.getTitle());
-        task.setProject(project);
-        task.setDescription(taskRequest.getDescription());
-        task.setToDate(taskRequest.getToDate());
-        task.setFromDate(taskRequest.getFromDate());
-        task.setStatus(taskRequest.getStatus());
-        task.setLevel(taskRequest.getLevel());
-        task.setAssignees(user);
-        task.setCreatedAt(LocalDateTime.now());
-        // doan nay sua lai thanh  user tu token hien tai
-        task.setCreatedBy(taskRequest.getCreatedBy());
-        taskRepository.save(task);
-        String slug = "/tasks/" + task.getId();
-        for(User u:user){
-          notificationService.sendNotification(u.getId(),"test tasks",slug);  
+    @Transactional
+    public void createTask(TaskRequest request) {
+        // Validate project exists
+        Project project = projectRepository.findById(request.getProjectId())
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        // Validate creator exists
+        User creator = userRepository.findById(request.getCreatedBy())
+                .orElseThrow(() -> new RuntimeException("Creator not found"));
+
+        // Không cần chuyển đổi múi giờ nữa vì thời gian đã được gửi từ frontend ở định dạng UTC
+        LocalDateTime fromDate = request.getFromDate();
+        LocalDateTime toDate = request.getToDate();
+
+        // Create main task
+        Task mainTask = new Task();
+        mainTask.setTitle(request.getTitle());
+        mainTask.setDescription(request.getDescription());
+        mainTask.setFromDate(fromDate);
+        mainTask.setToDate(toDate);
+        mainTask.setStatus(request.getStatus());
+        mainTask.setLevel(request.getLevel());
+        mainTask.setProject(project);
+        mainTask.setCreatedBy(creator.getId());
+        mainTask.setCreatedAt(LocalDateTime.now());
+
+        // Save main task first to get its ID
+        mainTask = taskRepository.save(mainTask);
+
+        // Handle subtasks if any
+        if (request.getSubTasks() != null && !request.getSubTasks().isEmpty()) {
+            for (TaskRequest subtaskRequest : request.getSubTasks()) {
+                // Không cần chuyển đổi múi giờ cho subtask nữa
+                LocalDateTime subtaskFromDate = subtaskRequest.getFromDate();
+                LocalDateTime subtaskToDate = subtaskRequest.getToDate();
+
+                Task subtask = new Task();
+                subtask.setTitle(subtaskRequest.getTitle());
+                subtask.setDescription(subtaskRequest.getDescription());
+                subtask.setFromDate(subtaskFromDate);
+                subtask.setToDate(subtaskToDate);
+                subtask.setStatus(subtaskRequest.getStatus());
+                subtask.setLevel(subtaskRequest.getLevel());
+                subtask.setProject(project);
+                subtask.setCreatedBy(creator.getId());
+                subtask.setParentId(mainTask.getId());
+                subtask.setCreatedAt(LocalDateTime.now());
+
+                taskRepository.save(subtask);
+            }
         }
-        
-        return task;
     }
 
 
     public List<Task> getAllTasks() {
-        List<Task> listTask =  taskRepository.findAll();
+        List<Task> listTask =  taskRepository.findAll()              ;
         log.info("List task: {}", listTask.get(0).getTitle());
         return listTask;
     }
@@ -289,13 +318,70 @@ public class TaskService {
             throw new RuntimeException("Bạn không có quyền cập nhật nhiệm vụ này");
         }
 
+        // Không cần chuyển đổi múi giờ nữa vì thời gian đã được gửi từ frontend ở định dạng UTC
+        LocalDateTime fromDate = taskRequest.getFromDate();
+        LocalDateTime toDate = taskRequest.getToDate();
+
         task.setTitle(taskRequest.getTitle());
         task.setDescription(taskRequest.getDescription());
-        task.setFromDate(taskRequest.getFromDate());
-        task.setToDate(taskRequest.getToDate());
+        task.setFromDate(fromDate);
+        task.setToDate(toDate);
         task.setLevel(taskRequest.getLevel());
 
-        return taskRepository.save(task);
+        // Lưu task chính trước
+        task = taskRepository.save(task);
+
+        // Xử lý subtasks nếu có
+        if (taskRequest.getSubTasks() != null && !taskRequest.getSubTasks().isEmpty()) {
+            // Lấy danh sách subtasks hiện tại
+            List<Task> existingSubTasks = taskRepository.findByParentId(task.getId());
+            
+            // Tạo map để theo dõi subtasks đã được cập nhật
+            Map<Integer, Boolean> updatedSubTasks = new HashMap<>();
+            
+            // Cập nhật hoặc tạo mới subtasks
+            for (TaskRequest subtaskRequest : taskRequest.getSubTasks()) {
+                Task subtask;
+                
+                // Nếu subtask có id, tìm và cập nhật
+                if (subtaskRequest.getId() != null) {
+                    subtask = taskRepository.findById(subtaskRequest.getId());
+                    if (subtask == null) {
+                        throw new RuntimeException("Không tìm thấy subtask với ID: " + subtaskRequest.getId());
+                    }
+                    
+                    // Đánh dấu subtask này đã được cập nhật
+                    updatedSubTasks.put(subtaskRequest.getId(), true);
+                } else {
+                    // Nếu không có id, tạo mới subtask
+                    subtask = new Task();
+                    subtask.setCreatedBy(task.getCreatedBy());
+                    subtask.setCreatedAt(LocalDateTime.now());
+                    subtask.setProject(project);
+                    subtask.setParentId(task.getId());
+                }
+                
+                // Cập nhật thông tin subtask
+                subtask.setTitle(subtaskRequest.getTitle());
+                subtask.setDescription(subtaskRequest.getDescription());
+                subtask.setFromDate(subtaskRequest.getFromDate());
+                subtask.setToDate(subtaskRequest.getToDate());
+                subtask.setLevel(subtaskRequest.getLevel());
+                subtask.setStatus(subtaskRequest.getStatus() != null ? subtaskRequest.getStatus() : 0);
+                
+                // Lưu subtask
+                taskRepository.save(subtask);
+            }
+            
+            // Xóa các subtasks không còn trong danh sách cập nhật
+            for (Task existingSubTask : existingSubTasks) {
+                if (!updatedSubTasks.containsKey(existingSubTask.getId())) {
+                    taskRepository.delete(existingSubTask);
+                }
+            }
+        }
+
+        return task;
     }
 
     public Task updateProgress(Integer taskId, Integer progress) {
@@ -346,5 +432,19 @@ public class TaskService {
 
         }
         return task;
+    }
+
+    public List<Task> getMainTasks(Integer projectId) {
+        log.info("Getting main tasks for project: {}", projectId);
+        List<Task> mainTasks = taskRepository.findByProjectIdAndParentIdIsNull(projectId);
+        log.info("Found {} main tasks", mainTasks.size());
+        return mainTasks;
+    }
+
+    public List<Task> getSubTasks(Integer parentId) {
+        log.info("Getting subtasks for parent task: {}", parentId);
+        List<Task> subTasks = taskRepository.findByParentId(parentId);
+        log.info("Found {} subtasks", subTasks.size());
+        return subTasks;
     }
 }

@@ -12,7 +12,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { debounce } from "lodash";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createTask, deleteTask, assignTask } from "@/hooks/useTaskApi";
+import { createTask, deleteTask, assignTask, getMainTasks } from "@/hooks/useTaskApi";
 
 interface ItemProject {
     id: number;
@@ -39,11 +39,16 @@ interface ITask {
     title: string;
     description: string;
     status: string;
+    createdAt: string;
     assignees: {
         id: number;
         name: string;
         avatar: string;
     }[];
+}
+
+interface RouteParams {
+    project: string;
 }
 
 const getStatusColor = (status: number): string => {
@@ -103,7 +108,8 @@ export default function ProjectDetail() {
     const [showAddMember, setShowAddMember] = useState(false);
     const [searchEmail, setSearchEmail] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
-    const project = route.params?.project ? JSON.parse(route.params.project) : null;
+    const projectData = route.params as RouteParams;
+    const project = projectData?.project ? JSON.parse(projectData.project) : null;
     const [userRole, setUserRole] = useState<string>("");
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [showAddTask, setShowAddTask] = useState(false);
@@ -149,8 +155,12 @@ export default function ProjectDetail() {
     const loadProjects = async () => {
         try {
             const data = await getProjectById(project.id);
-            console.log("Task data:", JSON.stringify(data.tasks, null, 2));
-            setItemProject(data);
+            // Lấy danh sách task chính và sắp xếp theo thời gian tạo
+            const mainTasks = await getMainTasks(project.id);
+            const sortedTasks = mainTasks.sort((a: ITask, b: ITask) => {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+            setItemProject({...data, tasks: sortedTasks});
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
         } finally {
@@ -175,7 +185,6 @@ export default function ProjectDetail() {
     const handleAddMember = async (userId: number) => {
         try {
             await addProjectMember(project.id, userId);
-            await loadProjects(); // Reload project data
             setShowAddMember(false);
             setSearchEmail("");
             Alert.alert("Thành công", "Đã thêm thành viên vào dự án");
@@ -196,7 +205,6 @@ export default function ProjectDetail() {
                     onPress: async () => {
                         try {
                             await removeProjectMember(project.id, memberId);
-                            await loadProjects(); // Reload data sau khi xóa
                             Alert.alert("Thành công", "Đã xóa thành viên khỏi dự án");
                         } catch (error: any) {
                             Alert.alert("Lỗi", error.message || "Không thể xóa thành viên");
@@ -224,7 +232,6 @@ export default function ProjectDetail() {
                     onPress: async () => {
                         try {
                             await deleteTask(taskId);
-                            await loadProjects(); // Reload data
                             Alert.alert("Thành công", "Đã xóa nhiệm vụ");
                         } catch (error: any) {
                             Alert.alert(
@@ -248,7 +255,6 @@ export default function ProjectDetail() {
         
         try {
             await assignTask(selectedTaskId, userId);
-            await loadProjects(); // Reload data để cập nhật UI
             setShowAssignModal(false);
             setSelectedTaskId(null);
             Alert.alert("Thành công", "Đã gán nhiệm vụ cho thành viên");
@@ -261,6 +267,11 @@ export default function ProjectDetail() {
         if (userRole === 'ADMIN') {
             router.push({
                 pathname: '/Task/editTask',
+                params: { taskId: taskId }
+            });
+        } else if (userRole === 'MEMBER') {
+            router.push({
+                pathname: '/Task/taskDetail',
                 params: { taskId: taskId }
             });
         }
@@ -395,8 +406,7 @@ export default function ProjectDetail() {
                             ]}>
                                 <TouchableOpacity 
                                     style={styles.taskContent}
-                                    onPress={() => userRole === 'ADMIN' && handleTaskPress(item.id)}
-                                    disabled={userRole !== 'ADMIN'}
+                                    onPress={() => handleTaskPress(item.id)}
                                 >
                                     <View style={styles.taskHeader}>
                                         <Text style={styles.taskTitle}>
@@ -414,6 +424,10 @@ export default function ProjectDetail() {
                                             </TouchableOpacity>
                                         )}
                                     </View>
+                                    <Text style={styles.taskDescription}>{item.description}</Text>
+                                    <Text style={styles.taskDate}>
+                                        {formatDateTime(item.createdAt)}
+                                    </Text>
                                     <View style={styles.taskFooter}>
                                         <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
                                             {getTaskStatusText(item.status)}
@@ -686,13 +700,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     taskTitle: {
         fontSize: 16,
         color: '#333',
         flex: 1,
         paddingRight: 24,
+    },
+    taskDate: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 4,
     },
     deleteButton: {
         position: 'absolute',
@@ -799,5 +818,10 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666',
         fontStyle: 'italic',
+    },
+    taskDescription: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 10,
     },
 });

@@ -65,5 +65,9 @@ public class Task {
             inverseJoinColumns = @JoinColumn(name = "reason_id")
     )
     private List<Reason> reasons;
+
+    // Thêm trường parentId
+    @Column(nullable = true)
+    private Integer parentId;
 }
 

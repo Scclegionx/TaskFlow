@@ -119,7 +119,7 @@ const PersonelDetailScreen = () => {
         const inforUser = await response.json();
         setInforPersonData(inforUser);
       } else {
-        console.error("Lỗi khi lấy danh sách thành viên. personDailtail");
+        console.error("Lỗi khi lấy danh sách thành viên. personDailtail haha");
       }
     } catch (error) {
       console.error("Lỗi khi gọi API danh sách thành viên:", error);

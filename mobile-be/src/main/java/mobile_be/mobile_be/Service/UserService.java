@@ -118,6 +118,19 @@ public class UserService {
         }
     }
 
+    public String genarateNewPassword() {
+        StringBuilder newPassword = new StringBuilder();
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        int length = 8; // Độ dài mật khẩu mới
+
+        for (int i = 0; i < length; i++) {
+            int index = (int) (Math.random() * characters.length());
+            newPassword.append(characters.charAt(index));
+        }
+
+        return newPassword.toString();
+    }
+
     public List<ChamCongResponseDTO> getTydstate(String startDate, String endDate, String textSearch) {
         try {
             List<Tydstate> typstateList = tydstateRepository.getAllTydstate(startDate, endDate, textSearch);

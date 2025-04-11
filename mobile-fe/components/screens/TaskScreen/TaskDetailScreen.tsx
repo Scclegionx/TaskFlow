@@ -38,6 +38,7 @@ interface TaskDetail {
   }>;
   waitFinish: number;
   progress: number;
+  level: number;
 }
 
 interface RejectReason {
@@ -623,6 +624,30 @@ const TaskDetailScreen = () => {
           label="Dự án"
           value={jobData.project?.name || 'Không có'}
         />
+
+
+        {/* Thêm phần hiển thị mức độ */}
+        {jobData.level !== undefined && (
+          <View style={[
+            styles.levelContainer,
+            {
+              borderColor: jobData.level === 2 ? '#ff4444' :
+                jobData.level === 1 ? '#FF9800' :
+                  '#4CAF50'
+            }
+          ]}>
+            <Text style={[
+              styles.levelText,
+              {
+                color: jobData.level === 2 ? '#ff4444' :
+                  jobData.level === 1 ? '#FF9800' :
+                    '#4CAF50'
+              }
+            ]}>
+              Mức độ: {jobData.level === 2 ? 'Khó' : jobData.level === 1 ? 'Trung bình' : 'Dễ'}
+            </Text>
+          </View>
+        )}
 
 
 
@@ -1239,6 +1264,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     marginTop: 10,
+  },
+  levelContainer: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 6,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    borderColor: '#FF9800', // Màu mặc định cho level 1
+  },
+  levelText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

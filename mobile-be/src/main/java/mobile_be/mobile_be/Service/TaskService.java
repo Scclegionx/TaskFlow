@@ -42,7 +42,8 @@ public class TaskService {
 
     @Autowired
     private ReasonRespository reasonRepository;
-
+    @Autowired
+    private MailService mailService;
 
     // type == null la lay tat ca cac trang thai
     // type == 0 la giao
@@ -82,7 +83,7 @@ public class TaskService {
         // Validate project exists
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found"));
-
+        List<User> user = userRepository.findAllById(request.getAssignedTo());
         // Validate creator exists
         User creator = userRepository.findById(request.getCreatedBy())
                 .orElseThrow(() -> new RuntimeException("Creator not found"));
@@ -105,7 +106,11 @@ public class TaskService {
 
         // Save main task first to get its ID
         mainTask = taskRepository.save(mainTask);
-
+        String slug = "/tasks/" + mainTask.getId();
+        for(User u:user){
+            notificationService.sendNotification(u.getId(),"test tasks",slug);
+            mailService.sendNoticeEmail(u.getEmail(), "Thông báo công việc", "Bạn được giao một nhiệm vụ mới: " + mainTask.getTitle());
+        }
         // Handle subtasks if any
         if (request.getSubTasks() != null && !request.getSubTasks().isEmpty()) {
             for (TaskRequest subtaskRequest : request.getSubTasks()) {
@@ -132,7 +137,7 @@ public class TaskService {
 
 
     public List<Task> getAllTasks() {
-        List<Task> listTask =  taskRepository.findAll()              ;
+        List<Task> listTask =  taskRepository.findAll();
         log.info("List task: {}", listTask.get(0).getTitle());
         return listTask;
     }
@@ -300,7 +305,7 @@ public class TaskService {
         // Gửi thông báo
         String slug = "/tasks/" + task.getId();
         notificationService.sendNotification(userId, "Bạn được gán một nhiệm vụ mới: " + task.getTitle(), slug);
-
+        mailService.sendNoticeEmail(user.getEmail(), "Thông báo công việc", "Bạn được giao một nhiệm vụ mới: " + task.getTitle());
         return updatedTask;
     }
 
@@ -335,21 +340,21 @@ public class TaskService {
         if (taskRequest.getSubTasks() != null && !taskRequest.getSubTasks().isEmpty()) {
             // Lấy danh sách subtasks hiện tại
             List<Task> existingSubTasks = taskRepository.findByParentId(task.getId());
-            
+
             // Tạo map để theo dõi subtasks đã được cập nhật
             Map<Integer, Boolean> updatedSubTasks = new HashMap<>();
-            
+
             // Cập nhật hoặc tạo mới subtasks
             for (TaskRequest subtaskRequest : taskRequest.getSubTasks()) {
                 Task subtask;
-                
+
                 // Nếu subtask có id, tìm và cập nhật
                 if (subtaskRequest.getId() != null) {
                     subtask = taskRepository.findById(subtaskRequest.getId());
                     if (subtask == null) {
                         throw new RuntimeException("Không tìm thấy subtask với ID: " + subtaskRequest.getId());
                     }
-                    
+
                     // Đánh dấu subtask này đã được cập nhật
                     updatedSubTasks.put(subtaskRequest.getId(), true);
                 } else {
@@ -360,7 +365,7 @@ public class TaskService {
                     subtask.setProject(project);
                     subtask.setParentId(task.getId());
                 }
-                
+
                 // Cập nhật thông tin subtask
                 subtask.setTitle(subtaskRequest.getTitle());
                 subtask.setDescription(subtaskRequest.getDescription());
@@ -368,11 +373,11 @@ public class TaskService {
                 subtask.setToDate(subtaskRequest.getToDate());
                 subtask.setLevel(subtaskRequest.getLevel());
                 subtask.setStatus(subtaskRequest.getStatus() != null ? subtaskRequest.getStatus() : 0);
-                
+
                 // Lưu subtask
                 taskRepository.save(subtask);
             }
-            
+
             // Xóa các subtasks không còn trong danh sách cập nhật
             for (Task existingSubTask : existingSubTasks) {
                 if (!updatedSubTasks.containsKey(existingSubTask.getId())) {
@@ -433,7 +438,6 @@ public class TaskService {
         }
         return task;
     }
-
     public List<Task> getMainTasks(Integer projectId) {
         log.info("Getting main tasks for project: {}", projectId);
         List<Task> mainTasks = taskRepository.findByProjectIdAndParentIdIsNull(projectId);

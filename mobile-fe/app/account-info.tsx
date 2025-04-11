@@ -34,6 +34,7 @@ const AccountInfo = () => {
 
             const data = await response.json();
             setName(data.name);
+            await AsyncStorage.setItem("username", data.name);
             setPhoneNumber(data.phoneNumber || "");
             setDateOfBirth(data.dateOfBirth || "");
             setGender(data.gender ?? "");

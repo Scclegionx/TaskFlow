@@ -80,6 +80,12 @@ const Profile = () => {
       );
 
       console.log(res.data);
+      setUser((prevUser) => ({
+        ...prevUser,
+        avatar: res.data.avatar,
+      }));
+      await AsyncStorage.setItem("avatar", res.data.avatar);
+      Alert.alert("Thành công", "Avatar đã được cập nhật.");
     } catch (error) {
       console.error("Lỗi tải ảnh:", error);
     }

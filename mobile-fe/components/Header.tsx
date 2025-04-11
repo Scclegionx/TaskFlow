@@ -4,25 +4,39 @@ import { View, Text, TextInput, StyleSheet,TouchableOpacity , Image } from "reac
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Avatar } from "react-native-paper";
-
+import { useFocusEffect } from "@react-navigation/native";
 const Header = () => {
     const router = useRouter();
     const [user, setUser] = useState({ name: '', email: '', avatar: '' });
 
-    useEffect(() => {
-        const loadUser = async () => {
-            const name = await AsyncStorage.getItem('username');
-            const email = await AsyncStorage.getItem('email');
-            const avatar = await AsyncStorage.getItem('avatar') || '';  // Lấy avatar từ AsyncStorage
-            if (name && email) setUser({ name, email, avatar });
-        };
-        loadUser();
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            const loadUser = async () => {
+                const name = await AsyncStorage.getItem('username');
+                const email = await AsyncStorage.getItem('email');
+                const avatar = await AsyncStorage.getItem('avatar') || '';
+                setUser({ name, email, avatar });
+            };
+            loadUser();
+        }, [])
+    );
+
     return (
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.title}>{user.name}</Text>
+                <View style={styles.userInfo}>
+                    <Avatar.Image
+                        size={40}
+                        source={{
+                            uri: user.avatar || "http://res.cloudinary.com/doah3bdw6/image/upload/v1743153165/r0nulby5tat56nq1q394.png",
+                        }}
+                        style={styles.avatar}
+                    />
+                    <Text style={styles.title} numberOfLines={1}>
+                        {user.name || "Người dùng"}
+                    </Text>
+                </View>
                 <View style={styles.headerIcons}>
                     <Ionicons name="mail-outline" size={24} color="black" style={styles.icon} />
                     <TouchableOpacity onPress={() => router.push("/notifications")}>
@@ -34,36 +48,69 @@ const Header = () => {
 
             {/* Search Bar */}
             <View style={styles.searchBar}>
-            
-            <Avatar.Image size={30} source={{ uri: user.avatar || "http://res.cloudinary.com/doah3bdw6/image/upload/v1743153165/r0nulby5tat56nq1q394.png" }} style={styles.avatar} />
-                
-                <TextInput placeholder="Tìm kiếm" style={styles.input} />
-                <Ionicons name="search" size={20} color="gray" style={styles.icon} />
+                <Ionicons name="search" size={20} color="gray" style={styles.searchIcon} />
+                <TextInput
+                    placeholder="Tìm kiếm"
+                    placeholderTextColor="#888"
+                    style={styles.input}
+                />
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { padding: 40 ,
-                 backgroundColor: "#fff" },
-    header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-    title: { fontSize: 24, fontWeight: "bold", color: "#222" },
-    headerIcons: { flexDirection: "row", alignItems: "center" },
-    icon: { marginRight: 10 },
+    container: {
+        paddingTop: 40,
+        padding: 20,
+        backgroundColor: "#fff",
+        borderBottomWidth: 1,
+        borderBottomColor: "#ddd",
+    },
+    header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20,
+    },
+    userInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#222",
+        marginLeft: 10,
+        maxWidth: 200,
+        fontFamily: "Roboto", // Giới hạn chiều rộng để tránh tràn
+    },
+    headerIcons: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    icon: {
+        marginRight: 15,
+    },
     avatar: {
-        marginRight: 15, // Tăng khoảng cách giữa avatar và ô nhập liệu
+        backgroundColor: "#ddd",
     },
-
-    // searchBar: { flexDirection: "row", alignItems: "center", backgroundColor: "#f2f2f2", borderRadius: 10, padding: 10 },
-    searchBar: { 
-        flexDirection: "row", 
-        alignItems: "center", 
-        backgroundColor: "#f2f2f2", 
-        borderRadius: 10, 
-        padding: 10 
+    searchBar: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#f2f2f2",
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
     },
-    input: { flex: 1 }
+    searchIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: "#333",
+    },
 });
 
 export default Header;

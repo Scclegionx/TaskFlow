@@ -6,7 +6,7 @@
 
 // const MeetingScreen = () => {
 //   const [permissionsGranted, setPermissionsGranted] = useState(false);
-//   const meetingUrl = `https://meet.jit.si/room-7f34aef9-3eec-4b24-9aee-65fddb49adf6#userInfo.displayName="YourName"&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false`;
+//   const meetingUrl = `https://meet.google.com/puh-fwvf-rbw`;
 
 //   const requestPermissions = async () => {
 //     const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();

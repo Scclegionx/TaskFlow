@@ -207,17 +207,21 @@ const MessagesScreen = () => {
             renderItem={({ item }) => {
               const displayName = item.isGroup
                 ? item.chatName
-                : item.users
+                : item.users && Array.isArray(item.users) // Kiểm tra nếu `item.users` tồn tại và là mảng
+                ? item.users
                     .filter((user) => user.id !== parseInt(userId)) // Lấy người dùng khác dựa trên id
                     .map((user) => user.name)
-                    .join(", ") || "Người dùng";
-            
-              const displayAvatar = item.isGroup
+                    .join(", ")
+                : "Người dùng";
+
+                const displayAvatar = item.isGroup
                 ? item.avatarUrl
-                : item.users.find((user) => user.id !== parseInt(userId))?.avatar || item.avatarUrl;
-            
+                : item.users && Array.isArray(item.users) // Kiểm tra nếu `item.users` tồn tại và là mảng
+                  ? item.users.find((user) => user.id !== parseInt(userId))?.avatar
+                  : item.avatarUrl;
+
               console.log("Display Avatar:", displayAvatar);
-            
+
               return (
                 <TouchableOpacity
                   style={styles.chatCard}

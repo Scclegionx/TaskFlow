@@ -34,6 +34,14 @@ const CreateTaskScreen = () => {
     const [isToTimePickerVisible, setToTimePickerVisible] = useState(false);
     const [level, setLevel] = useState(0);
     const [showLevelPicker, setShowLevelPicker] = useState(false);
+    const [showSubTaskForm, setShowSubTaskForm] = useState(false);
+    const [subTasks, setSubTasks] = useState<Array<{
+        title: string;
+        description: string;
+        fromDate: Date;
+        toDate: Date;
+        level: number;
+    }>>([]);
 
     const levelOptions = [
         { label: 'Thấp', value: 0 },
@@ -43,6 +51,21 @@ const CreateTaskScreen = () => {
 
     const getLevelLabel = (value: number) => {
         return levelOptions.find(option => option.value === value)?.label || 'Thấp';
+    };
+
+    const handleAddSubTask = () => {
+        setShowSubTaskForm(true);
+    };
+
+    const handleSaveSubTask = (subTaskData: {
+        title: string;
+        description: string;
+        fromDate: Date;
+        toDate: Date;
+        level: number;
+    }) => {
+        setSubTasks([...subTasks, subTaskData]);
+        setShowSubTaskForm(false);
     };
 
     const handleCreateTask = async () => {
@@ -62,15 +85,32 @@ const CreateTaskScreen = () => {
         }
 
         try {
+            const formatDate = (date: Date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+            };
+
             const taskData = {
                 projectId: Number(projectId),
                 title: title.trim(),
                 description: description.trim(),
-                fromDate: fromDate.toISOString(),
-                toDate: toDate.toISOString(),
+                fromDate: formatDate(fromDate),
+                toDate: formatDate(toDate),
                 status: 0,
                 level: level,
-                assignedTo: []
+                assignedTo: [],
+                subTasks: subTasks.map(subTask => ({
+                    ...subTask,
+                    fromDate: formatDate(subTask.fromDate),
+                    toDate: formatDate(subTask.toDate),
+                    status: 0,
+                    projectId: Number(projectId)
+                }))
             };
             console.log('Task data:', taskData);
             await createTask(taskData);
@@ -168,12 +208,12 @@ const CreateTaskScreen = () => {
     return (
         <ScrollView style={styles.container}>
             <View style={styles.formContainer}>
-                <Text style={styles.label}>Tiêu đề nhiệm vụ</Text>
+                <Text style={styles.label}>Tiêu đề công việc</Text>
                 <TextInput
                     style={styles.input}
                     value={title}
                     onChangeText={setTitle}
-                    placeholder="Nhập tiêu đề nhiệm vụ"
+                    placeholder="Nhập tiêu đề công việc"
                 />
 
                 <Text style={styles.label}>Mô tả</Text>
@@ -329,6 +369,33 @@ const CreateTaskScreen = () => {
                     </View>
                 </Modal>
 
+                <View style={styles.subTasksSection}>
+                    <Text style={styles.sectionTitle}>Công việc con</Text>
+                    
+                    {subTasks.map((subTask, index) => (
+                        <View key={index} style={styles.subTaskItem}>
+                            <Text style={styles.subTaskTitle}>{subTask.title}</Text>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    const newSubTasks = [...subTasks];
+                                    newSubTasks.splice(index, 1);
+                                    setSubTasks(newSubTasks);
+                                }}
+                                style={styles.removeSubTaskButton}
+                            >
+                                <Text style={styles.removeSubTaskText}>×</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ))}
+
+                    <TouchableOpacity
+                        style={styles.addSubTaskButton}
+                        onPress={handleAddSubTask}
+                    >
+                        <Text style={styles.addSubTaskText}>+ Thêm công việc con</Text>
+                    </TouchableOpacity>
+                </View>
+
                 <TouchableOpacity 
                     style={styles.createButton}
                     onPress={handleCreateTask}
@@ -336,7 +403,253 @@ const CreateTaskScreen = () => {
                     <Text style={styles.createButtonText}>Tạo nhiệm vụ</Text>
                 </TouchableOpacity>
             </View>
+
+            <Modal
+                visible={showSubTaskForm}
+                transparent={true}
+                animationType="slide"
+            >
+                <SubTaskForm
+                    onSave={handleSaveSubTask}
+                    onClose={() => setShowSubTaskForm(false)}
+                />
+            </Modal>
         </ScrollView>
+    );
+};
+
+interface SubTaskFormProps {
+    onSave: (subTaskData: {
+        title: string;
+        description: string;
+        fromDate: Date;
+        toDate: Date;
+        level: number;
+    }) => void;
+    onClose: () => void;
+}
+
+const SubTaskForm = ({ onSave, onClose }: SubTaskFormProps) => {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [fromDate, setFromDate] = useState(new Date());
+    const [toDate, setToDate] = useState(new Date());
+    const [level, setLevel] = useState(0);
+    const [showFromDatePicker, setShowFromDatePicker] = useState(false);
+    const [showFromTimePicker, setShowFromTimePicker] = useState(false);
+    const [showToDatePicker, setShowToDatePicker] = useState(false);
+    const [showToTimePicker, setShowToTimePicker] = useState(false);
+    const [showLevelPicker, setShowLevelPicker] = useState(false);
+
+    const levelOptions = [
+        { label: 'Thấp', value: 0 },
+        { label: 'Trung bình', value: 1 },
+        { label: 'Cao', value: 2 }
+    ];
+
+    const getLevelLabel = (value: number) => {
+        return levelOptions.find(option => option.value === value)?.label || 'Thấp';
+    };
+
+    const handleSave = () => {
+        if (!title.trim() || !description.trim()) {
+            Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+            return;
+        }
+
+        if (fromDate > toDate) {
+            Alert.alert('Lỗi', 'Thời gian bắt đầu không thể sau thời gian kết thúc');
+            return;
+        }
+
+        onSave({
+            title: title.trim(),
+            description: description.trim(),
+            fromDate,
+            toDate,
+            level
+        });
+    };
+
+    return (
+        <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Thêm công việc con</Text>
+                
+                <TextInput
+                    style={styles.input}
+                    placeholder="Tiêu đề"
+                    value={title}
+                    onChangeText={setTitle}
+                />
+
+                <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Mô tả"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                />
+
+                <Text style={styles.label}>Thời gian bắt đầu</Text>
+                <View style={styles.dateTimeContainer}>
+                    <TouchableOpacity 
+                        onPress={() => setShowFromDatePicker(true)} 
+                        style={styles.datePicker}
+                    >
+                        <Text>{fromDate.toLocaleDateString('vi-VN')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => setShowFromTimePicker(true)} 
+                        style={styles.datePicker}
+                    >
+                        <Text>
+                            {fromDate.toLocaleTimeString('vi-VN', { 
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                hour12: false 
+                            })}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <Text style={styles.label}>Thời gian kết thúc</Text>
+                <View style={styles.dateTimeContainer}>
+                    <TouchableOpacity 
+                        onPress={() => setShowToDatePicker(true)} 
+                        style={styles.datePicker}
+                    >
+                        <Text>{toDate.toLocaleDateString('vi-VN')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => setShowToTimePicker(true)} 
+                        style={styles.datePicker}
+                    >
+                        <Text>
+                            {toDate.toLocaleTimeString('vi-VN', { 
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                hour12: false 
+                            })}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {showFromDatePicker && (
+                    <DateTimePicker
+                        value={fromDate}
+                        mode="date"
+                        display="spinner"
+                        onChange={(event, selectedDate) => {
+                            setShowFromDatePicker(false);
+                            if (selectedDate) setFromDate(selectedDate);
+                        }}
+                    />
+                )}
+
+                {showFromTimePicker && (
+                    <DateTimePicker
+                        value={fromDate}
+                        mode="time"
+                        display="spinner"
+                        is24Hour={true}
+                        onChange={(event, selectedTime) => {
+                            setShowFromTimePicker(false);
+                            if (selectedTime) setFromDate(selectedTime);
+                        }}
+                    />
+                )}
+
+                {showToDatePicker && (
+                    <DateTimePicker
+                        value={toDate}
+                        mode="date"
+                        display="spinner"
+                        onChange={(event, selectedDate) => {
+                            setShowToDatePicker(false);
+                            if (selectedDate) setToDate(selectedDate);
+                        }}
+                    />
+                )}
+
+                {showToTimePicker && (
+                    <DateTimePicker
+                        value={toDate}
+                        mode="time"
+                        display="spinner"
+                        is24Hour={true}
+                        onChange={(event, selectedTime) => {
+                            setShowToTimePicker(false);
+                            if (selectedTime) setToDate(selectedTime);
+                        }}
+                    />
+                )}
+
+                <Text style={styles.label}>Mức độ ưu tiên</Text>
+                <TouchableOpacity
+                    style={styles.levelPicker}
+                    onPress={() => setShowLevelPicker(true)}
+                >
+                    <Text style={styles.levelText}>{getLevelLabel(level)}</Text>
+                </TouchableOpacity>
+
+                <Modal
+                    visible={showLevelPicker}
+                    transparent={true}
+                    animationType="slide"
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Chọn mức độ ưu tiên</Text>
+                            <FlatList
+                                data={levelOptions}
+                                keyExtractor={(item) => item.value.toString()}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.levelOption,
+                                            level === item.value && styles.selectedLevel
+                                        ]}
+                                        onPress={() => {
+                                            setLevel(item.value);
+                                            setShowLevelPicker(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.levelOptionText,
+                                            level === item.value && styles.selectedLevelText
+                                        ]}>
+                                            {item.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                            <TouchableOpacity
+                                style={styles.closeButton}
+                                onPress={() => setShowLevelPicker(false)}
+                            >
+                                <Text style={styles.closeButtonText}>Đóng</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                        style={[styles.modalButton, styles.cancelButton]}
+                        onPress={onClose}
+                    >
+                        <Text style={styles.modalButtonText}>Hủy</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.modalButton, styles.saveButton]}
+                        onPress={handleSave}
+                    >
+                        <Text style={styles.modalButtonText}>Lưu</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
     );
 };
 
@@ -410,18 +723,17 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
-        alignItems: 'center',
+        padding: 20,
     },
     modalContent: {
-        backgroundColor: 'white',
-        borderRadius: 10,
+        backgroundColor: '#fff',
+        borderRadius: 12,
         padding: 20,
-        width: '80%',
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 15,
+        marginBottom: 20,
         textAlign: 'center',
     },
     levelOption: {
@@ -448,6 +760,74 @@ const styles = StyleSheet.create({
     },
     closeButtonText: {
         color: 'white',
+        fontWeight: 'bold',
+    },
+    subTasksSection: {
+        marginTop: 20,
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    },
+    subTaskItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    subTaskTitle: {
+        fontSize: 16,
+        color: '#333',
+        flex: 1,
+    },
+    removeSubTaskButton: {
+        padding: 5,
+    },
+    removeSubTaskText: {
+        fontSize: 20,
+        color: '#FF4444',
+    },
+    addSubTaskButton: {
+        backgroundColor: '#E8F4FF',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    addSubTaskText: {
+        color: '#007BFF',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    modalButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
+    cancelButton: {
+        backgroundColor: '#FF4444',
+    },
+    saveButton: {
+        backgroundColor: '#007BFF',
+    },
+    modalButtonText: {
+        color: '#fff',
+        fontSize: 16,
         fontWeight: 'bold',
     },
 });

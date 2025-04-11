@@ -21,4 +21,5 @@ public class TaskRequest {
     private LocalDateTime toDate;
     private Integer status;
     private Integer level;
+    private List<TaskRequest> subTasks;
 }

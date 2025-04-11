@@ -10,13 +10,26 @@ import {
     Modal
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getTaskDetail, updateTask } from '@/hooks/useTaskApi';
+import { getTaskDetail, updateTask, getSubTasks } from '@/hooks/useTaskApi';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { AntDesign } from '@expo/vector-icons';
+import SubTaskEditModal from './SubTaskEditModal';
+
+interface SubTask {
+    id?: number;
+    tempId?: number;
+    title: string;
+    description: string;
+    fromDate: string;
+    toDate: string;
+    level: number;
+}
 
 const EditTaskScreen = () => {
     const { taskId } = useLocalSearchParams();
     const router = useRouter();
     const [task, setTask] = useState<any>(null);
+    const [subTasks, setSubTasks] = useState<SubTask[]>([]);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [fromDate, setFromDate] = useState(new Date());
@@ -25,14 +38,16 @@ const EditTaskScreen = () => {
     const [showToDatePicker, setShowToDatePicker] = useState(false);
     const [showFromTimePicker, setShowFromTimePicker] = useState(false);
     const [showToTimePicker, setShowToTimePicker] = useState(false);
-    const [level, setLevel] = useState(1);
+    const [level, setLevel] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showLevelPicker, setShowLevelPicker] = useState(false);
+    const [editingSubTask, setEditingSubTask] = useState<SubTask | null>(null);
+    const [showSubTaskModal, setShowSubTaskModal] = useState(false);
 
     const levelOptions = [
-        { label: 'Thấp', value: 1 },
-        { label: 'Trung bình', value: 2 },
-        { label: 'Cao', value: 3 }
+        { label: 'Thấp', value: 0 },
+        { label: 'Trung bình', value: 1 },
+        { label: 'Cao', value: 2 }
     ];
 
     const getLevelLabel = (value: number) => {
@@ -51,7 +66,11 @@ const EditTaskScreen = () => {
             setDescription(data.description);
             setFromDate(new Date(data.fromDate));
             setToDate(new Date(data.toDate));
-            setLevel(data.level || 1);
+            setLevel(data.level || 0);
+
+            // Load subtasks
+            const subTasksData = await getSubTasks(Number(taskId));
+            setSubTasks(subTasksData);
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể tải thông tin nhiệm vụ');
         } finally {
@@ -76,14 +95,33 @@ const EditTaskScreen = () => {
         }
 
         try {
+            // Tạo chuỗi thời gian theo định dạng YYYY-MM-DDTHH:mm:ss
+            const formatDate = (date: Date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+            };
+
             const updatedTask = {
                 id: Number(taskId),
                 title: title.trim(),
                 description: description.trim(),
-                fromDate: fromDate.toISOString(),
-                toDate: toDate.toISOString(),
+                fromDate: formatDate(fromDate),
+                toDate: formatDate(toDate),
                 level,
-                projectId: task.project.id
+                projectId: task.project.id,
+                subTasks: subTasks.map(subTask => ({
+                    id: subTask.id || null,
+                    title: subTask.title,
+                    description: subTask.description,
+                    fromDate: subTask.fromDate,
+                    toDate: subTask.toDate,
+                    level: subTask.level
+                }))
             };
             await updateTask(updatedTask);
             Alert.alert('Thành công', 'Cập nhật nhiệm vụ thành công', [
@@ -92,6 +130,33 @@ const EditTaskScreen = () => {
         } catch (error: any) {
             Alert.alert('Lỗi', error.message || 'Không thể cập nhật nhiệm vụ');
         }
+    };
+
+    const handleAddSubTask = () => {
+        setEditingSubTask(null);
+        setShowSubTaskModal(true);
+    };
+
+    const handleSaveSubTask = (updatedSubTask: SubTask) => {
+        console.log('Saving subtask:', updatedSubTask);
+        if (editingSubTask?.id) {
+            // Cập nhật subtask hiện có
+            setSubTasks(prevTasks =>
+                prevTasks.map(task =>
+                    task.id === updatedSubTask.id ? updatedSubTask : task
+                )
+            );
+        } else {
+            // Thêm subtask mới
+            setSubTasks(prevTasks => [...prevTasks, updatedSubTask]);
+        }
+        setShowSubTaskModal(false);
+        setEditingSubTask(null);
+    };
+
+    const handleEditSubTask = (subTask: SubTask) => {
+        setEditingSubTask(subTask);
+        setShowSubTaskModal(true);
     };
 
     if (loading) {
@@ -175,6 +240,52 @@ const EditTaskScreen = () => {
                     <Text style={styles.levelText}>{getLevelLabel(level)}</Text>
                 </TouchableOpacity>
 
+                <View style={styles.subTasksSection}>
+                    <View style={styles.subTasksHeader}>
+                        <Text style={styles.label}>Công việc con</Text>
+                        <TouchableOpacity 
+                            style={styles.addSubTaskButton}
+                            onPress={handleAddSubTask}
+                        >
+                            <AntDesign name="plus" size={20} color="#007AFF" />
+                        </TouchableOpacity>
+                    </View>
+                    
+                    {subTasks.map((subTask) => (
+                        <TouchableOpacity
+                            key={subTask.tempId || subTask.id}
+                            style={styles.subTaskItem}
+                            onPress={() => handleEditSubTask(subTask)}
+                        >
+                            <View style={styles.subTaskInfo}>
+                                <Text style={styles.subTaskTitle}>{subTask.title}</Text>
+                                <Text style={styles.subTaskDescription}>{subTask.description}</Text>
+                                <Text style={styles.subTaskDate}>
+                                    {new Date(subTask.fromDate).toLocaleDateString('vi-VN')} - 
+                                    {new Date(subTask.toDate).toLocaleDateString('vi-VN')}
+                                </Text>
+                                <Text style={styles.subTaskLevel}>
+                                    Mức độ: {getLevelLabel(subTask.level)}
+                                </Text>
+                            </View>
+                            <View style={styles.subTaskActions}>
+                                <TouchableOpacity
+                                    style={styles.deleteButton}
+                                    onPress={() => {
+                                        setSubTasks(prevTasks => 
+                                            prevTasks.filter(task => 
+                                                (task.tempId || task.id) !== (subTask.tempId || subTask.id)
+                                            )
+                                        );
+                                    }}
+                                >
+                                    <AntDesign name="delete" size={20} color="#FF4444" />
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
                 {showFromDatePicker && (
                     <DateTimePicker
                         value={fromDate}
@@ -225,7 +336,6 @@ const EditTaskScreen = () => {
                     />
                 )}
 
-                {/* Modal cho level picker */}
                 <Modal
                     visible={showLevelPicker}
                     transparent={true}
@@ -263,6 +373,16 @@ const EditTaskScreen = () => {
                         </View>
                     </View>
                 </Modal>
+
+                <SubTaskEditModal
+                    visible={showSubTaskModal}
+                    subTask={editingSubTask}
+                    onClose={() => {
+                        setShowSubTaskModal(false);
+                        setEditingSubTask(null);
+                    }}
+                    onSave={handleSaveSubTask}
+                />
 
                 <TouchableOpacity
                     style={styles.updateButton}
@@ -384,6 +504,62 @@ const styles = StyleSheet.create({
     closeButtonText: {
         color: 'white',
         fontWeight: 'bold',
+    },
+    subTasksSection: {
+        marginTop: 20,
+        marginBottom: 20,
+    },
+    subTasksHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    addSubTaskButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#E8F4FF',
+    },
+    subTaskItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        padding: 15,
+        borderRadius: 8,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    subTaskInfo: {
+        flex: 1,
+    },
+    subTaskTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 4,
+    },
+    subTaskDescription: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 4,
+    },
+    subTaskDate: {
+        fontSize: 12,
+        color: '#888',
+        marginBottom: 4,
+    },
+    subTaskLevel: {
+        fontSize: 12,
+        color: '#007AFF',
+    },
+    subTaskActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    deleteButton: {
+        padding: 5,
     },
 });
 

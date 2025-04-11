@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,10 +34,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,@NonNull HttpServletResponse response,@NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (request.getServletPath().equals("/api/auth/login") ||
-                request.getServletPath().equals("/api/auth/register") ||
-                request.getServletPath().equals("/api/auth/forgot-password")
-                ) {
+//        if (request.getServletPath().equals("/api/auth/login") ||
+//                request.getServletPath().equals("/api/auth/register") ||
+//                request.getServletPath().equals("/api/auth/forgot-password")
+//                ) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+        AntPathMatcher pathMatcher = new AntPathMatcher();
+        if (pathMatcher.match("/api/auth/**", request.getServletPath())
+                || pathMatcher.match("/api/tydstate/**", request.getServletPath())) {
             filterChain.doFilter(request, response);
             return;
         }

@@ -3,8 +3,11 @@ package mobile_be.mobile_be.Model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -23,6 +26,8 @@ public class User {
     private String password;
     private boolean isActive;
     private String avatar;
+    private String resetPasswordToken;
+    private LocalDateTime timeResetPasswordToken;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

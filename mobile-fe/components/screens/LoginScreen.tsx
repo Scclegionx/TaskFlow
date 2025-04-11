@@ -1,16 +1,20 @@
 import React, { useState,useEffect } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet, Text, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, TextInput, Button, Alert, StyleSheet, Text, TouchableOpacity, ImageBackground , Modal  } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { login } from '@/hooks/useAuthApi';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
+import axios from 'axios';
+import { API_BASE_URL } from "@/constants/api";
 
 const LoginScreen = () => {
     const navigation = useNavigation();
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
     useEffect(() => {
         navigation.setOptions({ 
             headerShown: false,
@@ -46,6 +50,39 @@ const LoginScreen = () => {
         }
     };
 
+    const handleForgotPassword = async () => {
+        if (!resetEmail) {
+            Alert.alert('Lỗi', 'Vui lòng nhập email');
+            return;
+        }
+
+        try {
+            await forgotPassword(resetEmail);
+            Alert.alert('Thành công', 'Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn');
+            setForgotPasswordVisible(false);
+        } catch (error: any) {
+            Alert.alert('Lỗi', error.response?.data || 'Gửi yêu cầu thất bại');
+        }
+    };
+
+
+     const forgotPassword = async (email: string) => {
+        try {
+            Alert.alert('Thông báo', 'Yêu cầu của bạn đang được xử lý. Vui lòng kiểm tra email của bạn trong giây lát.');
+          const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+          });
+      
+        return response
+        } catch (error: any) {
+          throw new Error(error.message || 'Lỗi kết nối đến server');
+        }
+      };
+
     return (
         <LinearGradient colors={['#3A7BDD', '#3A6073']} style={styles.container}>
             <View style={styles.loginBox}>
@@ -55,6 +92,11 @@ const LoginScreen = () => {
                 <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
                     <Text style={styles.loginText}>ĐĂNG NHẬP</Text>
                 </TouchableOpacity>
+                {/* Thêm nút quên mật khẩu */}
+                <TouchableOpacity onPress={() => setForgotPasswordVisible(true)}>
+                    <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+                </TouchableOpacity>
+
                 <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>
                 <View style={styles.socialIcons}>
                     <Text>🔵</Text>
@@ -64,6 +106,41 @@ const LoginScreen = () => {
                     <Text style={styles.linkText}>Đăng ký</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Modal quên mật khẩu */}
+            <Modal
+                visible={forgotPasswordVisible}
+                transparent={true}
+                animationType="slide"
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Quên mật khẩu</Text>
+                        <TextInput
+                            placeholder="Nhập email của bạn"
+                            value={resetEmail}
+                            onChangeText={setResetEmail}
+                            style={styles.input}
+                            keyboardType="email-address"
+                        />
+                        <View style={styles.buttonGroup}>
+                            <TouchableOpacity 
+                                style={[styles.button, styles.cancelButton]} 
+                                onPress={() => setForgotPasswordVisible(false)}
+                            >
+                                <Text style={styles.buttonText}>Hủy</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.button, styles.confirmButton]}
+                                onPress={handleForgotPassword}
+                            >
+                                <Text style={styles.buttonText}>Xác nhận</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
         </LinearGradient>
     );
 };
@@ -73,6 +150,51 @@ const styles = StyleSheet.create({
         flex: 1, 
         justifyContent:"center",
         alignItems: 'center' 
+    },
+    forgotPasswordText: {
+        color: '#3A7BDD',
+        marginTop: 10,
+        marginBottom: 15,
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 15,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 15,
+    },
+    buttonGroup: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 15,
+    },
+    button: {
+        padding: 10,
+        borderRadius: 8,
+        width: '45%',
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#ccc',
+    },
+    confirmButton: {
+        backgroundColor: '#3A7BDD',
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
     },
     loginBox: { 
         width: '80%',

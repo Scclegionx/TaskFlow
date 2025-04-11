@@ -350,8 +350,10 @@ public class ProjectService {
         }).collect(Collectors.toList());
     }
     @Transactional
-    public List<ProjectResponseDTO> getProject() {
-        List<Project> projects = projectRepository.findAll();
+    public List<ProjectResponseDTO> getProject(Integer userId) {
+        // Lấy danh sách project mà user là thành viên thông qua ProjectMember
+        List<Project> projects = projectRepository.findByProjectMembersUserId(userId);
+        
         return projects.stream()
                 .map(project -> {
                     ProjectResponseDTO dto = new ProjectResponseDTO();

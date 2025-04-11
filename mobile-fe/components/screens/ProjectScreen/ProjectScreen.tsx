@@ -30,7 +30,12 @@ export default function ProjectsScreen() {
 
     const loadProjects = async () => {
         try {
-            const data = await getProjects();
+            const userId = await AsyncStorage.getItem("userId");
+            if (!userId) {
+                throw new Error("Không tìm thấy thông tin người dùng");
+            }
+
+            const data = await getProjects(parseInt(userId));
             const formattedData: IProject[] = data.map((item: any) => ({
                 id: item.id,
                 name: item.name,
@@ -45,6 +50,7 @@ export default function ProjectsScreen() {
             setProjects(formattedData);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
+            Alert.alert("Lỗi", "Không thể tải danh sách dự án");
         } finally {
             setLoading(false);
         }

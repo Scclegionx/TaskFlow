@@ -185,7 +185,6 @@ export default function ProjectDetail() {
     const handleAddMember = async (userId: number) => {
         try {
             await addProjectMember(project.id, userId);
-            await loadProjects(); // Reload project data
             setShowAddMember(false);
             setSearchEmail("");
             Alert.alert("Thành công", "Đã thêm thành viên vào dự án");
@@ -206,7 +205,6 @@ export default function ProjectDetail() {
                     onPress: async () => {
                         try {
                             await removeProjectMember(project.id, memberId);
-                            await loadProjects(); // Reload data sau khi xóa
                             Alert.alert("Thành công", "Đã xóa thành viên khỏi dự án");
                         } catch (error: any) {
                             Alert.alert("Lỗi", error.message || "Không thể xóa thành viên");
@@ -234,7 +232,6 @@ export default function ProjectDetail() {
                     onPress: async () => {
                         try {
                             await deleteTask(taskId);
-                            await loadProjects(); // Reload data
                             Alert.alert("Thành công", "Đã xóa nhiệm vụ");
                         } catch (error: any) {
                             Alert.alert(
@@ -258,7 +255,6 @@ export default function ProjectDetail() {
         
         try {
             await assignTask(selectedTaskId, userId);
-            await loadProjects(); // Reload data để cập nhật UI
             setShowAssignModal(false);
             setSelectedTaskId(null);
             Alert.alert("Thành công", "Đã gán nhiệm vụ cho thành viên");
@@ -271,6 +267,11 @@ export default function ProjectDetail() {
         if (userRole === 'ADMIN') {
             router.push({
                 pathname: '/Task/editTask',
+                params: { taskId: taskId }
+            });
+        } else if (userRole === 'MEMBER') {
+            router.push({
+                pathname: '/Task/taskDetail',
                 params: { taskId: taskId }
             });
         }
@@ -405,8 +406,7 @@ export default function ProjectDetail() {
                             ]}>
                                 <TouchableOpacity 
                                     style={styles.taskContent}
-                                    onPress={() => userRole === 'ADMIN' && handleTaskPress(item.id)}
-                                    disabled={userRole !== 'ADMIN'}
+                                    onPress={() => handleTaskPress(item.id)}
                                 >
                                     <View style={styles.taskHeader}>
                                         <Text style={styles.taskTitle}>

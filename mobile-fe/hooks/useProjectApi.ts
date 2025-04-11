@@ -21,12 +21,13 @@ export const searchUserByEmail = async (email: string) => {
     return response.data;
 };
 
-export const getProjects = async () => {
+export const getProjects = async (userId: number) => {
     const token = await AsyncStorage.getItem("token");
     if (!token) {
         throw new Error("Token không tồn tại");
     }
     const response = await axios.get(`${API_URL_project}/get-project`, {
+        params: { userId },
         headers: { Authorization: `Bearer ${token}` }
     });
     console.log(response.data);

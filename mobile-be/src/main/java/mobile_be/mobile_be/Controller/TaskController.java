@@ -44,8 +44,8 @@ public class TaskController {
     @PostMapping("/create-task")
     public ResponseEntity<?> createTask(@RequestBody TaskRequest request) {
         try {
-            taskService.createTask(request);
-            return ResponseEntity.ok("Tạo nhiệm vụ thành công");
+            Integer taskId=taskService.createTask(request);
+            return ResponseEntity.ok(taskId);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi khi tạo nhiệm vụ: " + e.getMessage());
         }

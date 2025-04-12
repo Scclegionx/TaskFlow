@@ -10,10 +10,16 @@ import {
     Modal
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getTaskDetail, updateTask, getSubTasks } from '@/hooks/useTaskApi';
+import { getTaskDetail, updateTask, getSubTasks,getDocumentsByTaskId, deleteDocument } from '@/hooks/useTaskApi';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AntDesign } from '@expo/vector-icons';
 import SubTaskEditModal from './SubTaskEditModal';
+import * as FileSystem from "expo-file-system";
+import * as DocumentPicker from "expo-document-picker";
+import { API_BASE_URL } from "@/constants/api";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 interface SubTask {
     id?: number;
@@ -43,7 +49,7 @@ const EditTaskScreen = () => {
     const [showLevelPicker, setShowLevelPicker] = useState(false);
     const [editingSubTask, setEditingSubTask] = useState<SubTask | null>(null);
     const [showSubTaskModal, setShowSubTaskModal] = useState(false);
-
+    const [documents, setDocuments] = useState<any[]>([]);
     const levelOptions = [
         { label: 'Thấp', value: 0 },
         { label: 'Trung bình', value: 1 },
@@ -71,6 +77,10 @@ const EditTaskScreen = () => {
             // Load subtasks
             const subTasksData = await getSubTasks(Number(taskId));
             setSubTasks(subTasksData);
+
+            // Load documents
+    const documentsData = await getDocumentsByTaskId(Number(taskId));
+    setDocuments(documentsData);
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể tải thông tin nhiệm vụ');
         } finally {
@@ -123,7 +133,9 @@ const EditTaskScreen = () => {
                     level: subTask.level
                 }))
             };
+            await handleUploadDocuments(Number(taskId));
             await updateTask(updatedTask);
+             // Tải lên tài liệu sau khi cập nhật nhiệm vụ
             Alert.alert('Thành công', 'Cập nhật nhiệm vụ thành công', [
                 { text: 'OK', onPress: () => router.back() }
             ]);
@@ -131,7 +143,107 @@ const EditTaskScreen = () => {
             Alert.alert('Lỗi', error.message || 'Không thể cập nhật nhiệm vụ');
         }
     };
-
+    const handleDeleteDocument = async (documentId: number | undefined, isLocal: boolean) => {
+        try {
+          if (isLocal) {
+            // Nếu tài liệu được thêm từ handlePickDocument, chỉ xóa khỏi state
+            setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+            Alert.alert("Thành công", "Tài liệu đã được xóa khỏi danh sách.");
+          } else {
+            // Nếu tài liệu đã được tải lên server, gọi API để xóa
+            await deleteDocument(documentId!, Number(taskId));
+            setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+            Alert.alert("Thành công", "Tài liệu đã được xóa thành công.");
+          }
+        } catch (error) {
+          console.error("Lỗi khi xóa tài liệu:", error);
+          Alert.alert("Lỗi", "Không thể xóa tài liệu. Vui lòng thử lại.");
+        }
+      };
+      const getFileNameFromPath = (path: string) => {
+        return path.substring(path.lastIndexOf("/") + 1);
+      };
+      const handlePickDocument = async () => {
+        try {
+          const result = await DocumentPicker.getDocumentAsync({
+            type: "*/*", // Chấp nhận tất cả các loại tệp
+            copyToCacheDirectory: true,
+          });
+    
+          console.log("Document Picker Result:", result);
+    
+          // Kiểm tra nếu người dùng không hủy và có tài liệu được chọn
+          if (!result.canceled && result.assets && result.assets.length > 0) {
+            const selectedFile = result.assets[0]; // Lấy tệp đầu tiên từ danh sách
+            console.log("Selected file:", selectedFile);
+            setDocuments((prev) => [...prev, selectedFile]); // Lưu tệp đã chọn vào state
+          } else if (result.canceled) {
+            console.log("User canceled file picker");
+          } else {
+            console.error("Unexpected result from DocumentPicker:", result);
+          }
+        } catch (error) {
+          console.error("Error picking file:", error);
+          Alert.alert("Lỗi", "Không thể chọn tài liệu. Vui lòng thử lại.");
+        }
+      };
+      const handleUploadDocuments = async (taskId: number) => {
+        if (!taskId || isNaN(taskId)) {
+          console.error("Invalid taskId:", taskId);
+          Alert.alert("Lỗi", "Không thể tải tài liệu vì taskId không hợp lệ.");
+          return;
+        }
+      
+        try {
+          console.log("Danh sách tài liệu trước khi tải lên:", documents);
+      
+          const formData = new FormData();
+      
+          // Lọc các tài liệu mới (không có id)
+          const newDocuments = documents.filter((doc) => !doc.id);
+      
+          if (newDocuments.length === 0) {
+            console.log("Không có tài liệu mới để tải lên.");
+            return;
+          }
+      
+          for (const doc of newDocuments) {
+            const fileUri = doc.uri;
+            const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      
+            formData.append("files", {
+              uri: fileUri,
+              type: doc.mimeType || "application/octet-stream",
+              name: doc.name || fileInfo.uri.split("/").pop(),
+            });
+          }
+      
+          const token = await AsyncStorage.getItem("token");
+          const response = await axios.post(
+            `${API_BASE_URL}/document/upload/task/${taskId}`,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+      
+          console.log("Tài liệu đã tải lên:", response.data);
+      
+          // Cập nhật danh sách tài liệu với các tài liệu đã được tải lên từ server
+          setDocuments((prev) => [
+            ...prev.filter((doc) => doc.id), // Giữ lại các tài liệu cũ
+            ...response.data, // Thêm các tài liệu mới từ server
+          ]);
+      
+          Alert.alert("Thành công", "Tài liệu đã được tải lên.");
+        } catch (error) {
+          console.error("Lỗi khi tải tài liệu:", error);
+          Alert.alert("Lỗi", "Không thể tải tài liệu. Vui lòng thử lại.");
+        }
+      };
     const handleAddSubTask = () => {
         setEditingSubTask(null);
         setShowSubTaskModal(true);
@@ -234,12 +346,37 @@ const EditTaskScreen = () => {
                     </View>
 
                     <Text style={styles.label}>Mức độ ưu tiên</Text>
-                    <TouchableOpacity
-                        style={styles.levelPicker}
-                        onPress={() => setShowLevelPicker(true)}
-                    >
-                        <Text style={styles.levelText}>{getLevelLabel(level)}</Text>
-                    </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.levelPicker}
+                    onPress={() => setShowLevelPicker(true)}
+                >
+                    <Text style={styles.levelText}>{getLevelLabel(level)}</Text>
+                </TouchableOpacity>
+                
+                <View style={styles.documentsSection}>
+  <Text style={styles.label}>Tài liệu đính kèm</Text>
+
+  {documents.length > 0 ? (
+    documents.map((doc, index) => (
+      <View key={index} style={styles.documentItem}>
+        <Text style={styles.documentName}>
+          {doc.name ? doc.name : getFileNameFromPath(doc.pathFile)}
+        </Text>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteDocument(doc.id, !doc.id)}
+        >
+          <AntDesign name="delete" size={20} color="#FF4444" />
+        </TouchableOpacity>
+      </View>
+    ))
+  ) : (
+    <Text style={styles.noDocumentsText}>Không có tài liệu nào</Text>
+  )}
+</View>
+<TouchableOpacity style={styles.addDocumentButton} onPress={handlePickDocument}>
+  <Text style={styles.addDocumentText}>+ Thêm tài liệu</Text>
+</TouchableOpacity>
 
                     <View style={styles.subTasksSection}>
                         <View style={styles.subTasksHeader}>
@@ -632,6 +769,82 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
+    documentsSection: {
+        marginTop: 25,
+        marginBottom: 25,
+        backgroundColor: "white",
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+      documentItem: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        backgroundColor: "#F8F9FA",
+        padding: 15,
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#E0E0E0",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+      },
+      documentName: {
+        fontSize: 16,
+        color: "#333",
+        flex: 1,
+      },
+      downloadButton: {
+        padding: 8,
+        backgroundColor: "#E8F4FF",
+        borderRadius: 20,
+        shadowColor: "#007AFF",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 2,
+      },
+      noDocumentsText: {
+        fontSize: 14,
+        color: "#888",
+        textAlign: "center",
+        marginTop: 10,
+      },
+      deleteButtonn: {
+        padding: 8,
+        backgroundColor: "#FFF0F0",
+        borderRadius: 20,
+        shadowColor: "#FF4444",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 2,
+      },
+      addDocumentButton: {
+        backgroundColor: "#E8F4FF",
+        padding: 12,
+        borderRadius: 12,
+        alignItems: "center",
+        marginTop: 10,
+        shadowColor: "#007AFF",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 3,
+      },
+      addDocumentText: {
+        color: "#007AFF",
+        fontSize: 16,
+        fontWeight: "500",
+      },
 });
 
 export default EditTaskScreen;

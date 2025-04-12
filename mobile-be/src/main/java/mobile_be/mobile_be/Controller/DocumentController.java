@@ -1,13 +1,19 @@
 package mobile_be.mobile_be.Controller;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import jakarta.transaction.Transactional;
+import mobile_be.mobile_be.Model.Document;
 import mobile_be.mobile_be.Model.Kpi;
+import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Model.User;
+import mobile_be.mobile_be.Repository.DocumentRepository;
 import mobile_be.mobile_be.Repository.KpiRepository;
+import mobile_be.mobile_be.Repository.TaskRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
 import mobile_be.mobile_be.Service.ExcelGenerator;
 import mobile_be.mobile_be.Service.UserService;
 import mobile_be.mobile_be.contains.enum_tydstate;
-import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -16,18 +22,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.io.File;
-import java.io.FileInputStream;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Controller
 @RequestMapping("/api/document")
@@ -41,6 +42,15 @@ public class DocumentController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private Cloudinary cloudinary;
+
+    @Autowired
+    private DocumentRepository documentRepository;
+
+    @Autowired
+    private TaskRepository taskRepository;
 
 
     @GetMapping("/download-excel-user")
@@ -133,5 +143,131 @@ public class DocumentController {
                 .body(resource);
     }
 
+
+    @PostMapping("/upload/task/{taskId}")
+    public ResponseEntity<List<Document>> uploadMultipleFiles(
+            @PathVariable("taskId") Integer taskId,
+            @RequestParam("files") MultipartFile[] files) {
+
+        Task task = taskRepository.findById(taskId);
+        if (task == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        List<Document> savedDocuments = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            try {
+                String mimeType = file.getContentType();
+                String resourceType = "auto";
+                String attachmentType = "raw";
+
+                if (mimeType != null && mimeType.startsWith("image")) {
+                    resourceType = "image";
+                    attachmentType = "image";
+                } else if (mimeType != null && mimeType.startsWith("video")) {
+                    resourceType = "video";
+                    attachmentType = "video";
+                } else if (mimeType != null && mimeType.startsWith("application/pdf")) {
+                    resourceType = "image";
+                    attachmentType = "pdf";
+                }
+
+                String originalFilename = file.getOriginalFilename();
+                assert originalFilename != null;
+                String safeFilename = originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+                Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                        ObjectUtils.asMap(
+                                "resource_type", resourceType,
+                                "public_id", "uploads/" + safeFilename
+                        )
+                );
+
+                String fileUrl = (String) uploadResult.get("secure_url");
+
+                // Tạo document mới và gắn với task
+                Document document = new Document();
+                document.setPathFile(fileUrl);
+                document.setTypeFile(attachmentType); // Ensure this field exists in the Document model
+                document.setListTaskDocument(Collections.singletonList(task)); // Associate with the task
+
+                Document saved = documentRepository.save(document);
+                savedDocuments.add(saved);
+
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
+        }
+
+        return ResponseEntity.ok(savedDocuments);
+    }
+
+    @Transactional
+    @GetMapping("/task/{taskId}")
+    public ResponseEntity<List<Document>> getDocumentsByTaskId(@PathVariable("taskId") Integer taskId) {
+        List<Document> documents = documentRepository.findByListTaskDocument_Id(taskId);
+        if (documents.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(documents);
+    }
+
+    @Transactional
+    @PostMapping("/delete")
+    public ResponseEntity<String> deleteDocument(
+            @RequestParam("documentId") Integer documentId,
+            @RequestParam("taskId") Integer taskId) {
+        // Kiểm tra task có tồn tại không
+        Task task = taskRepository.findById(taskId);
+        if (task == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task không tồn tại");
+        }
+        // Kiểm tra tài liệu có tồn tại không
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Tài liệu không tồn tại"));
+        // Xóa tài liệu khỏi danh sách task
+        document.getListTaskDocument().remove(task);
+        documentRepository.save(document);
+        // Nếu tài liệu không còn thuộc về bất kỳ task nào, xóa tài liệu
+        if (document.getListTaskDocument().isEmpty()) {
+            // Xóa tài liệu từ Cloudinary
+            String publicId = document.getPathFile().substring(document.getPathFile().lastIndexOf("/") + 1);
+            CompletableFuture.runAsync(()->{
+                try {
+                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            documentRepository.delete(document);
+        }
+        return ResponseEntity.ok("Tài liệu đã được xóa thành công");
+    }
+
+    @PostMapping("/share")
+    public ResponseEntity<String> shareDocument(@RequestParam("documentId") Integer documentId,
+                                                @RequestParam("taskId") Integer taskId) {
+        // Kiểm tra tài liệu có tồn tại không
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Tài liệu không tồn tại"));
+
+        // Kiểm tra task có tồn tại không
+        Task task = taskRepository.findById(taskId);
+        if (task == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Công việc không tồn tại");
+        }
+        // Kiểm tra tài liệu đã được chia sẻ với task chưa
+        if (document.getListTaskDocument().contains(task)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tài liệu đã có trong công việc này!");
+        }
+
+        // Thêm task vào danh sách task của tài liệu
+        if (!document.getListTaskDocument().contains(task)) {
+            document.getListTaskDocument().add(task);
+            documentRepository.save(document);
+        }
+
+        return ResponseEntity.ok("Tài liệu đã được chia sẻ thành công");
+    }
 
 }

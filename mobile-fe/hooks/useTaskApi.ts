@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL_TASK } from '@/constants/api';
+import { API_BASE_URL } from '@/constants/api';
 
 export const createTask = async (taskData: any) => {
     try {
@@ -128,3 +129,39 @@ export const getSubTasks = async (parentId: number) => {
         throw new Error(error.response?.data || 'Không thể lấy danh sách công việc con');
     }
 };
+export const getDocumentsByTaskId = async (taskId: number) => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const response = await axios.get(`${API_BASE_URL}/document/task/${taskId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching documents:", error.response?.data || error.message);
+      throw error;
+    }
+  };
+
+  export const deleteDocument = async (documentId: number, taskId: number) => {
+    try {
+        console.log("documentId", documentId);
+        console.log("taskId", taskId);
+      const token = await AsyncStorage.getItem("token");
+      const response = await axios.post(
+        `${API_BASE_URL}/document/delete`,
+        { documentId, taskId },
+        {
+            params: { documentId, taskId },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting document:", error.response?.data || error.message);
+      throw error;
+    }
+  };

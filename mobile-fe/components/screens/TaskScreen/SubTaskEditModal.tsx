@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     selectedLevel: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#8B5CF6',
     },
     levelOptionText: {
         fontSize: 16,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
         color: 'white',
     },
     closeButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#8B5CF6',
         padding: 12,
         borderRadius: 10,
         alignItems: 'center',
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F2F2F2',
     },
     saveButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#8B5CF6',
     },
     buttonText: {
         fontSize: 16,

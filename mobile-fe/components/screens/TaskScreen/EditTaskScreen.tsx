@@ -169,227 +169,229 @@ const EditTaskScreen = () => {
 
     return (
         <ScrollView style={styles.container}>
-            <View style={styles.formContainer}>
-                <Text style={styles.label}>Tiêu đề nhiệm vụ</Text>
-                <TextInput
-                    style={styles.input}
-                    value={title}
-                    onChangeText={setTitle}
-                    placeholder="Nhập tiêu đề nhiệm vụ"
-                />
+            <View style={styles.formWrapper}>
+                <View style={styles.formContainer}>
+                    <Text style={styles.label}>Tiêu đề nhiệm vụ</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={title}
+                        onChangeText={setTitle}
+                        placeholder="Nhập tiêu đề nhiệm vụ"
+                    />
 
-                <Text style={styles.label}>Mô tả</Text>
-                <TextInput
-                    style={[styles.input, styles.textArea]}
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="Nhập mô tả chi tiết"
-                    multiline
-                    numberOfLines={4}
-                />
+                    <Text style={styles.label}>Mô tả</Text>
+                    <TextInput
+                        style={[styles.input, styles.textArea]}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="Nhập mô tả chi tiết"
+                        multiline
+                        numberOfLines={4}
+                    />
 
-                <Text style={styles.label}>Thời gian bắt đầu</Text>
-                <View style={styles.dateTimeContainer}>
-                    <TouchableOpacity 
-                        onPress={() => setShowFromDatePicker(true)} 
-                        style={styles.datePicker}
-                    >
-                        <Text>{fromDate.toLocaleDateString('vi-VN')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        onPress={() => setShowFromTimePicker(true)} 
-                        style={styles.datePicker}
-                    >
-                        <Text>
-                            {fromDate.toLocaleTimeString('vi-VN', { 
-                                hour: '2-digit', 
-                                minute: '2-digit',
-                                hour12: false 
-                            })}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <Text style={styles.label}>Thời gian kết thúc</Text>
-                <View style={styles.dateTimeContainer}>
-                    <TouchableOpacity 
-                        onPress={() => setShowToDatePicker(true)} 
-                        style={styles.datePicker}
-                    >
-                        <Text>{toDate.toLocaleDateString('vi-VN')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        onPress={() => setShowToTimePicker(true)} 
-                        style={styles.datePicker}
-                    >
-                        <Text>
-                            {toDate.toLocaleTimeString('vi-VN', { 
-                                hour: '2-digit', 
-                                minute: '2-digit',
-                                hour12: false 
-                            })}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <Text style={styles.label}>Mức độ ưu tiên</Text>
-                <TouchableOpacity
-                    style={styles.levelPicker}
-                    onPress={() => setShowLevelPicker(true)}
-                >
-                    <Text style={styles.levelText}>{getLevelLabel(level)}</Text>
-                </TouchableOpacity>
-
-                <View style={styles.subTasksSection}>
-                    <View style={styles.subTasksHeader}>
-                        <Text style={styles.label}>Công việc con</Text>
+                    <Text style={styles.label}>Thời gian bắt đầu</Text>
+                    <View style={styles.dateTimeContainer}>
                         <TouchableOpacity 
-                            style={styles.addSubTaskButton}
-                            onPress={handleAddSubTask}
+                            onPress={() => setShowFromDatePicker(true)} 
+                            style={styles.datePicker}
                         >
-                            <AntDesign name="plus" size={20} color="#007AFF" />
+                            <Text>{fromDate.toLocaleDateString('vi-VN')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={() => setShowFromTimePicker(true)} 
+                            style={styles.datePicker}
+                        >
+                            <Text>
+                                {fromDate.toLocaleTimeString('vi-VN', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    hour12: false 
+                                })}
+                            </Text>
                         </TouchableOpacity>
                     </View>
-                    
-                    {subTasks.map((subTask) => (
-                        <TouchableOpacity
-                            key={subTask.tempId || subTask.id}
-                            style={styles.subTaskItem}
-                            onPress={() => handleEditSubTask(subTask)}
+
+                    <Text style={styles.label}>Thời gian kết thúc</Text>
+                    <View style={styles.dateTimeContainer}>
+                        <TouchableOpacity 
+                            onPress={() => setShowToDatePicker(true)} 
+                            style={styles.datePicker}
                         >
-                            <View style={styles.subTaskInfo}>
-                                <Text style={styles.subTaskTitle}>{subTask.title}</Text>
-                                <Text style={styles.subTaskDescription}>{subTask.description}</Text>
-                                <Text style={styles.subTaskDate}>
-                                    {new Date(subTask.fromDate).toLocaleDateString('vi-VN')} - 
-                                    {new Date(subTask.toDate).toLocaleDateString('vi-VN')}
-                                </Text>
-                                <Text style={styles.subTaskLevel}>
-                                    Mức độ: {getLevelLabel(subTask.level)}
-                                </Text>
-                            </View>
-                            <View style={styles.subTaskActions}>
-                                <TouchableOpacity
-                                    style={styles.deleteButton}
-                                    onPress={() => {
-                                        setSubTasks(prevTasks => 
-                                            prevTasks.filter(task => 
-                                                (task.tempId || task.id) !== (subTask.tempId || subTask.id)
-                                            )
-                                        );
-                                    }}
-                                >
-                                    <AntDesign name="delete" size={20} color="#FF4444" />
-                                </TouchableOpacity>
-                            </View>
+                            <Text>{toDate.toLocaleDateString('vi-VN')}</Text>
                         </TouchableOpacity>
-                    ))}
-                </View>
+                        <TouchableOpacity 
+                            onPress={() => setShowToTimePicker(true)} 
+                            style={styles.datePicker}
+                        >
+                            <Text>
+                                {toDate.toLocaleTimeString('vi-VN', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    hour12: false 
+                                })}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
 
-                {showFromDatePicker && (
-                    <DateTimePicker
-                        value={fromDate}
-                        mode="date"
-                        display="spinner"
-                        onChange={(event, selectedDate) => {
-                            setShowFromDatePicker(false);
-                            if (selectedDate) setFromDate(selectedDate);
-                        }}
-                    />
-                )}
+                    <Text style={styles.label}>Mức độ ưu tiên</Text>
+                    <TouchableOpacity
+                        style={styles.levelPicker}
+                        onPress={() => setShowLevelPicker(true)}
+                    >
+                        <Text style={styles.levelText}>{getLevelLabel(level)}</Text>
+                    </TouchableOpacity>
 
-                {showFromTimePicker && (
-                    <DateTimePicker
-                        value={fromDate}
-                        mode="time"
-                        display="spinner"
-                        is24Hour={true}
-                        onChange={(event, selectedTime) => {
-                            setShowFromTimePicker(false);
-                            if (selectedTime) setFromDate(selectedTime);
-                        }}
-                    />
-                )}
-
-                {showToDatePicker && (
-                    <DateTimePicker
-                        value={toDate}
-                        mode="date"
-                        display="spinner"
-                        onChange={(event, selectedDate) => {
-                            setShowToDatePicker(false);
-                            if (selectedDate) setToDate(selectedDate);
-                        }}
-                    />
-                )}
-
-                {showToTimePicker && (
-                    <DateTimePicker
-                        value={toDate}
-                        mode="time"
-                        display="spinner"
-                        is24Hour={true}
-                        onChange={(event, selectedTime) => {
-                            setShowToTimePicker(false);
-                            if (selectedTime) setToDate(selectedTime);
-                        }}
-                    />
-                )}
-
-                <Modal
-                    visible={showLevelPicker}
-                    transparent={true}
-                    animationType="slide"
-                >
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>Chọn mức độ ưu tiên</Text>
-                            {levelOptions.map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.levelOption,
-                                        level === option.value && styles.selectedLevel
-                                    ]}
-                                    onPress={() => {
-                                        setLevel(option.value);
-                                        setShowLevelPicker(false);
-                                    }}
-                                >
-                                    <Text style={[
-                                        styles.levelOptionText,
-                                        level === option.value && styles.selectedLevelText
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                            <TouchableOpacity
-                                style={styles.closeButton}
-                                onPress={() => setShowLevelPicker(false)}
+                    <View style={styles.subTasksSection}>
+                        <View style={styles.subTasksHeader}>
+                            <Text style={styles.label}>Công việc con</Text>
+                            <TouchableOpacity 
+                                style={styles.addSubTaskButton}
+                                onPress={handleAddSubTask}
                             >
-                                <Text style={styles.closeButtonText}>Đóng</Text>
+                                <AntDesign name="plus" size={20} color="#007AFF" />
                             </TouchableOpacity>
                         </View>
+                        
+                        {subTasks.map((subTask) => (
+                            <TouchableOpacity
+                                key={subTask.tempId || subTask.id}
+                                style={styles.subTaskItem}
+                                onPress={() => handleEditSubTask(subTask)}
+                            >
+                                <View style={styles.subTaskInfo}>
+                                    <Text style={styles.subTaskTitle}>{subTask.title}</Text>
+                                    <Text style={styles.subTaskDescription}>{subTask.description}</Text>
+                                    <Text style={styles.subTaskDate}>
+                                        {new Date(subTask.fromDate).toLocaleDateString('vi-VN')} - 
+                                        {new Date(subTask.toDate).toLocaleDateString('vi-VN')}
+                                    </Text>
+                                    <Text style={styles.subTaskLevel}>
+                                        Mức độ: {getLevelLabel(subTask.level)}
+                                    </Text>
+                                </View>
+                                <View style={styles.subTaskActions}>
+                                    <TouchableOpacity
+                                        style={styles.deleteButton}
+                                        onPress={() => {
+                                            setSubTasks(prevTasks => 
+                                                prevTasks.filter(task => 
+                                                    (task.tempId || task.id) !== (subTask.tempId || subTask.id)
+                                                )
+                                            );
+                                        }}
+                                    >
+                                        <AntDesign name="delete" size={20} color="#FF4444" />
+                                    </TouchableOpacity>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                </Modal>
 
-                <SubTaskEditModal
-                    visible={showSubTaskModal}
-                    subTask={editingSubTask}
-                    onClose={() => {
-                        setShowSubTaskModal(false);
-                        setEditingSubTask(null);
-                    }}
-                    onSave={handleSaveSubTask}
-                />
+                    {showFromDatePicker && (
+                        <DateTimePicker
+                            value={fromDate}
+                            mode="date"
+                            display="spinner"
+                            onChange={(event, selectedDate) => {
+                                setShowFromDatePicker(false);
+                                if (selectedDate) setFromDate(selectedDate);
+                            }}
+                        />
+                    )}
 
-                <TouchableOpacity
-                    style={styles.updateButton}
-                    onPress={handleUpdateTask}
-                >
-                    <Text style={styles.updateButtonText}>Cập nhật</Text>
-                </TouchableOpacity>
+                    {showFromTimePicker && (
+                        <DateTimePicker
+                            value={fromDate}
+                            mode="time"
+                            display="spinner"
+                            is24Hour={true}
+                            onChange={(event, selectedTime) => {
+                                setShowFromTimePicker(false);
+                                if (selectedTime) setFromDate(selectedTime);
+                            }}
+                        />
+                    )}
+
+                    {showToDatePicker && (
+                        <DateTimePicker
+                            value={toDate}
+                            mode="date"
+                            display="spinner"
+                            onChange={(event, selectedDate) => {
+                                setShowToDatePicker(false);
+                                if (selectedDate) setToDate(selectedDate);
+                            }}
+                        />
+                    )}
+
+                    {showToTimePicker && (
+                        <DateTimePicker
+                            value={toDate}
+                            mode="time"
+                            display="spinner"
+                            is24Hour={true}
+                            onChange={(event, selectedTime) => {
+                                setShowToTimePicker(false);
+                                if (selectedTime) setToDate(selectedTime);
+                            }}
+                        />
+                    )}
+
+                    <Modal
+                        visible={showLevelPicker}
+                        transparent={true}
+                        animationType="slide"
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Chọn mức độ ưu tiên</Text>
+                                {levelOptions.map((option) => (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.levelOption,
+                                            level === option.value && styles.selectedLevel
+                                        ]}
+                                        onPress={() => {
+                                            setLevel(option.value);
+                                            setShowLevelPicker(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.levelOptionText,
+                                            level === option.value && styles.selectedLevelText
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                                <TouchableOpacity
+                                    style={styles.closeButton}
+                                    onPress={() => setShowLevelPicker(false)}
+                                >
+                                    <Text style={styles.closeButtonText}>Đóng</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+                    <SubTaskEditModal
+                        visible={showSubTaskModal}
+                        subTask={editingSubTask}
+                        onClose={() => {
+                            setShowSubTaskModal(false);
+                            setEditingSubTask(null);
+                        }}
+                        onSave={handleSaveSubTask}
+                    />
+
+                    <TouchableOpacity
+                        style={styles.updateButton}
+                        onPress={handleUpdateTask}
+                    >
+                        <Text style={styles.updateButtonText}>Cập nhật</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </ScrollView>
     );
@@ -398,30 +400,43 @@ const EditTaskScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#F8FAFC',
+    },
+    formWrapper: {
+        flex: 1,
+        backgroundColor: 'white',
+        margin: 16,
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
     },
     formContainer: {
-        padding: 20,
+        flex: 1,
     },
     label: {
         fontSize: 16,
         fontWeight: '600',
         marginTop: 15,
         marginBottom: 8,
-        color: '#333',
+        color: '#374151',
     },
     input: {
         backgroundColor: 'white',
         padding: 15,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: '#E5E7EB',
         marginBottom: 15,
         fontSize: 16,
+        color: '#1F2937',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowRadius: 4,
         elevation: 2,
     },
     textArea: {
@@ -440,48 +455,48 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginHorizontal: 5,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: '#E5E7EB',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowRadius: 4,
         elevation: 2,
-    },
-    levelPicker: {
-        backgroundColor: 'white',
-        padding: 15,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    levelText: {
-        fontSize: 16,
-        color: '#333',
     },
     updateButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#8B5CF6',
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
         marginTop: 25,
         marginBottom: 30,
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 3 },
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
-        shadowRadius: 4,
+        shadowRadius: 8,
         elevation: 5,
     },
     updateButtonText: {
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    levelPicker: {
+        backgroundColor: 'white',
+        padding: 15,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    levelText: {
+        fontSize: 16,
+        color: '#1F2937',
     },
     modalContainer: {
         flex: 1,
@@ -505,7 +520,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
-        color: '#333',
+        color: '#1F2937',
     },
     levelOption: {
         padding: 16,
@@ -514,17 +529,17 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     selectedLevel: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#8B5CF6',
     },
     levelOptionText: {
         fontSize: 16,
-        color: '#333',
+        color: '#1F2937',
     },
     selectedLevelText: {
         color: 'white',
     },
     closeButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#8B5CF6',
         padding: 12,
         borderRadius: 10,
         alignItems: 'center',
@@ -542,10 +557,10 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowRadius: 8,
+        elevation: 5,
     },
     subTasksHeader: {
         flexDirection: 'row',
@@ -565,27 +580,27 @@ const styles = StyleSheet.create({
     },
     subTaskItem: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#F9FAFB',
         padding: 15,
         borderRadius: 12,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: '#E5E7EB',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     subTaskInfo: {
         flex: 1,
     },
     subTaskTitle: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 5,
+        color: '#1F2937',
+        flex: 1,
     },
     subTaskDescription: {
         fontSize: 14,

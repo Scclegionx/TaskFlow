@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { 
     View, Text, StyleSheet, FlatList, ScrollView, 
-    TouchableOpacity, Modal, TextInput, Alert, Image 
+    TouchableOpacity, Modal, TextInput, Alert, Image,
+    Animated 
 } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { useRouter } from 'expo-router';
@@ -13,6 +14,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { debounce } from "lodash";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createTask, deleteTask, assignTask, getMainTasks } from "@/hooks/useTaskApi";
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface ItemProject {
     id: number;
@@ -283,63 +285,77 @@ export default function ProjectDetail() {
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.card}>
-                <Text style={styles.title}>📌 {ItemProject?.name}</Text>
-                <Text style={styles.description}>{ItemProject?.description}</Text>
-                <Text style={styles.date}>
-                    📅 Ngày tạo: {ItemProject?.fromDate ? formatDateTime(ItemProject.fromDate) : "Chưa cập nhật"}
-                </Text>
-                <Text style={styles.date}>
-                    🚀 Hạn chót: {ItemProject?.toDate ? formatDateTime(ItemProject.toDate) : "Chưa cập nhật"}
-                </Text>
-                <Text style={[styles.status, { color: ItemProject ? getStatusColor(ItemProject.status) : "#A0A0A0" }]}>
-                    ⚡ Trạng thái: {ItemProject ? getStatusText(ItemProject.status) : "Chưa xác định"}
-                </Text>
-            </View>
+            <Animated.View style={styles.card}>
+                <LinearGradient
+                    colors={['#62B2D1', '#FFFFFF']}
+                    style={styles.cardGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <Text style={styles.title}>{ItemProject?.name}</Text>
+                    <Text style={styles.description}>{ItemProject?.description}</Text>
+                    <Text style={styles.date}>
+                        📅 Ngày tạo: {ItemProject?.fromDate ? formatDateTime(ItemProject.fromDate) : "Chưa cập nhật"}
+                    </Text>
+                    <Text style={styles.date}>
+                        🚀 Hạn chót: {ItemProject?.toDate ? formatDateTime(ItemProject.toDate) : "Chưa cập nhật"}
+                    </Text>
+                    <Text style={[styles.status, { color: ItemProject ? getStatusColor(ItemProject.status) : "#A0A0A0" }]}>
+                        ⚡ Trạng thái: {ItemProject ? getStatusText(ItemProject.status) : "Chưa xác định"}
+                    </Text>
+                </LinearGradient>
+            </Animated.View>
 
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>👥 Thành viên</Text>
-                    {userRole === 'ADMIN' && (
-                        <TouchableOpacity onPress={() => setShowAddMember(true)}>
-                            <AntDesign name="plus" size={24} color="#007BFF" />
-                        </TouchableOpacity>
-                    )}
-                </View>
-                <FlatList
-                    data={ItemProject?.members}
-                    keyExtractor={(member) => member.id.toString()}
-                    renderItem={({ item }) => (
-                        <View style={styles.memberItem}>
-                            <View style={styles.memberInfo}>
-                                <View style={styles.memberAvatarContainer}>
-                                    <Image 
-                                        source={{ uri: item.avatar }} 
-                                        style={styles.memberAvatar}
-                                    />
-                                    <View style={styles.memberDetails}>
-                                        <Text style={styles.memberName}>
-                                            {item.name}
-                                        </Text>
-                                        <Text style={styles.memberEmail}>
-                                            {item.email}
-                                        </Text>
-                                        <Text style={[styles.roleText, { color: item.role === 'ADMIN' ? '#007BFF' : '#666' }]}>
-                                            {item.role}
-                                        </Text>
+            <Animated.View style={styles.section}>
+                <LinearGradient
+                    colors={['#FFA07A', '#FFFFFF']}
+                    style={styles.sectionGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>👥 Thành viên</Text>
+                        {userRole === 'ADMIN' && (
+                            <TouchableOpacity onPress={() => setShowAddMember(true)}>
+                                <AntDesign name="plus" size={24} color="#007BFF" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    <FlatList
+                        data={ItemProject?.members}
+                        keyExtractor={(member) => member.id.toString()}
+                        renderItem={({ item }) => (
+                            <View style={styles.memberItem}>
+                                <View style={styles.memberInfo}>
+                                    <View style={styles.memberAvatarContainer}>
+                                        <Image 
+                                            source={{ uri: item.avatar }} 
+                                            style={styles.memberAvatar}
+                                        />
+                                        <View style={styles.memberDetails}>
+                                            <Text style={styles.memberName}>
+                                                {item.name}
+                                            </Text>
+                                            <Text style={styles.memberEmail}>
+                                                {item.email}
+                                            </Text>
+                                            <Text style={[styles.roleText, { color: item.role === 'ADMIN' ? '#007BFF' : '#666' }]}>
+                                                {item.role}
+                                            </Text>
+                                        </View>
                                     </View>
                                 </View>
+                                {userRole === 'ADMIN' && item.id !== currentUserId && (
+                                    <TouchableOpacity onPress={() => handleRemoveMember(item.id)}>
+                                        <AntDesign name="delete" size={20} color="#FF4D67" />
+                                    </TouchableOpacity>
+                                )}
                             </View>
-                            {userRole === 'ADMIN' && item.id !== currentUserId && (
-                                <TouchableOpacity onPress={() => handleRemoveMember(item.id)}>
-                                    <AntDesign name="delete" size={20} color="#FF4D67" />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    )}
-                    scrollEnabled={false}
-                />
-            </View>
+                        )}
+                        scrollEnabled={false}
+                    />
+                </LinearGradient>
+            </Animated.View>
 
             {/* Modal thêm thành viên */}
             <Modal
@@ -385,113 +401,118 @@ export default function ProjectDetail() {
                 </View>
             </Modal>
 
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>📌 Công việc</Text>
-                    {userRole === 'ADMIN' && (
-                        <TouchableOpacity 
-                            onPress={() => router.push({
-                                pathname: '/Task/createTask',
-                                params: { projectId: project.id }
-                            })}
-                        >
-                            <AntDesign name="plus" size={24} color="#007BFF" />
-                        </TouchableOpacity>
-                    )}
-                </View>
-                {ItemProject?.tasks && ItemProject.tasks.length > 0 ? (
-                    <FlatList
-                        data={ItemProject.tasks}
-                        keyExtractor={(task) => task.id.toString()}
-                        renderItem={({ item }) => (
-                            <View style={[
-                                styles.taskItem,
-                                userRole === 'ADMIN' && styles.taskItemClickable
-                            ]}>
-                                <TouchableOpacity 
-                                    style={styles.taskContent}
-                                    onPress={() => handleTaskPress(item.id)}
-                                >
-                                    <View style={styles.taskHeader}>
-                                        <Text style={styles.taskTitle}>
-                                            🔹 {item.title}
-                                        </Text>
-                                        {userRole === 'ADMIN' && (
-                                            <TouchableOpacity 
-                                                style={styles.deleteButton}
-                                                onPress={(e) => {
-                                                    e.stopPropagation();
-                                                    handleRemoveTask(item.id);
-                                                }}
-                                            >
-                                                <AntDesign name="close" size={16} color="#FF4D67" />
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                    <Text style={styles.taskDescription}>{item.description}</Text>
-                                    <Text style={styles.taskDate}>
-                                        {formatDateTime(item.createdAt)}
-                                    </Text>
-                                    <View style={styles.taskFooter}>
-                                        <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
-                                            {getTaskStatusText(item.status)}
-                                        </Text>
-                                        {item.assignees && item.assignees.length > 0 ? (
-                                            <View style={styles.assigneeContainer}>
-                                                <View style={styles.assignedAvatar}>
-                                                    <Image 
-                                                        source={{ uri: item.assignees[0].avatar }} 
-                                                        style={styles.avatarImage}
-                                                    />
-                                                    {/* Chỉ hiển thị nút edit cho ADMIN */}
-                                                    {userRole === 'ADMIN' && (
-                                                        <TouchableOpacity 
-                                                            style={styles.changeAssignBadge}
-                                                            onPress={(e) => {
-                                                                e.stopPropagation();
-                                                                handleShowAssignModal(item.id);
-                                                            }}
-                                                        >
-                                                            <AntDesign name="edit" size={8} color="#FFF" />
-                                                        </TouchableOpacity>
-                                                    )}
-                                                </View>
-                                                {item.assignees.length > 1 && (
-                                                    <View style={styles.assigneeCount}>
-                                                        <Text style={styles.assigneeCountText}>
-                                                            +{item.assignees.length - 1}
-                                                        </Text>
-                                                    </View>
-                                                )}
-                                            </View>
-                                        ) : (
-                                            // Chỉ ADMIN mới thấy và có thể nhấn nút thêm người
-                                            userRole === 'ADMIN' ? (
+            <Animated.View style={styles.taskSection}>
+                <LinearGradient
+                    colors={['#FFD700', '#FFA500']}
+                    style={styles.taskGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>📌 Công việc</Text>
+                        {userRole === 'ADMIN' && (
+                            <TouchableOpacity 
+                                onPress={() => router.push({
+                                    pathname: '/Task/createTask',
+                                    params: { projectId: project.id }
+                                })}
+                            >
+                                <AntDesign name="plus" size={24} color="#007BFF" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    {ItemProject?.tasks && ItemProject.tasks.length > 0 ? (
+                        <FlatList
+                            data={ItemProject.tasks}
+                            keyExtractor={(task) => task.id.toString()}
+                            renderItem={({ item }) => (
+                                <View style={[
+                                    styles.taskItem,
+                                    userRole === 'ADMIN' && styles.taskItemClickable
+                                ]}>
+                                    <TouchableOpacity 
+                                        style={styles.taskContent}
+                                        onPress={() => handleTaskPress(item.id)}
+                                    >
+                                        <View style={styles.taskHeader}>
+                                            <Text style={styles.taskTitle}>
+                                                🔹 {item.title}
+                                            </Text>
+                                            {userRole === 'ADMIN' && (
                                                 <TouchableOpacity 
-                                                    style={styles.assignButton}
+                                                    style={styles.deleteButton}
                                                     onPress={(e) => {
                                                         e.stopPropagation();
-                                                        handleShowAssignModal(item.id);
+                                                        handleRemoveTask(item.id);
                                                     }}
                                                 >
-                                                    <AntDesign name="adduser" size={20} color="#007BFF" />
+                                                    <AntDesign name="close" size={16} color="#FF4D67" />
                                                 </TouchableOpacity>
+                                            )}
+                                        </View>
+                                        <Text style={styles.taskDescription}>{item.description}</Text>
+                                        <Text style={styles.taskDate}>
+                                            {formatDateTime(item.createdAt)}
+                                        </Text>
+                                        <View style={styles.taskFooter}>
+                                            <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
+                                                {getTaskStatusText(item.status)}
+                                            </Text>
+                                            {item.assignees && item.assignees.length > 0 ? (
+                                                <View style={styles.assigneeContainer}>
+                                                    <View style={styles.assignedAvatar}>
+                                                        <Image 
+                                                            source={{ uri: item.assignees[0].avatar }} 
+                                                            style={styles.avatarImage}
+                                                        />
+                                                        {userRole === 'ADMIN' && (
+                                                            <TouchableOpacity 
+                                                                style={styles.changeAssignBadge}
+                                                                onPress={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleShowAssignModal(item.id);
+                                                                }}
+                                                            >
+                                                                <AntDesign name="edit" size={8} color="#FFF" />
+                                                            </TouchableOpacity>
+                                                        )}
+                                                    </View>
+                                                    {item.assignees.length > 1 && (
+                                                        <View style={styles.assigneeCount}>
+                                                            <Text style={styles.assigneeCountText}>
+                                                                +{item.assignees.length - 1}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                </View>
                                             ) : (
-                                                <Text style={styles.noAssigneeText}>Chưa có người được gán</Text>
-                                            )
-                                        )}
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                        scrollEnabled={false}
-                    />
-                ) : (
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>Chưa có nhiệm vụ nào</Text>
-                    </View>
-                )}
-            </View>
+                                                userRole === 'ADMIN' ? (
+                                                    <TouchableOpacity 
+                                                        style={styles.assignButton}
+                                                        onPress={(e) => {
+                                                            e.stopPropagation();
+                                                            handleShowAssignModal(item.id);
+                                                        }}
+                                                    >
+                                                        <AntDesign name="adduser" size={20} color="#007BFF" />
+                                                    </TouchableOpacity>
+                                                ) : (
+                                                    <Text style={styles.noAssigneeText}>Chưa có người được gán</Text>
+                                                )
+                                            )}
+                                        </View>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                            scrollEnabled={false}
+                        />
+                    ) : (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>Chưa có nhiệm vụ nào</Text>
+                        </View>
+                    )}
+                </LinearGradient>
+            </Animated.View>
 
             {/* Modal Assign Task */}
             <Modal
@@ -536,296 +557,355 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flexGrow: 1,
         padding: 15,
-        backgroundColor: "#F5F5F5", 
+        backgroundColor: "#F5F5F5",
     },
     card: {
-        backgroundColor: "#FFF",
-        padding: 20,
-        borderRadius: 10,
-        marginBottom: 15,
+        borderRadius: 15,
+        marginBottom: 20,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3, 
+        shadowRadius: 8,
+        elevation: 5,
+        overflow: 'hidden',
     },
-    title: { 
-        fontSize: 22, 
-        fontWeight: "bold", 
-        marginBottom: 10, 
-        color: "#333" 
+    cardGradient: {
+        padding: 20,
     },
-    description: { 
-        fontSize: 16, 
-        color: "#666", 
-        marginBottom: 10 
+    title: {
+        fontSize: 28,
+        fontWeight: "800",
+        marginBottom: 12,
+        color: "black",
+        letterSpacing: 0.5,
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 3,
     },
-    date: { 
-        fontSize: 14, 
-        color: "#888", 
-        marginBottom: 5 
+    description: {
+        fontSize: 16,
+        color: "black",
+        marginBottom: 15,
+        lineHeight: 24,
+        fontWeight: "500",
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
-    status: { 
-        fontSize: 16, 
-        fontWeight: "bold", 
-        color: "#007BFF", 
-        marginBottom: 10 
+    date: {
+        fontSize: 15,
+        color: "black",
+        marginBottom: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        fontWeight: "500",
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
-
-    section: { 
-        backgroundColor: "#FFF", 
-        padding: 15, 
-        borderRadius: 8, 
-        marginBottom: 15, 
+    status: {
+        fontSize: 16,
+        fontWeight: "700",
+        marginTop: 10,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        alignSelf: "flex-start",
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        color: "#FFFFFF",
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+    },
+    section: {
+        borderRadius: 15,
+        marginBottom: 20,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 3,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+        overflow: 'hidden',
     },
-    sectionTitle: { 
-        fontSize: 18, 
-        fontWeight: "bold", 
-        marginBottom: 10, 
-        color: "#333", 
-        borderBottomWidth: 2, 
-        borderBottomColor: "#DDD",
-        paddingBottom: 5,
-    },
-
-    listItem: { 
-        paddingVertical: 10, 
-        paddingHorizontal: 15, 
-        borderBottomWidth: 1, 
-        borderBottomColor: "#EEE", 
-    },
-    listText: { 
-        fontSize: 16, 
-        color: "#333", 
+    sectionGradient: {
+        padding: 20,
     },
     sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 15,
+    },
+    sectionTitle: {
+        fontSize: 22,
+        fontWeight: "800",
+        marginBottom: 15,
+        color: "black",
+        flexDirection: "row",
+        alignItems: "center",
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 3,
     },
     memberItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         paddingVertical: 12,
         paddingHorizontal: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalContent: {
-        backgroundColor: 'white',
+        backgroundColor: "#F9FAFB",
         borderRadius: 10,
-        padding: 20,
-        width: '90%',
-        maxHeight: '80%',
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        textAlign: 'center',
-    },
-    searchInput: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 10,
         marginBottom: 10,
-    },
-    searchResultItem: {
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    closeButton: {
-        backgroundColor: '#007BFF',
-        padding: 10,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 10,
-    },
-    closeButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
     },
     memberInfo: {
         flex: 1,
-        justifyContent: 'center',
+        flexDirection: "row",
+        alignItems: "center",
     },
     memberAvatarContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
     },
     memberAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
         marginRight: 12,
+        borderWidth: 2,
+        borderColor: "#E5E7EB",
     },
     memberDetails: {
         flex: 1,
     },
     memberName: {
         fontSize: 16,
-        color: '#333',
-        fontWeight: '500',
+        color: "#1F2937",
+        fontWeight: "600",
     },
     memberEmail: {
         fontSize: 14,
-        color: '#666',
+        color: "#6B7280",
         marginTop: 2,
     },
     roleText: {
         fontSize: 12,
-        marginTop: 2,
-        fontWeight: '500',
+        marginTop: 4,
+        fontWeight: "500",
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+        overflow: "hidden",
     },
     taskItem: {
         padding: 15,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        marginBottom: 10,
+        backgroundColor: "#F9FAFB",
+        borderRadius: 12,
+        marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#EEE',
+        borderColor: "#E5E7EB",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     taskHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 8,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 10,
     },
     taskTitle: {
         fontSize: 16,
-        color: '#333',
+        color: "#1F2937",
+        fontWeight: "600",
         flex: 1,
         paddingRight: 24,
     },
+    taskDescription: {
+        fontSize: 14,
+        color: "#4B5563",
+        marginBottom: 12,
+        lineHeight: 20,
+    },
     taskDate: {
         fontSize: 12,
-        color: '#666',
+        color: "#6B7280",
         marginTop: 4,
     },
-    deleteButton: {
-        position: 'absolute',
-        right: -5,
-        top: -5,
-        padding: 5,
-    },
     taskFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 5,
-    },
-    assignButton: {
-        backgroundColor: '#E8F4FF',
-        padding: 5,
-        borderRadius: 20,
-        width: 30,
-        height: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    memberOption: {
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
-    },
-    memberOptionText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    emptyContainer: {
-        padding: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyText: {
-        color: '#666',
-        fontSize: 16,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: "#E5E7EB",
     },
     statusText: {
         fontSize: 12,
-        marginTop: 4,
+        fontWeight: "600",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        overflow: "hidden",
+    },
+    assigneeContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    assignedAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        marginRight: 8,
+        borderWidth: 2,
+        borderColor: "#FFF",
+    },
+    assigneeCount: {
+        backgroundColor: "#3B82F6",
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 10,
+        marginLeft: 8,
+    },
+    assigneeCountText: {
+        color: "#FFF",
+        fontSize: 12,
+        fontWeight: "600",
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContent: {
+        backgroundColor: "#FFF",
+        borderRadius: 15,
+        padding: 20,
+        width: "90%",
+        maxHeight: "80%",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        marginBottom: 20,
+        color: "#1F2937",
+        textAlign: "center",
+    },
+    searchInput: {
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 15,
+        backgroundColor: "#F9FAFB",
+        fontSize: 16,
+    },
+    searchResultItem: {
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "#E5E7EB",
+    },
+    closeButton: {
+        backgroundColor: "#3B82F6",
+        padding: 12,
+        borderRadius: 10,
+        alignItems: "center",
+        marginTop: 15,
+    },
+    closeButtonText: {
+        color: "#FFF",
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    emptyContainer: {
+        padding: 30,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#F9FAFB",
+        borderRadius: 12,
+        marginTop: 10,
+    },
+    emptyText: {
+        color: "#6B7280",
+        fontSize: 16,
+        textAlign: "center",
     },
     taskItemClickable: {
         opacity: 1,
-        cursor: 'pointer',
     },
     taskContent: {
         flex: 1,
     },
-    assignedAvatar: {
-        position: 'relative',
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: '#E8F4FF',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
+    deleteButton: {
+        position: "absolute",
+        right: -5,
+        top: -5,
+        backgroundColor: "#FEE2E2",
+        padding: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#FECACA",
+    },
+    assignButton: {
+        backgroundColor: "#EFF6FF",
+        padding: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: "#DBEAFE",
+    },
+    memberOption: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: "#E5E7EB",
+    },
+    memberOptionText: {
+        fontSize: 16,
+        color: "#1F2937",
+    },
+    noAssigneeText: {
+        fontSize: 14,
+        color: "#6B7280",
+        fontStyle: "italic",
     },
     avatarImage: {
-        width: '100%',
-        height: '100%',
+        width: "100%",
+        height: "100%",
         borderRadius: 15,
     },
     changeAssignBadge: {
-        position: 'absolute',
+        position: "absolute",
         right: -2,
         bottom: -2,
-        backgroundColor: '#007BFF',
+        backgroundColor: "blue",
         borderRadius: 10,
         width: 14,
         height: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: "center",
+        alignItems: "center",
         borderWidth: 1,
-        borderColor: '#FFF',
+        borderColor: "#DBEAFE",
     },
-    assigneeCount: {
-        position: 'absolute',
-        right: -15,
-        top: '50%',
-        transform: [{ translateY: -10 }],
-        backgroundColor: '#007BFF',
-        borderRadius: 10,
-        minWidth: 20,
-        height: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 5,
+    taskSection: {
+        borderRadius: 15,
+        marginBottom: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+        overflow: 'hidden',
     },
-    assigneeCountText: {
-        color: 'white',
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    assigneeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        position: 'relative',
-    },
-    noAssigneeText: {
-        fontSize: 12,
-        color: '#666',
-        fontStyle: 'italic',
-    },
-    taskDescription: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 10,
+    taskGradient: {
+        padding: 20,
     },
 });

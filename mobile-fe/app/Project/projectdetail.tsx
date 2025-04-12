@@ -185,6 +185,7 @@ export default function ProjectDetail() {
     const handleAddMember = async (userId: number) => {
         try {
             await addProjectMember(project.id, userId);
+            await loadProjects();
             setShowAddMember(false);
             setSearchEmail("");
             Alert.alert("Thành công", "Đã thêm thành viên vào dự án");
@@ -205,6 +206,7 @@ export default function ProjectDetail() {
                     onPress: async () => {
                         try {
                             await removeProjectMember(project.id, memberId);
+                            await loadProjects();
                             Alert.alert("Thành công", "Đã xóa thành viên khỏi dự án");
                         } catch (error: any) {
                             Alert.alert("Lỗi", error.message || "Không thể xóa thành viên");
@@ -232,6 +234,7 @@ export default function ProjectDetail() {
                     onPress: async () => {
                         try {
                             await deleteTask(taskId);
+                            await loadProjects();
                             Alert.alert("Thành công", "Đã xóa nhiệm vụ");
                         } catch (error: any) {
                             Alert.alert(
@@ -255,6 +258,7 @@ export default function ProjectDetail() {
         
         try {
             await assignTask(selectedTaskId, userId);
+            await loadProjects();
             setShowAssignModal(false);
             setSelectedTaskId(null);
             Alert.alert("Thành công", "Đã gán nhiệm vụ cho thành viên");

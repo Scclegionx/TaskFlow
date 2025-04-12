@@ -373,6 +373,7 @@ public class ProjectService {
                     dto.setStatus(project.getStatus());
                     dto.setFromDate(project.getFromDate());
                     dto.setToDate(project.getToDate());
+                    dto.setCreatedAt(project.getCreatedAt());
                     dto.setMembers(null); // Không lấy members
                     dto.setTasks(null);   // Không lấy tasks
                     return dto;

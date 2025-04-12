@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/schedules")
@@ -24,13 +25,19 @@ public class ScheduleController {
     }
 
     @GetMapping
-    public List<Schedule> getSchedulesByDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return scheduleService.getSchedulesByDate(date);
+    public ResponseEntity<?> getSchedulesByDate(
+        @RequestParam String date,
+        @RequestParam Integer userId
+    ) {
+        LocalDate parsedDate = LocalDate.parse(date);
+        List<Schedule> schedules = scheduleService.getSchedulesByDate(parsedDate, userId);
+        return ResponseEntity.ok(schedules);
     }
 
     @GetMapping("/highlighted-dates")
-    public Map<String, String> getHighlightedDates() {
-        return scheduleService.getHighlightedDates();
+    public ResponseEntity<?> getHighlightedDates(@RequestParam Integer userId) {
+        Map<String, String> highlightedDates = scheduleService.getHighlightedDates(userId);
+        return ResponseEntity.ok(highlightedDates);
     }
 
     @PutMapping("/{id}")

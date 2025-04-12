@@ -8,6 +8,8 @@ import { useNavigation } from "@react-navigation/native";
 import utf8 from "utf8";
 import axios from 'axios';
 import { API_BASE_URL } from "@/constants/api";
+import CustomAlert from '@/components/CustomAlert';
+
 
 const LoginScreen = () => {
     const navigation = useNavigation();
@@ -16,6 +18,10 @@ const LoginScreen = () => {
     const [password, setPassword] = useState('');
     const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
     const [resetEmail, setResetEmail] = useState('');
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+    const [shouldNavigate, setShouldNavigate] = useState(false);
     useEffect(() => {
         navigation.setOptions({ 
             headerShown: false,
@@ -26,9 +32,15 @@ const LoginScreen = () => {
     }, []);
     
 
+    const showAlert = (title: string, message: string) => {
+        setAlertTitle(title);
+        setAlertMessage(message);
+        setAlertVisible(true);
+    };
+
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Validation', 'Email and password are required');
+            showAlert('Thông báo', 'Vui lòng nhập đầy đủ email và mật khẩu');
             return;
         }
 
@@ -46,10 +58,11 @@ console.log("Decoded username:", decodedUsername);
             await AsyncStorage.setItem('userId', payload.id.toString());
             await AsyncStorage.setItem('avatar', payload.avatar ? payload.avatar.toString() : "null");
             await AsyncStorage.setItem('roles', JSON.stringify(payload.roles));
-            Alert.alert('Successful!', 'Logged in!');
-            router.push('/dashboard');
+            
+            setShouldNavigate(true);
+            showAlert('Thành công', 'Đăng nhập thành công!');
         } catch (error:any) {
-            Alert.alert('Error', error.response?.data || 'Failed to login');
+            showAlert('Lỗi', error.response?.data || 'Đăng nhập thất bại');
         }
     };
 
@@ -88,7 +101,7 @@ console.log("Decoded username:", decodedUsername);
 
     return (
         <LinearGradient colors={['#3A7BDD', '#3A6073']} style={styles.container}>
-            <View style={styles.loginBox}>
+            <View style={[styles.loginBox, styles.elevation]}>
                 <Text style={styles.title}>Đăng nhập</Text>
                 <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
                 <TextInput placeholder="Mật khẩu" value={password} secureTextEntry onChangeText={setPassword} style={styles.input} />
@@ -144,6 +157,18 @@ console.log("Decoded username:", decodedUsername);
                 </View>
             </Modal>
 
+            <CustomAlert
+                visible={alertVisible}
+                title={alertTitle}
+                message={alertMessage}
+                onClose={() => setAlertVisible(false)}
+                onClosed={() => {
+                    if (shouldNavigate) {
+                        router.push('/dashboard');
+                        setShouldNavigate(false);
+                    }
+                }}
+            />
         </LinearGradient>
     );
 };
@@ -216,18 +241,29 @@ const styles = StyleSheet.create({
     },
     input: { 
         width: '100%', 
-        padding: 10, 
+        padding: 15,
         borderWidth: 1, 
-        borderColor: '#ccc', 
-        borderRadius: 10, 
-        marginBottom: 10 
+        borderColor: '#e0e0e0', 
+        borderRadius: 15,
+        marginBottom: 15,
+        backgroundColor: '#f8f9fa',
+        fontSize: 16,
+        color: '#333',
     },
     loginButton: { 
         backgroundColor: '#3A7BDD', 
-        padding: 10, 
-        borderRadius: 10, 
-        width: '100%', 
-        alignItems: 'center' 
+        padding: 15,
+        borderRadius: 15,
+        width: '100%',
+        alignItems: 'center',
+        shadowColor: '#3A7BDD',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     loginText: { 
         color: '#fff', 
@@ -246,7 +282,17 @@ const styles = StyleSheet.create({
     linkText: { 
         color: '#3A7BDD', 
         marginTop: 10 
-    }
+    },
+    elevation: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        elevation: 8,
+    },
 });
 
 export default LoginScreen;

@@ -14,6 +14,7 @@ public class ProjectResponseDTO {
     private Integer status;
     private Date fromDate;
     private Date toDate;
+    private Date createdAt;
     private List<ProjectMemberDTO> members; // Thay đổi kiểu từ UserDTO sang ProjectMemberDTO
     private List<TaskDTO> tasks;
     // tien do, lay so nguyen cho de ve bieu do

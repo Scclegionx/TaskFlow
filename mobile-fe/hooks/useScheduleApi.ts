@@ -4,7 +4,13 @@ import { API_URL_SCHEDULES_URL } from '@/constants/api';
 
 export const getSchedulesByDate = async (date: string) => {
     const token = await AsyncStorage.getItem('token');
-    const response = await axios.get(`${API_URL_SCHEDULES_URL}?date=${date}`, {
+    const userId = await AsyncStorage.getItem('userId');
+    
+    const response = await axios.get(`${API_URL_SCHEDULES_URL}`, {
+        params: {
+            date: date,
+            userId: userId
+        },
         headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -12,7 +18,12 @@ export const getSchedulesByDate = async (date: string) => {
 
 export const getHighlightedDates = async () => {
     const token = await AsyncStorage.getItem('token');
+    const userId = await AsyncStorage.getItem('userId');
+    
     const response = await axios.get(`${API_URL_SCHEDULES_URL}/highlighted-dates`, {
+        params: {
+            userId: userId
+        },
         headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

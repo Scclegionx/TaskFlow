@@ -92,6 +92,13 @@ public class TaskController {
     }
 
 
+    // gia han cong viec
+    @PutMapping("/extend-deadline")
+    public ResponseEntity<?> extendDeadline(@RequestParam(value = "taskId", required = false) Integer taskId,
+                                            @RequestParam(value = "toDate", required = false) String toDate) {
+        return ResponseEntity.ok(taskService.extendDeadline(taskId, toDate));
+    }
+
     @GetMapping("/get-my-task")
     public ResponseEntity<?> getMyTask(@RequestParam(value = "projectId", required = false) Integer projectId,
                                             @RequestParam(value = "userId", required = false) Integer userId,

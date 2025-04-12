@@ -5,9 +5,11 @@ import mobile_be.mobile_be.DTO.response.ChamCongResponseDTO;
 import mobile_be.mobile_be.DTO.response.InfoUserResponseDTO;
 import mobile_be.mobile_be.DTO.response.RatingResponseDTO;
 import mobile_be.mobile_be.Mapper.RatingMapper;
+import mobile_be.mobile_be.Model.Kpi;
 import mobile_be.mobile_be.Model.Rating;
 import mobile_be.mobile_be.Model.Tydstate;
 import mobile_be.mobile_be.Model.User;
+import mobile_be.mobile_be.Repository.KpiRepository;
 import mobile_be.mobile_be.Repository.RatingRepository;
 import mobile_be.mobile_be.Repository.TydstateRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
@@ -20,6 +22,7 @@ import java.text.DateFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
@@ -27,7 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import mobile_be.mobile_be.contains.enum_tydstate;
+import mobile_be.mobile_be.contains.*;
 import org.springframework.web.servlet.View;
 
 @Service
@@ -46,9 +49,13 @@ public class UserService {
     @Autowired
     private RatingMapper ratingMapper;
 
+    @Autowired
+    private KpiRepository kpiRepository;
+
     public ResponseEntity<?> checkIn(Integer userId) {
 
         try {
+            log.info("Check in userId: " + userId);
             User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
             LocalDateTime now = LocalDateTime.now();
@@ -71,6 +78,7 @@ public class UserService {
 
     public ResponseEntity<?> checkOut(Integer userId) {
         try {
+            log.info("Check out userId: " + userId);
             User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
             LocalDateTime now = LocalDateTime.now();
@@ -99,14 +107,32 @@ public class UserService {
             log.info("Total hours: " + total_hours);
 
 
-            if (total_hours >=8 && tydstate.getCheckin().getHour() <= 8) {
+            log.info("Check in time: " + tydstate.getCheckin());
+            LocalTime checkinTime = tydstate.getCheckin().toLocalTime();
+            LocalTime checkoutTime = tydstate.getCheckout().toLocalTime();
+
+            if (total_hours >= 8 && checkinTime.isBefore(LocalTime.of(8, 1))) {
                 tydstate.setStatus(enum_tydstate.Du.getValue());
-            } else if (tydstate.getCheckin().getHour() > 8 && tydstate.getCheckout().getHour() >= 17){
+            } else if (checkinTime.isAfter(LocalTime.of(8, 0)) && !checkoutTime.isBefore(LocalTime.of(17, 0))) {
                 tydstate.setStatus(enum_tydstate.DiMuon.getValue());
-            }else if (tydstate.getCheckin().getHour() > 8 && tydstate.getCheckout().getHour() < 17){
+            } else if (checkinTime.isAfter(LocalTime.of(8, 0)) && checkoutTime.isBefore(LocalTime.of(17, 0))) {
                 tydstate.setStatus(enum_tydstate.DiMuonVeSom.getValue());
-            }else if (tydstate.getCheckin().getHour() <= 8 && tydstate.getCheckout().getHour() < 17){
+            } else if (checkinTime.isBefore(LocalTime.of(8, 1)) && checkoutTime.isBefore(LocalTime.of(17, 0))) {
                 tydstate.setStatus(enum_tydstate.VeSom.getValue());
+            }
+
+            if (tydstate.getStatus() != enum_tydstate.Du.getValue() ){
+                List<Kpi> kpiList = findByTimeAndUserId(formattedDate, userId);
+                Kpi kpi =  kpiList.get(0);
+                kpi.setMinusPoint(kpi.getMinusPoint() + 1);
+                kpi.setTotalPoint(kpi.getPlusPoint() - kpi.getMinusPoint());
+                if(kpi.getTotalPoint() >= kpi.getKpiRegistry()){
+                    kpi.setStatus(enum_status_kpi.Du.getValue());
+                }else{
+                    kpi.setStatus(enum_status_kpi.ChuaDu.getValue());
+                }
+                kpiRepository.save(kpi);
+
             }
 
             tydstate.setTotal_hours(total_hours);
@@ -116,6 +142,15 @@ public class UserService {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Check out failed");
         }
+    }
+
+    public List<Kpi> findByTimeAndUserId(String time, Integer userId) {
+        LocalDate date = LocalDate.parse(time);  // tự động dùng định dạng yyyy-MM-dd
+
+        // Chuyển về định dạng "yyyy-MM"
+        String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        List<Kpi> kpiExist = kpiRepository.findByUserIdAndTime(userId, formattedDate);
+        return kpiExist;
     }
 
     public String genarateNewPassword() {
@@ -179,12 +214,15 @@ public class UserService {
 
            Object[] results = userRepository.getUserById(userId, startDate, endDate);
 
-            if (results == null) {
-                return ResponseEntity.badRequest().body("khong tim thay user");
+
+           // doan nay de tranh loi khi ma khong co ban ghi
+            if (results == null || results.length == 0) {
+                results = userRepository.getUserById(userId, null, null);
             }
 
             Object[] result = (Object[]) results[0]; // Lấy dòng đầu tiên
 
+            log.info("result haha : " + result.toString());
 
             Integer id = (result[0] instanceof Integer) ? (Integer) result[0] : null;
             String name = (result[1] instanceof String) ? (String) result[1] : null;
@@ -226,7 +264,7 @@ public class UserService {
 
             return ResponseEntity.ok(infoUserResponseDTO);
         }catch (Exception e){
-            log.error("Error: " + e.getMessage());
+            log.error("co loi trong qua trinh lay user: " + e.getMessage());
             return ResponseEntity.badRequest().body("co loi trong qua trinh lay du lieu");
         }
     }

@@ -1,5 +1,6 @@
 package mobile_be.mobile_be.Service;
 
+import com.cloudinary.api.exceptions.BadRequest;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.CreateProjectRequest;
@@ -191,6 +192,8 @@ public class ProjectService {
                 if (task.getToDate() != null && currentDate.isAfter(task.getToDate())) {
                     dto.setStatus(enum_taskStatus.OVERDUE.getValue());
                 }
+            } else if (task.getStatus() == enum_taskStatus.OVERDUE.getValue()){
+                dto.setStatus(enum_taskStatus.OVERDUE.getValue());
             }
 
             return dto;
@@ -224,6 +227,7 @@ public class ProjectService {
             return dto;
         }).collect(Collectors.toList());
     }
+
 
 
     public List<TaskResponseDTO> getMyTask(Integer projectId, Integer userId, Integer type, String textSearch) {
@@ -286,9 +290,9 @@ public class ProjectService {
             LocalDateTime currentDate = LocalDateTime.now();
             return results.stream()
                     .filter(task ->
-                            task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue() &&
+                            (task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue() &&
                                     task.getToDate() != null &&
-                                    currentDate.isAfter(task.getToDate())
+                                    currentDate.isAfter(task.getToDate())) || (task.getStatus() == enum_taskStatus.OVERDUE.getValue())
                     )
                     .map(task -> {
                         TaskResponseDTO dto = taskMapper.toDTO(task);

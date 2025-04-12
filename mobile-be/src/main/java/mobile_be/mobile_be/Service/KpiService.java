@@ -75,6 +75,15 @@ public class KpiService {
         return ResponseEntity.ok(results);
     }
 
+    public List<Kpi> findByTimeAndUserId(String time, Integer userId) {
+        LocalDate date = LocalDate.parse(time);  // tự động dùng định dạng yyyy-MM-dd
+
+        // Chuyển về định dạng "yyyy-MM"
+        String formattedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        List<Kpi> kpiExist = kpiRepository.findByUserIdAndTime(userId, formattedDate);
+        return kpiExist;
+    }
+
     public ResponseEntity<?> deleteKpi(Integer kpiId) {
 
         log.info("kpiId: " + kpiId);

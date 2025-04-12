@@ -12,9 +12,9 @@ const Header = () => {
     useFocusEffect(
         React.useCallback(() => {
             const loadUser = async () => {
-                const name = await AsyncStorage.getItem('username');
-                const email = await AsyncStorage.getItem('email');
-                const avatar = await AsyncStorage.getItem('avatar') || '';
+                const name = await AsyncStorage.getItem('username') || 'Người dùng';
+                const email = await AsyncStorage.getItem('email') || 'email';
+                const avatar = await AsyncStorage.getItem('avatar') || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s';
                 setUser({ name, email, avatar });
             };
             loadUser();
@@ -29,7 +29,7 @@ const Header = () => {
                     <Avatar.Image
                         size={40}
                         source={{
-                            uri: user.avatar || "http://res.cloudinary.com/doah3bdw6/image/upload/v1743153165/r0nulby5tat56nq1q394.png",
+                            uri: user.avatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s",
                         }}
                         style={styles.avatar}
                     />

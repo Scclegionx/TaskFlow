@@ -10,4 +10,5 @@ public class CommentResponseDTO {
     private String date;
     private Integer id;
     private String userName;
+    private String avatar;
 }

@@ -18,5 +18,6 @@ public class TaskResponseDTO {
     private Integer status;
     private String nameCreatedBy;
     private Integer waitFinish;
+    private Integer level;
 
 }

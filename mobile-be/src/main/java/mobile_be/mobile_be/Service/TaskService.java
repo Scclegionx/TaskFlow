@@ -7,12 +7,14 @@ import mobile_be.mobile_be.Model.*;
 import mobile_be.mobile_be.Repository.*;
 import mobile_be.mobile_be.contains.enum_projectStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import mobile_be.mobile_be.contains.enum_taskStatus;
 import mobile_be.mobile_be.contains.enum_levelTask;
 import mobile_be.mobile_be.contains.enum_status_kpi;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -44,6 +46,37 @@ public class TaskService {
     private ReasonRespository reasonRepository;
     @Autowired
     private MailService mailService;
+
+
+    @Scheduled(fixedRate = 60 * 1000) // chay moi tieng 1 lan
+    public void scanTaskOverDue() {
+        try {
+            List<Task> listOverdueTasks = taskRepository.getOverDueTask();
+
+            listOverdueTasks.stream()
+                    .forEach(task -> {
+                        List<User> listUser = task.getAssignees();
+                        for (User user : listUser) {
+                            Kpi kpi = kpiRepository.getByUserIdAndTime(user.getId(), task.getToDate().format(DateTimeFormatter.ofPattern("yyyy-MM")));
+                            if (kpi != null) {
+                                log.info("Task overdue ID: {}, User ID: {}, Kpi ID: {}", task.getId(), user.getId(), kpi.getId());
+                                kpi.setMinusPoint(kpi.getMinusPoint() + 1);
+                                kpi.setTotalPoint(kpi.getPlusPoint() - kpi.getMinusPoint());
+                                if (kpi.getTotalPoint() >= kpi.getKpiRegistry()) {
+                                    kpi.setStatus(enum_status_kpi.Du.getValue());
+                                }
+                                kpiRepository.save(kpi);
+                            }
+                        }
+                        task.setStatus(enum_taskStatus.OVERDUE.getValue());
+                        taskRepository.save(task);
+                    });
+
+        } catch (Exception e) {
+            log.error("Error while scanning overdue tasks: {}", e.getMessage());
+        }
+
+    }
 
     // type == null la lay tat ca cac trang thai
     // type == 0 la giao
@@ -154,13 +187,15 @@ public class TaskService {
     }
 
     public Task getTaskDetail(Integer taskId) {
-        log.info("haha");
+       log.info("getTaskDetail Task ID: {}", taskId);
         Task task = taskRepository.getTaskDetail(taskId);
         if (task.getStatus() == enum_taskStatus.IN_PROGRESS.getValue()
                 && task.getToDate() != null) {
             if (task.getToDate().isBefore(LocalDateTime.now())) {
                 task.setStatus(enum_taskStatus.OVERDUE.getValue());
             }
+        } else if (task.getStatus() == enum_taskStatus.OVERDUE.getValue()){
+            task.setStatus(enum_taskStatus.OVERDUE.getValue());
         }
         return task;
     }
@@ -174,6 +209,28 @@ public class TaskService {
             taskRepository.save(task);
         }
         return task;
+    }
+
+    public Task  extendDeadline (Integer taskId, String toDate) {
+        try{
+            log.info(" bat dau gia han Task ID: {}", taskId);
+            Task task = taskRepository.findById(taskId);
+            if (task == null) {
+                throw new RuntimeException("Task not found");
+            }
+
+            // Chuyển đổi từ chuỗi "yyyy-MM-dd" sang LocalDateTime
+            LocalDate date = LocalDate.parse(toDate); // vd: "2026-04-11"
+            LocalDateTime newFromDate = date.atStartOfDay(); // tự động thêm 00:00:00
+
+            // Cập nhật thời gian bắt đầu
+            task.setToDate(newFromDate);
+            task.setStatus(enum_taskStatus.IN_PROGRESS.getValue());
+            taskRepository.save(task);
+            return task;
+        } catch (Exception e) {
+            throw new RuntimeException("Có lỗi xảy ra khi gia hạn thời gian: " + e.getMessage());
+        }
     }
 
     public Task taskApproveFinish(Integer taskId) {

@@ -20,7 +20,8 @@ public interface TydstateRepository extends JpaRepository<Tydstate, Integer> {
             " join users u on u.id = t.user_id " +
             " WHERE (:startDate IS NULL OR t.checkin >= :startDate) " +
             " AND (:endDate IS NULL OR t.checkin <= :endDate + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND)  " +
-            " AND (:textSearch is null or u.name LIKE CONCAT('%', :textSearch, '%') ) " ,
+            " AND (:textSearch is null or u.name LIKE CONCAT('%', :textSearch, '%') ) " +
+            " order by t.checkin desc " ,
             nativeQuery = true)
     List<Tydstate> getAllTydstate(String startDate, String endDate, String textSearch);
 

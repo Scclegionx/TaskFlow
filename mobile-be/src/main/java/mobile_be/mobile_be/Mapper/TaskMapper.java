@@ -20,6 +20,7 @@ public interface TaskMapper {
     @Mapping(source = "id", target = "id")
     @Mapping(source = "waitFinish", target = "waitFinish")
     @Mapping(source = "project.name", target = "project")
+//    @Mapping(source = "level", target = "level")
     @Mapping(source = "assignees", target = "assignees", qualifiedByName = "mapAssignees")
     TaskResponseDTO toDTO(Task task);
 

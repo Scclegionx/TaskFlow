@@ -69,5 +69,6 @@ public class Task {
     // Thêm trường parentId
     @Column(nullable = true)
     private Integer parentId;
+
 }
 

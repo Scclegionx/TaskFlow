@@ -10,7 +10,8 @@ public interface KpiRepository extends JpaRepository<Kpi, Integer> {
 
 
     @Query(value = "SELECT * FROM kpi WHERE user_id = :userId " +
-            " AND DATE_FORMAT(time, '%Y-%m') = :time   ",
+            " AND DATE_FORMAT(time, '%Y-%m') = :time " +
+            " order by time desc ",
             nativeQuery = true)
     List<Kpi> findByUserIdAndTime(Integer userId, String time);
 

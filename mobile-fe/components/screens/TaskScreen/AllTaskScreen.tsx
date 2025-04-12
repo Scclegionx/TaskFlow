@@ -19,6 +19,7 @@ interface Task {
   date: string; // Add this property;
   status: number,
   waitFinish: number,
+  level: number,
 
 }
 
@@ -28,7 +29,7 @@ type TaskStatusData = {
   CANCELLED: number;
   COMPLETED: number;
   OVERDUE: number;
-  PENDING : number;
+  PENDING: number;
 } | null;
 
 
@@ -140,7 +141,8 @@ const AllTaskScreen = () => {
           title: task.title,
           date: task.toDate || "Không có ngày hết hạn",
           status: task.status,
-          waitFinish: task.waitFinish
+          waitFinish: task.waitFinish,
+          level: task.level,
 
 
         })));
@@ -212,7 +214,7 @@ const AllTaskScreen = () => {
 
             {/* Dải màu vàng cho chữ "Đang xử lý" */}
             <View style={styles.statusContainer}>
-              <Text>Tiến độ công việc</Text>
+              <Text>Tiến độ toàn công việc</Text>
               <View style={[
                 styles.processingTag,
                 taskStatus?.IN_PROGRESS === 1 ? styles.inProgress : styles.completed
@@ -255,7 +257,7 @@ const AllTaskScreen = () => {
             </View>
 
             {/* Header danh sách công việc */}
-            <View style={{ padding: 20, backgroundColor: '#C8D9CF', marginBottom: - 5 , borderRadius: 15  }}>
+            <View style={{ padding: 20, backgroundColor: '#C8D9CF', marginBottom: - 5, borderRadius: 15 }}>
               <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách công việc</Text>
               {/* Bộ lọc */}
               <View style={styles.filterContainer}>
@@ -332,6 +334,25 @@ const AllTaskScreen = () => {
                   </View>
                   <Text style={{ fontSize: 16, fontWeight: 'bold', marginVertical: 5, color: "#000000" }}>{item.title}</Text>
                   <Text style={{ fontSize: 14, color: 'black', marginVertical: 5 }}>📅 {item.date}</Text>
+                  {item.level !== undefined && ( // Thêm điều kiện kiểm tra undefined
+                    <View style={{
+                      borderWidth: 1,
+                      borderColor: item.level === 2 ? '#ff4444' : item.level === 1 ? '#FF9800' : '#4CAF50',
+                      borderRadius: 12,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      alignSelf: 'flex-start',
+                      marginVertical: 5
+                    }}>
+                      <Text style={{
+                        fontSize: 13,
+                        color: item.level === 2 ? '#ff4444' : item.level === 1 ? '#FF9800' : '#4CAF50',
+                        fontWeight: '500'
+                      }}>
+                        {item.level === 2 ? 'Khó' : item.level === 1 ? 'Trung bình' : 'Dễ'}
+                      </Text>
+                    </View>
+                  )}
                   {item.waitFinish === 1 && (
                     <Text style={{ fontSize: 14, color: 'green', marginVertical: 5 }}>⏳ Chờ duyệt hoàn thành</Text>
                   )}

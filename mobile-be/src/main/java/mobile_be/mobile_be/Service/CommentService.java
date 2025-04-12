@@ -73,6 +73,7 @@ public class CommentService {
                         if (comment.getUserId() != null){
                             User user = userRepository.findById(comment.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
                             commentResponseDTO.setUserName(user.getName());
+                            commentResponseDTO.setAvatar(user.getAvatar());
                         }
 
                         commentResponseDTO.setDate(comment.getDate().format(formatter));

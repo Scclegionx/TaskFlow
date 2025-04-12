@@ -67,6 +67,9 @@ const ChamCongScreen = () => {
   const [endDate, setEndDate] = useState<Date>(new Date()); // khởi tạo ngày hiện tại
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [currentUser_id, setCurrentUser_id] = useState<number | null>(null); // Khởi tạo state cho user_id
 
   const colors = ["#ADDCE3", "#D1E7DD", "#FEE2E2", "#EDEBDE", "#FDE8C9"]; // danh sách màu
 
@@ -178,6 +181,9 @@ const ChamCongScreen = () => {
 
     try {
       const authToken = await AsyncStorage.getItem("token");
+      const userCurrentId = await AsyncStorage.getItem("userId");
+      setCurrentUser_id(Number(userCurrentId)); // Chuyển đổi giá trị user_id thành số
+      console.log("userId", userCurrentId);
       if (!authToken) {
         console.error("Không tìm thấy token! Vui lòng đăng nhập.");
         setLoading(false);
@@ -296,6 +302,60 @@ const ChamCongScreen = () => {
     }
   };
 
+  const handleCheckIn = async () => {
+    try {
+      setActionLoading(true);
+      const authToken = await AsyncStorage.getItem("token");
+
+      const response = await fetch(`${API_BASE_URL}/tydstate/check-in?userId=${currentUser_id}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        Alert.alert("Thành công", "Chấm công vào thành công");
+        fetchChamCong(searchText, startDate, endDate);
+      } else {
+        Alert.alert("Thất bại", "Bạn đã chấm công hôm nay rồi");
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi chấm công");
+    } finally {
+      setActionLoading(false);
+      setShowPopup(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    try {
+      setActionLoading(true);
+      const authToken = await AsyncStorage.getItem("token");
+
+      const response = await fetch(`${API_BASE_URL}/tydstate/check-out?userId=${currentUser_id}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        Alert.alert("Thành công", "Chấm công ra về thành công");
+        fetchChamCong(searchText, startDate, endDate);
+      } else {
+        Alert.alert("Thất bại", "Chấm công ra về thất bại. Bạn đã chấm công ra về trước đó rồi");
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi chấm công");
+    } finally {
+      setActionLoading(false);
+      setShowPopup(false);
+    }
+  };
+
 
   return (
     <View style={{ padding: 16, backgroundColor: "#F8F9FA", flex: 1 }}>
@@ -364,7 +424,57 @@ const ChamCongScreen = () => {
       ) : (
         <>
           {/* Tổng số thành viên */}
-          <Text style={{ fontSize: 18, fontWeight: "bold", marginVertical: 10 }}>Tổng số: {chamCongData.length}</Text>
+          {/* <Text style={{ fontSize: 18, fontWeight: "bold", marginVertical: 10 }}>Tổng số: {chamCongData.length}</Text> */}
+
+          {/* Tổng số thành viên và nút chấm công */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 10 }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold" }}>Tổng số: {chamCongData.length}</Text>
+
+            <TouchableOpacity
+              onPress={() => setShowPopup(!showPopup)}
+              style={{ padding: 8 }}
+            >
+              <FontAwesome name="plus-circle" size={24} color="#007BFF" />
+            </TouchableOpacity>
+
+            {/* Popup chấm công */}
+            {showPopup && (
+              <View style={styles.popupContainer}>
+                <TouchableOpacity
+                  style={styles.popupButton}
+                  onPress={handleCheckIn}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text style={styles.popupButtonText}>Chấm công vào</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.popupButton}
+                  onPress={handleCheckOut}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text style={styles.popupButtonText}>Ra về</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Overlay để đóng popup khi click ra ngoài */}
+          {showPopup && (
+            <TouchableOpacity
+              style={styles.overlay}
+              activeOpacity={1}
+              onPress={() => setShowPopup(false)}
+            />
+          )}
 
           {/* Danh sách người dùng */}
           <FlatList
@@ -456,6 +566,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     marginRight: 10
+  },
+
+  popupContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 40,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 10,
+    elevation: 4,
+    zIndex: 1000,
+  },
+  popupButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 6,
+    marginVertical: 4,
+    minWidth: 150,
+    alignItems: 'center',
+  },
+  popupButtonText: {
+    color: 'white',
+    fontWeight: '500',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 999,
   },
 
 

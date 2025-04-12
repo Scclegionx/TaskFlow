@@ -123,6 +123,7 @@ const Profile = () => {
                 <ProfileItem icon="👤" label="Thông tin cá nhân" onPress={() => router.push('/account-info')} />
                 <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
                 <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
+                <ProfileItem icon="🏢" label="Quản lý phòng ban"  onPress={() => router.push('/Department/allDepartment')}  />
                 <ProfileItem icon="🏆" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
                 <ProfileItem icon="📅" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
                 <ProfileItem icon="⏳" label="Công việc chờ duyệt"  onPress={() => router.push('/Task/taskPending')}  />

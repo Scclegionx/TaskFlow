@@ -48,7 +48,7 @@ public class TaskService {
     private MailService mailService;
 
 
-    @Scheduled(fixedRate = 60 * 1000) // chay moi tieng 1 lan
+    @Scheduled(fixedRate = 60 * 60 * 1000) // chay moi tieng 1 lan
     public void scanTaskOverDue() {
         try {
             List<Task> listOverdueTasks = taskRepository.getOverDueTask();

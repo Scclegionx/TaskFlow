@@ -1,10 +1,13 @@
 package mobile_be.mobile_be.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -36,4 +39,8 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
+
+    @OneToMany(mappedBy = "user",fetch = FetchType.EAGER,  cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<TeamMember> teamMemberships = new ArrayList<>();
 }

@@ -207,6 +207,12 @@ public class TaskService {
             task.setWaitFinish(1);
             task.setProgress(100);
             taskRepository.save(task);
+            // Gửi thông báo
+            String slug = "/tasks/" + task.getId();
+            User user = userRepository.findById(task.getCreatedBy())
+                    .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+            notificationService.sendNotification(task.getCreatedBy(), "Bạn có một yêu cầu phê duyệt hoàn thành: " + task.getTitle(), slug);
+            mailService.sendNoticeEmail(user.getEmail(), "Thông báo công việc", "Bạn có một yêu cầu phê duyệt hoàn thành: " + task.getTitle());
         }
         return task;
     }
@@ -272,6 +278,10 @@ public class TaskService {
                         }
                         kpiRepository.save(kpi);
                     }
+                    // Gửi thông báo
+                    String slug = "/tasks/" + task.getId();
+                    notificationService.sendNotification(user.getId(), "Công việc của bạn đã được phê duyệt hoàn thành: " + task.getTitle(), slug);
+                    mailService.sendNoticeEmail(user.getEmail(), "Thông báo công việc", "Công việc của bạn đã được phê duyệt hoàn thành: " + task.getTitle());
                 }
             }
             taskRepository.save(task);
@@ -290,6 +300,7 @@ public class TaskService {
                 projectRepository.save(project);
             }
         }
+
         return task;
     }
 

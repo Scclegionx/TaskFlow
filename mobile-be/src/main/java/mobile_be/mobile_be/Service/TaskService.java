@@ -112,7 +112,7 @@ public class TaskService {
     }
 
     @Transactional
-    public void createTask(TaskRequest request) {
+    public Integer createTask(TaskRequest request) {
         // Validate project exists
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found"));
@@ -166,6 +166,7 @@ public class TaskService {
                 taskRepository.save(subtask);
             }
         }
+        return mainTask.getId();
     }
 
 

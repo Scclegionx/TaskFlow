@@ -18,13 +18,14 @@ public class Document {
     private Integer id;
 
     private String pathFile;
+    private String typeFile;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "task_document",
             joinColumns = @JoinColumn(name = "document_id"),
             inverseJoinColumns = @JoinColumn(name = "task_id")
     )
-    private List<Task> ListTaskDocument; // Danh sách tai lieu cua task
+    private List<Task> listTaskDocument; // Danh sách tai lieu cua task
 
 }

@@ -13,15 +13,17 @@ import java.util.Optional;
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     @Query("""
-        SELECT s FROM Schedule s WHERE DATE(s.startTime) = :date ORDER BY
+        SELECT s FROM Schedule s 
+        WHERE DATE(s.startTime) = :date 
+        AND s.user.id = :userId 
+        ORDER BY
             CASE
             WHEN s.priority = 'HIGH' THEN 2
             WHEN s.priority = 'NORMAL' THEN 1
             WHEN s.priority = 'LOW' THEN 0
         END DESC
     """)
-    List<Schedule> findSchedulesByDate(LocalDate date);
-
+    List<Schedule> findSchedulesByDateAndUserId(LocalDate date, Integer userId);
 
     @Query("""
     SELECT DATE(s.startTime),
@@ -31,9 +33,11 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                WHEN s.priority = 'LOW' THEN 0
            END)
     FROM Schedule s
+    WHERE s.user.id = :userId
     GROUP BY DATE(s.startTime)
     """)
-    List<Object[]> findHighlightedDates();
+    List<Object[]> findHighlightedDatesByUserId(Integer userId);
+
     Optional<Schedule> findById(Long id);
     void deleteById(@NonNull Long id);
 }

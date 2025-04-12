@@ -3,8 +3,16 @@ import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal} from
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import {getSchedulesByDate, getHighlightedDates, deleteSchedule} from '@/hooks/useScheduleApi';
 import { useRouter} from "expo-router";
-import {Ionicons} from "@expo/vector-icons";
+import {Ionicons, MaterialIcons, FontAwesome, AntDesign} from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
+
+interface Schedule {
+    id: number;
+    title: string;
+    startTime: string;
+    endTime: string;
+    priority: 'HIGH' | 'NORMAL' | 'LOW';
+}
 
 // Cấu hình lịch tiếng Việt
 LocaleConfig.locales['vi'] = {
@@ -13,18 +21,17 @@ LocaleConfig.locales['vi'] = {
         'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
     ],
     dayNames: ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'],
-    dayNamesShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-    today: 'Hôm nay'
+    dayNamesShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 };
 LocaleConfig.defaultLocale = 'vi';
 
 const CalendarScreen = () => {
     const [selectedDate, setSelectedDate] = useState('');
-    const [schedules, setSchedules] = useState([]);
-    const [highlightedDates, setHighlightedDates] = useState({});
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [highlightedDates, setHighlightedDates] = useState<{[key: string]: any}>({});
     const today = new Date().toISOString().split('T')[0];
     const [modalVisible, setModalVisible] = useState(false);
-    const [selectedSchedule, setSelectedSchedule] = useState(null);
+    const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
     const router = useRouter();
 
     useFocusEffect(
@@ -41,8 +48,6 @@ const CalendarScreen = () => {
         }, [selectedDate])
     );
 
-
-
     useEffect(() => {
         fetchHighlightedDates();
     }, []);
@@ -53,7 +58,7 @@ const CalendarScreen = () => {
         }
     }, [selectedDate]);
 
-    const fetchSchedules = async (date) => {
+    const fetchSchedules = async (date: string) => {
         try {
             const data = await getSchedulesByDate(date);
             setSchedules(data);
@@ -65,15 +70,16 @@ const CalendarScreen = () => {
     const fetchHighlightedDates = async () => {
         try {
             const data = await getHighlightedDates();
-            let formattedDates = {};
+            let formattedDates: {[key: string]: any} = {};
 
             Object.keys(data).forEach(date => {
                 const priorityColor = getPriorityColor(data[date]);
-                formattedDates[date] = { selected: true, selectedColor: priorityColor };
+                formattedDates[date] = { 
+                    selected: true, 
+                    selectedColor: priorityColor,
+                    dotColor: priorityColor
+                };
             });
-
-            console.log(data);
-            console.log(formattedDates)
 
             setHighlightedDates(formattedDates);
         } catch (error) {
@@ -81,16 +87,16 @@ const CalendarScreen = () => {
         }
     };
 
-    const getPriorityColor = (priority) => {
+    const getPriorityColor = (priority: 'HIGH' | 'NORMAL' | 'LOW'): string => {
         switch (priority) {
-            case 'HIGH': return 'red';
-            case 'NORMAL': return '#D4AF37';
-            case 'LOW': return 'green';
-            default: return 'gray';
+            case 'HIGH': return '#EF4444'; // Đỏ
+            case 'NORMAL': return '#F59E0B'; // Cam
+            case 'LOW': return '#10B981'; // Xanh lá
+            default: return '#6B7280'; // Xám
         }
     };
 
-    const getPriorityLabel = (priority) => {
+    const getPriorityLabel = (priority: 'HIGH' | 'NORMAL' | 'LOW'): string => {
         switch (priority) {
             case 'HIGH': return 'Cao';
             case 'NORMAL': return 'Bình thường';
@@ -99,30 +105,46 @@ const CalendarScreen = () => {
         }
     };
 
-
-    const handleLongPress = (schedule) => {
+    const handleLongPress = (schedule: Schedule) => {
         setSelectedSchedule(schedule);
         setModalVisible(true);
     };
 
     const handleDelete = async () => {
         if (!selectedSchedule) return;
-        try {
-            await deleteSchedule(selectedSchedule.id);
-            Alert.alert("Thành công", "Lịch trình đã được xóa!");
-            fetchSchedules(selectedDate);
-            fetchHighlightedDates();
-        } catch (error) {
-            console.error("Lỗi khi xóa lịch trình:", error);
-            Alert.alert("Lỗi", "Không thể xóa lịch trình, vui lòng thử lại!");
-        } finally {
-            setModalVisible(false);
-        }
+        
+        Alert.alert(
+            "Xác nhận xóa",
+            "Bạn có chắc chắn muốn xóa lịch trình này không?",
+            [
+                {
+                    text: "Hủy",
+                    style: "cancel"
+                },
+                {
+                    text: "Xóa",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteSchedule(selectedSchedule.id);
+                            Alert.alert("Thành công", "Lịch trình đã được xóa!");
+                            fetchSchedules(selectedDate);
+                            fetchHighlightedDates();
+                        } catch (error) {
+                            console.error("Lỗi khi xóa lịch trình:", error);
+                            Alert.alert("Lỗi", "Không thể xóa lịch trình, vui lòng thử lại!");
+                        } finally {
+                            setModalVisible(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const onEdit = () => {
         if (!selectedSchedule) return;
-        router.push(`/Schedule/editSchedule?id=${selectedSchedule?.id}`)
+        router.push(`/Schedule/editSchedule?id=${selectedSchedule.id}`);
         setModalVisible(false);
     };
 
@@ -130,7 +152,7 @@ const CalendarScreen = () => {
         handleDelete();
     };
 
-    const formatTime = (timeString) => {
+    const formatTime = (timeString: string): string => {
         if (!timeString) return '';
         return new Date(timeString).toLocaleTimeString('vi-VN', {
             hour: '2-digit',
@@ -152,57 +174,125 @@ const CalendarScreen = () => {
                     onDayPress={(day) => setSelectedDate(day.dateString)}
                     markedDates={{
                         ...highlightedDates,
-                        [selectedDate]: { selected: true, selectedColor: '#FFD966' }
+                        [selectedDate]: { 
+                            selected: true, 
+                            selectedColor: '#EF4444',
+                            dotColor: '#EF4444'
+                        }
                     }}
-                    theme={{ todayTextColor: '#FF5733', selectedDayBackgroundColor: '#FFD966', arrowColor: '#FF5733' }}
+                    theme={{
+                        todayTextColor: '#EF4444',
+                        selectedDayBackgroundColor: '#EF4444',
+                        arrowColor: '#EF4444',
+                        textDayFontSize: 16,
+                        textMonthFontSize: 18,
+                        textDayHeaderFontSize: 14,
+                        backgroundColor: 'white',
+                        calendarBackground: 'white',
+                        textSectionTitleColor: '#374151',
+                        dayTextColor: '#1F2937',
+                        textDisabledColor: '#9CA3AF',
+                        dotColor: '#EF4444',
+                        selectedDotColor: 'white',
+                        monthTextColor: '#EF4444',
+                        indicatorColor: '#EF4444',
+                        textDayFontWeight: '500',
+                        textMonthFontWeight: 'bold',
+                        textDayHeaderFontWeight: '500',
+                        stylesheet: {
+                            calendar: {
+                                header: {
+                                    arrow: {
+                                        color: '#EF4444'
+                                    }
+                                }
+                            }
+                        }
+                    }}
                 />
             </View>
 
             {/* Tiêu đề lịch trình */}
-            <Text style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>📅 Lịch trình cho {selectedDate || 'hôm nay'}</Text>
-                <TouchableOpacity onPress={() => router.push("/Schedule/createSchedule")}>
-                    <Ionicons name="add-circle-outline" size={26} color="#FF5733" style={styles.createIcon} />
+            <View style={styles.sectionTitleContainer}>
+                <View style={styles.titleWrapper}>
+                    <MaterialIcons name="event-note" size={24} color="#EF4444" />
+                    <Text style={styles.sectionTitle}>
+                        Lịch trình cho {selectedDate || 'hôm nay'}
+                    </Text>
+                </View>
+                <TouchableOpacity 
+                    style={styles.createButton}
+                    onPress={() => router.push("/Schedule/createSchedule")}
+                >
+                    <Ionicons name="add" size={24} color="white" />
                 </TouchableOpacity>
-            </Text>
+            </View>
+
             <View style={styles.listContainer}>
                 {schedules.length > 0 ? (
                     schedules.map((item) => (
-                        <TouchableOpacity key={item.id}
-                                          onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
-                                          onLongPress={() => handleLongPress(item)}
-                                          style={styles.itemCard}
+                        <TouchableOpacity 
+                            key={item.id}
+                            onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
+                            onLongPress={() => handleLongPress(item)}
+                            style={styles.itemCard}
                         >
-                            <Text style={styles.itemTitle}>{item.title}</Text>
-                            <Text style={styles.itemTime}>
-                                {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
-                            </Text>
-                            <Text style={[styles.priorityText, { color: getPriorityColor(item.priority) }]}>
-                                {getPriorityLabel(item.priority)}
-                            </Text>
+                            <View style={styles.itemHeader}>
+                                <MaterialIcons name="event" size={20} color="#EF4444" />
+                                <Text style={styles.itemTitle}>{item.title}</Text>
+                            </View>
+                            <View style={styles.itemTimeContainer}>
+                                <FontAwesome name="clock-o" size={16} color="#6B7280" />
+                                <Text style={styles.itemTime}>
+                                    {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
+                                </Text>
+                            </View>
+                            <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
+                                <Text style={styles.priorityText}>
+                                    {getPriorityLabel(item.priority)}
+                                </Text>
+                            </View>
                         </TouchableOpacity>
                     ))
                 ) : (
-                    <Text>Không có lịch trình</Text>
+                    <View style={styles.emptyState}>
+                        <MaterialIcons name="event-busy" size={48} color="#9CA3AF" />
+                        <Text style={styles.emptyStateText}>Không có lịch trình</Text>
+                    </View>
                 )}
             </View>
 
             <Modal transparent visible={modalVisible} animationType="fade">
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Chọn thao tác</Text>
+                        <View style={styles.modalHeader}>
+                            <View style={styles.titleWrapper}>
+                                <MaterialIcons name="event-note" size={24} color="#EF4444" />
+                                <Text style={styles.modalTitle}>Chọn thao tác</Text>
+                            </View>
+                            <TouchableOpacity 
+                                style={styles.closeButton}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <AntDesign name="close" size={24} color="#6B7280" />
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.modalButtonContainer}>
-                            <TouchableOpacity style={[styles.modalButton, styles.editButton]} onPress={onEdit}>
-                                <Text style={styles.buttonText}>✏️ Sửa</Text>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.editButton]} 
+                                onPress={onEdit}
+                            >
+                                <AntDesign name="edit" size={20} color="white" />
+                                <Text style={styles.buttonText}>Sửa</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={[styles.modalButton, styles.deleteButton]} onPress={onDelete}>
-                                <Text style={styles.buttonText}>🗑️ Xóa</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.buttonText}>❌ Hủy</Text>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.deleteButton]} 
+                                onPress={onDelete}
+                            >
+                                <AntDesign name="delete" size={20} color="white" />
+                                <Text style={styles.buttonText}>Xóa</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -215,111 +305,171 @@ const CalendarScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 15,
-        backgroundColor: '#F5F5F5',
+        padding: 16,
+        backgroundColor: '#F8FAFC',
     },
     calendarContainer: {
         backgroundColor: 'white',
-        borderRadius: 15,
-        padding: 10,
-        marginBottom: 15,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
         elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginVertical: 10,
-    },
-    listContainer: {
-        minHeight: 80,
-    },
-    itemCard: {
-        backgroundColor: '#FFD966',
-        padding: 15,
-        marginVertical: 8,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
-    },
-    itemTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    itemTime: {
-        fontSize: 14,
-        color: '#555',
-    },
-    priorityText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        position: 'absolute',
-        bottom: 10,
-        right: 10,
     },
     sectionTitleContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 20,
     },
-    createIcon: {
-        marginLeft: 60,
-        marginTop: 10,
+    titleWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#1F2937',
+    },
+    createButton: {
+        backgroundColor: '#EF4444',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    listContainer: {
+        minHeight: 100,
+    },
+    itemCard: {
+        backgroundColor: 'white',
+        padding: 16,
+        marginVertical: 8,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+        position: 'relative',
+    },
+    itemHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8,
+    },
+    itemTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1F2937',
+    },
+    itemTimeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    itemTime: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    priorityBadge: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 8,
+    },
+    priorityText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 32,
+        backgroundColor: 'white',
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    emptyStateText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#6B7280',
+        fontWeight: '500',
     },
     modalContainer: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Nền mờ
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContent: {
-        width: '80%',
+        width: '85%',
         backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 15, // Bo góc mềm mại
+        padding: 24,
+        borderRadius: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 5, // Đổ bóng trên Android
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 24,
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 10,
+        color: '#1F2937',
+    },
+    closeButton: {
+        padding: 8,
     },
     modalButtonContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginTop: 15,
+        justifyContent: 'space-between',
+        gap: 12,
     },
     modalButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 10,
-        minWidth: 90,
+        flex: 1,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        gap: 8,
     },
     editButton: {
-        backgroundColor: '#4CAF50', // Màu xanh lá cho nút "Sửa"
+        backgroundColor: '#3B82F6',
     },
     deleteButton: {
-        backgroundColor: '#FF5252', // Màu đỏ cho nút "Xóa"
-    },
-    cancelButton: {
-        backgroundColor: '#757575', // Màu xám cho nút "Hủy"
+        backgroundColor: '#EF4444',
     },
     buttonText: {
         color: 'white',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
     },
 });
 

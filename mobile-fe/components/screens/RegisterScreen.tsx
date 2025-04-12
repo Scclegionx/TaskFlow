@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { register } from '@/hooks/useAuthApi';
 import { useRouter } from 'expo-router';
 import { useNavigation } from "@react-navigation/native";
+import CustomAlert from '@/components/CustomAlert';
 
 const RegisterScreen = () => {
     const navigation = useNavigation()
@@ -12,6 +13,11 @@ const RegisterScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+    const [shouldNavigate, setShouldNavigate] = useState(false);
+
     useEffect(() => {
             navigation.setOptions({ 
                 headerShown: false,
@@ -21,29 +27,35 @@ const RegisterScreen = () => {
             });
         }, []);
 
+    const showAlert = (title: string, message: string) => {
+        setAlertTitle(title);
+        setAlertMessage(message);
+        setAlertVisible(true);
+    };
+
     const handleRegister = async () => {
         if (!name || !email || !password || !confirmPassword) {
-            Alert.alert('Validation', 'All fields are required');
+            showAlert('Thông báo', 'Vui lòng điền đầy đủ thông tin');
             return;
         }
         
         if (password !== confirmPassword) {
-            Alert.alert('Validation', 'Passwords do not match');
+            showAlert('Thông báo', 'Mật khẩu xác nhận không khớp');
             return;
         }
 
         try {
             const response = await register(name, email, password, confirmPassword);
-            Alert.alert('Success', response);
-            router.push('/login');
+            setShouldNavigate(true);
+            showAlert('Thành công', 'Đăng ký tài khoản thành công!');
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data || 'Failed to register');
+            showAlert('Lỗi', error.response?.data || 'Đăng ký thất bại');
         }
     };
 
     return (
         <LinearGradient colors={['#3A7BDD', '#3A6073']} style={styles.container}>
-            <View style={styles.registerBox}>
+            <View style={[styles.registerBox, styles.elevation]}>
                 <Text style={styles.title}>Tạo tài khoản</Text>
                 <TextInput placeholder="Tên" placeholderTextColor="#555" value={name} onChangeText={setName} style={styles.input} />
                 <TextInput placeholder="Email" placeholderTextColor="#555" value={email} onChangeText={setEmail} style={styles.input} />
@@ -58,6 +70,18 @@ const RegisterScreen = () => {
                     <Text style={styles.linkText}>Đã có tài khoản? Đăng nhập</Text>
                 </TouchableOpacity>
             </View>
+            <CustomAlert
+                visible={alertVisible}
+                title={alertTitle}
+                message={alertMessage}
+                onClose={() => setAlertVisible(false)}
+                onClosed={() => {
+                    if (shouldNavigate) {
+                        router.push('/login');
+                        setShouldNavigate(false);
+                    }
+                }}
+            />
         </LinearGradient>
     );
 };
@@ -88,20 +112,29 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         borderWidth: 1,
-        borderColor: '#ddd',
-        padding: 12,
-        marginBottom: 12,
-        borderRadius: 25,
-        backgroundColor: '#f9f9f9',
+        borderColor: '#e0e0e0',
+        padding: 15,
+        marginBottom: 15,
+        borderRadius: 15,
+        backgroundColor: '#f8f9fa',
         color: '#333',
+        fontSize: 16,
     },
     button: {
         backgroundColor: '#3A7BDD',
         padding: 15,
-        borderRadius: 25,
+        borderRadius: 15,
         alignItems: 'center',
         width: '100%',
-        marginTop: 10,
+        marginTop: 15,
+        shadowColor: '#3A7BDD',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     buttonText: {
         color: '#fff',
@@ -113,6 +146,16 @@ const styles = StyleSheet.create({
         color: '#3A7BDD',
         textAlign: 'center',
         fontWeight: 'bold',
+    },
+    elevation: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        elevation: 8,
     },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { getScheduleById, updateSchedule } from '@/hooks/useScheduleApi';
@@ -83,63 +83,69 @@ const EditScheduleScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <ScrollView 
+            style={styles.container}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            showsVerticalScrollIndicator={false}
+        >
             <Text style={styles.header}>✏️ Chỉnh Sửa Lịch Trình</Text>
 
             {loading ? <ActivityIndicator size="large" color="#FF5733" /> : (
                 <>
-                    <Text style={styles.label}>Tiêu đề</Text>
-                    <TextInput style={styles.input} value={title} onChangeText={setTitle} />
+                    <View style={styles.formContainer}>
+                        <Text style={styles.label}>Tiêu đề</Text>
+                        <TextInput style={styles.input} value={title} onChangeText={setTitle} />
 
-                    <Text style={styles.label}>Chọn ngày</Text>
-                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-                        <Text>{date.toLocaleDateString('vi-VN')}</Text>
-                    </TouchableOpacity>
-                    {showDatePicker && (
-                        <DateTimePicker value={date} mode="date" display="spinner" locale="vi"
-                                        onChange={(event, selectedDate) => {
-                                            setShowDatePicker(false);
-                                            if (selectedDate) setDate(selectedDate);
-                                        }} />
-                    )}
+                        <Text style={styles.label}>Chọn ngày</Text>
+                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePicker}>
+                            <Text style={styles.dateText}>{date.toLocaleDateString('vi-VN')}</Text>
+                        </TouchableOpacity>
+                        {showDatePicker && (
+                            <DateTimePicker value={date} mode="date" display="spinner" locale="vi"
+                                            onChange={(event, selectedDate) => {
+                                                setShowDatePicker(false);
+                                                if (selectedDate) setDate(selectedDate);
+                                            }} />
+                        )}
 
-                    <Text style={styles.label}>Thời gian bắt đầu</Text>
-                    <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.input}>
-                        <Text>{startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}</Text>
-                    </TouchableOpacity>
-                    {showStartPicker && (
-                        <DateTimePicker value={startTime} mode="time" display="spinner" is24Hour
-                                        onChange={(event, selectedTime) => {
-                                            setShowStartPicker(false);
-                                            if (selectedTime) setStartTime(selectedTime);
-                                        }} />
-                    )}
+                        <Text style={styles.label}>Thời gian bắt đầu</Text>
+                        <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.input}>
+                            <Text>{startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}</Text>
+                        </TouchableOpacity>
+                        {showStartPicker && (
+                            <DateTimePicker value={startTime} mode="time" display="spinner" is24Hour
+                                            onChange={(event, selectedTime) => {
+                                                setShowStartPicker(false);
+                                                if (selectedTime) setStartTime(selectedTime);
+                                            }} />
+                        )}
 
-                    <Text style={styles.label}>Thời gian kết thúc</Text>
-                    <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.input}>
-                        <Text>{endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}</Text>
-                    </TouchableOpacity>
-                    {showEndPicker && (
-                        <DateTimePicker value={endTime} mode="time" display="spinner" is24Hour
-                                        onChange={(event, selectedTime) => {
-                                            setShowEndPicker(false);
-                                            if (selectedTime) setEndTime(selectedTime);
-                                        }} />
-                    )}
+                        <Text style={styles.label}>Thời gian kết thúc</Text>
+                        <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.input}>
+                            <Text>{endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}</Text>
+                        </TouchableOpacity>
+                        {showEndPicker && (
+                            <DateTimePicker value={endTime} mode="time" display="spinner" is24Hour
+                                            onChange={(event, selectedTime) => {
+                                                setShowEndPicker(false);
+                                                if (selectedTime) setEndTime(selectedTime);
+                                            }} />
+                        )}
 
-                    <Text style={styles.label}>Mức độ ưu tiên</Text>
-                    <View style={styles.priorityContainer}>
-                        {Object.entries(priorityMapping).map(([key, value]) => (
-                            <TouchableOpacity
-                                key={key}
-                                style={[styles.priorityButton, priority === key && styles.selectedPriority]}
-                                onPress={() => setPriority(key)}
-                            >
-                                <Text style={{ color: priority === key ? 'white' : 'black' }}>
-                                    {value}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                        <Text style={styles.label}>Mức độ ưu tiên</Text>
+                        <View style={styles.priorityContainer}>
+                            {Object.entries(priorityMapping).map(([key, value]) => (
+                                <TouchableOpacity
+                                    key={key}
+                                    style={[styles.priorityButton, priority === key && styles.selectedPriority]}
+                                    onPress={() => setPriority(key)}
+                                >
+                                    <Text style={{ color: priority === key ? 'white' : 'black' }}>
+                                        {value}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
 
                     <TouchableOpacity style={styles.saveButton} onPress={handleUpdateSchedule}>
@@ -147,20 +153,120 @@ const EditScheduleScreen = () => {
                     </TouchableOpacity>
                 </>
             )}
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: '#F5F5F5' },
-    header: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-    label: { fontSize: 16, fontWeight: 'bold', marginTop: 10 },
-    input: { backgroundColor: 'white', padding: 12, borderRadius: 8, marginTop: 5, borderWidth: 1, borderColor: '#DDD', alignItems: 'center' },
-    priorityContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-    priorityButton: { padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#DDD', flex: 1, alignItems: 'center', marginHorizontal: 5 },
-    selectedPriority: { backgroundColor: '#FF5733' },
-    saveButton: { backgroundColor: '#FF5733', padding: 15, borderRadius: 10, marginTop: 20, alignItems: 'center' },
-    saveButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+    container: {
+        flex: 1,
+        padding: 20,
+        backgroundColor: '#F8FAFC',
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 24,
+        textAlign: 'center',
+        color: '#1F2937',
+    },
+    formContainer: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginTop: 16,
+        marginBottom: 8,
+        color: '#374151',
+    },
+    input: {
+        backgroundColor: '#F3F4F6',
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 8,
+        fontSize: 16,
+        color: '#1F2937',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    datePicker: {
+        backgroundColor: '#F3F4F6',
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    dateText: {
+        fontSize: 16,
+        color: '#1F2937',
+    },
+    priorityContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 8,
+        gap: 8,
+    },
+    priorityButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+    },
+    selectedPriority: {
+        backgroundColor: '#EF4444',
+        borderColor: '#EF4444',
+    },
+    priorityText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#1F2937',
+    },
+    selectedPriorityText: {
+        color: 'white',
+    },
+    saveButton: {
+        backgroundColor: '#EF4444',
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 24,
+        alignItems: 'center',
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    saveButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    loadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    loadingText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
 });
 
 export default EditScheduleScreen;

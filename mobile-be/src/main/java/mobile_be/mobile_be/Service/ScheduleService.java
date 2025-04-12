@@ -19,12 +19,12 @@ public class ScheduleService {
         return scheduleRepository.save(schedule);
     }
 
-    public List<Schedule> getSchedulesByDate(LocalDate date) {
-        return scheduleRepository.findSchedulesByDate(date);
+    public List<Schedule> getSchedulesByDate(LocalDate date, Integer userId) {
+        return scheduleRepository.findSchedulesByDateAndUserId(date, userId);
     }
 
-    public Map<String, String> getHighlightedDates() {
-        List<Object[]> result = scheduleRepository.findHighlightedDates();
+    public Map<String, String> getHighlightedDates(Integer userId) {
+        List<Object[]> result = scheduleRepository.findHighlightedDatesByUserId(userId);
         Map<String, String> highlightedDates = new HashMap<>();
 
         for (Object[] row : result) {

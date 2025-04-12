@@ -4,7 +4,8 @@ import { MoreHorizontal } from "lucide-react-native";
 import { styles } from "../assets/styles/projectStyles";
 import { getStatusText } from "@/hooks/useProjectApi";
 import { useRouter } from 'expo-router';
-import { deleteProject } from '@/hooks/useProjectApi';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface ProjectItemProps {
     project: {
@@ -18,21 +19,31 @@ interface ProjectItemProps {
         members?: any;
         tasks?: any;
     };
-    onDelete: () => Promise<void>;
+    onDelete: (projectId: number) => Promise<void>;
 }
 
-const getStatusColor = (status: number): string => {
+const getStatusColor = (status: number): readonly [string, string] => {
     switch (status) {
         case 0: // Chưa bắt đầu
-            return "#A0A0A0";
+            return ['#A0A0A0', '#C0C0C0'] as const;
         case 1: // Đang thực hiện
-            return "#00AEEF";
+            return ['#00AEEF', '#4ECDC4'] as const;
         case 2: // Hoàn thành
-            return "#4CAF50";
+            return ['#4CAF50', '#96C93D'] as const;
         case 3: // Quá hạn
-            return "#FF4D67";
+            return ['#FF4D67', '#FF6B6B'] as const;
         default:
-            return "#A0A0A0";
+            return ['#A0A0A0', '#C0C0C0'] as const;
+    }
+};
+
+const getStatusIcon = (status: number): keyof typeof MaterialCommunityIcons.glyphMap => {
+    switch (status) {
+        case 0: return "rocket-launch";
+        case 1: return "progress-clock";
+        case 2: return "check-circle";
+        case 3: return "alert-circle";
+        default: return "help-circle";
     }
 };
 
@@ -82,23 +93,87 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
                 {
                     text: "Xóa",
                     style: "destructive",
-                    onPress: onDelete
+                    onPress: async () => {
+                        try {
+                            await onDelete(project.id);
+                        } catch (error) {
+                            console.error('Lỗi khi xóa dự án:', error);
+                            Alert.alert("Lỗi", "Không thể xóa dự án");
+                        }
+                    }
                 }
             ]
         );
     };
 
     return (
-        <View style={styles.card}>
-            <View style={{ flex: 1 }}>
-                <Text style={styles.title}>{project.name}</Text>
-                <Text style={styles.description}>{project.description}</Text>
-                <Text style={styles.date}>📅 {project.fromDate ? project.fromDate.toLocaleDateString() : "Chưa xác định"}</Text>
-                <Text style={[styles.status, { color: statusColor }]}>⚡ {statusText}</Text>
+        <Animated.View style={styles.projectCard}>
+            <View style={styles.cardGradient}>
+                <LinearGradient
+                    colors={['#FFFFFF', '#F3F4F6', '#E5E7EB', '#D1D5DB']}
+                    style={styles.cardBackground}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    locations={[0, 0.3, 0.7, 1]}
+                />
+                <LinearGradient
+                    colors={['rgba(139, 92, 246, 0.1)', 'rgba(139, 92, 246, 0.2)']}
+                    style={styles.cardBackground}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                />
+                <View style={styles.cardContent}>
+                    <View style={styles.cardHeader}>
+                        <View style={styles.titleContainer}>
+                            <MaterialCommunityIcons name="folder-outline" size={24} color="#8B5CF6" />
+                            <Text style={[styles.projectTitle, { color: '#1F2937' }]}>{project.name}</Text>
+                        </View>
+                        <TouchableOpacity onPress={showPopupMenu} style={styles.moreButton}>
+                            <MoreHorizontal size={24} color="#8B5CF6" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.descriptionContainer}>
+                        <Text style={[styles.description, { color: '#4B5563' }]} numberOfLines={2}>
+                            {project.description}
+                        </Text>
+                    </View>
+
+                    <View style={styles.infoContainer}>
+                        <View style={styles.dateContainer}>
+                            <MaterialCommunityIcons name="calendar-outline" size={20} color="#6B7280" />
+                            <Text style={[styles.dateText, { color: '#6B7280' }]}>
+                                {project.fromDate ? new Date(project.fromDate).toLocaleDateString('vi-VN') : 'N/A'} 
+                                {' - '}
+                                {project.toDate ? new Date(project.toDate).toLocaleDateString('vi-VN') : 'N/A'}
+                            </Text>
+                        </View>
+
+                        <View style={styles.membersContainer}>
+                            <MaterialCommunityIcons name="account-group" size={18} color="#6B7280" />
+                            <Text style={[styles.membersText, { color: '#6B7280' }]}>
+                                {project.members?.length || 0} thành viên
+                            </Text>
+                        </View>
+                    </View>
+
+                    <LinearGradient
+                        colors={getStatusColor(project.status)}
+                        style={styles.statusBadge}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <MaterialCommunityIcons 
+                            name={getStatusIcon(project.status)} 
+                            size={18} 
+                            color="white" 
+                        />
+                        <Text style={styles.statusText}>
+                            {getStatusText(project.status)}
+                        </Text>
+                    </LinearGradient>
+                </View>
             </View>
-            <TouchableOpacity onPress={showPopupMenu}>
-                <MoreHorizontal size={24} color="#A0A0A0" />
-            </TouchableOpacity>
 
             <Modal
                 transparent={true}
@@ -106,10 +181,10 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
                 onRequestClose={hidePopupMenu}
                 animationType="none"
             >
-                <Pressable style={popupStyles.overlay} onPress={hidePopupMenu}>
+                <Pressable style={styles.popupOverlay} onPress={hidePopupMenu}>
                     <Animated.View 
                         style={[
-                            popupStyles.popup,
+                            styles.popup,
                             {
                                 opacity: fadeAnim,
                                 transform: [{
@@ -122,21 +197,21 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
                         ]}
                     >
                         <TouchableOpacity 
-                            style={popupStyles.menuItem}
+                            style={styles.menuItem}
                             onPress={handleEdit}
                         >
-                            <Text style={popupStyles.menuText}>✏️ Sửa</Text>
+                            <Text style={styles.menuText}>✏️ Sửa</Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                            style={[popupStyles.menuItem, popupStyles.menuItemDanger]}
+                            style={[styles.menuItem, styles.menuItemDanger]}
                             onPress={handleDelete}
                         >
-                            <Text style={[popupStyles.menuText, popupStyles.menuTextDanger]}>🗑️ Xóa</Text>
+                            <Text style={[styles.menuText, styles.menuTextDanger]}>🗑️ Xóa</Text>
                         </TouchableOpacity>
                     </Animated.View>
                 </Pressable>
             </Modal>
-        </View>
+        </Animated.View>
     );
 };
 

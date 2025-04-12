@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, Modal,
-  TextInput, FlatList, Image, Alert, PanResponder
+  TextInput, FlatList, Image, Alert, PanResponder, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -10,6 +10,7 @@ import { API_BASE_URL } from "@/constants/api";
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import DateTimePickerModal from "@react-native-community/datetimepicker";
 
 import axios from 'axios'; // Cần cài đặt axios hoặc sử dụng fetch
 
@@ -62,6 +63,7 @@ interface Comment {
   taskId: number;
   date: string;
   userName: string;
+  avatar: string;
 
 }
 
@@ -91,6 +93,8 @@ const TaskDetailScreen = () => {
   const [rejectReasons, setRejectReasons] = useState<RejectReason[]>([]); // Dữ liệu lý do từ API
   const [selectedReason, setSelectedReason] = useState('');  // chon cai gi 
   const [rejectReason, setRejectReason] = useState('');
+  const [showExtendDatePicker, setShowExtendDatePicker] = useState(false);
+  const [newEndDate, setNewEndDate] = useState<Date>(new Date());
 
 
   useLayoutEffect(() => {
@@ -274,6 +278,8 @@ const TaskDetailScreen = () => {
     }
   };
 
+
+
   const fetchRejectReasons = async () => {
     try {
       const authToken = await AsyncStorage.getItem("token");
@@ -397,6 +403,7 @@ const TaskDetailScreen = () => {
 
 
 
+
   const handleMarkComplete = async () => {
     Alert.alert(
       "Thông báo",
@@ -458,6 +465,56 @@ const TaskDetailScreen = () => {
       ]
     );
   };
+
+
+  const handleGiaHan = () => {
+    setShowExtendDatePicker(true);
+  };
+
+  // Hàm gọi API gia hạn
+  const handleExtendDateChange = (event: any, selectedDate?: Date) => {
+    setShowExtendDatePicker(false);
+    if (selectedDate) {
+      setNewEndDate(selectedDate);
+      // Hiển thị xác nhận
+      Alert.alert(
+        "Xác nhận gia hạn",
+        `Bạn chắc chắn muốn gia hạn đến ${selectedDate.toLocaleDateString('vi-VN')}?`,
+        [
+          { text: "Hủy", style: "cancel" },
+          { text: "Xác nhận", onPress: () => callExtendAPI(selectedDate) }
+        ]
+      );
+    }
+  };
+
+  // Hàm gọi API
+  const callExtendAPI = async (toDate: Date) => {
+    try {
+      // Chuyển đổi định dạng ngày tháng về dạng YYYY-MM-DD
+      const formattedDate = toDate.toISOString().split('T')[0];
+
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/tasks/extend-deadline?taskId=${taskId}&toDate=${formattedDate}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        }
+
+      });
+      console.info("url gia han", `${API_BASE_URL}/tasks/extend-deadline?taskId=${taskId}&toDate=${formattedDate}`);
+
+      if (!response.ok) throw new Error("Gia hạn thất bại");
+
+      Alert.alert("Thành công", "Đã cập nhật hạn mới thành công");
+      fetchTask_Detail(); // Refresh data
+    } catch (error) {
+      Alert.alert("Lỗi", error instanceof Error ? error.message : "Lỗi không xác định");
+    }
+  };
+
+
 
   if (loading) {
     return (
@@ -566,7 +623,9 @@ const TaskDetailScreen = () => {
       ]}
     >
       <Image
-        source={{ uri: 'http://res.cloudinary.com/doah3bdw6/image/upload/v1743153165/r0nulby5tat56nq1q394.png' }} // Thay bằng avatar thực tế nếu có
+        source={{
+          uri: item.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s',
+        }}
         style={styles.avatar}
       />
       <View style={styles.commentContent}>
@@ -595,64 +654,70 @@ const TaskDetailScreen = () => {
 
 
   return (
-    <SafeAreaView style={styles.container}>
 
-      <View style={styles.header}>
-        <Text style={styles.title}>{jobData.title}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: statusBackgroundMap[jobData.status] }]}>
-          <Text style={[styles.statusText, { color: statusColorMap[jobData.status] }]}>
-            {statusMap[jobData.status] || 'Chờ nhận việc'}
-          </Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <SafeAreaView style={styles.container}>
+
+        <View style={styles.header}>
+          <Text style={styles.title}>{jobData.title}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusBackgroundMap[jobData.status] }]}>
+            <Text style={[styles.statusText, { color: statusColorMap[jobData.status] }]}>
+              {statusMap[jobData.status] || 'Chờ nhận việc'}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <DetailRow label="Người giao" value={creatorInfo?.name || "Không có"} />
-        <DetailRow
-          label="Người thực hiện"
-          value={jobData.assignees.map(a => a.name).join(', ')}
-        />
-        <DetailRow
-          label="Ngày bắt đầu"
-          value={formatDate(jobData.fromDate)}
-        />
-        <DetailRow
-          label="Ngày kết thúc"
-          value={formatDate(jobData.toDate)}
-        />
-        <DetailRow
-          label="Dự án"
-          value={jobData.project?.name || 'Không có'}
-        />
+        <View style={styles.section}>
+          <DetailRow label="Người giao" value={creatorInfo?.name || "Không có"} />
+          <DetailRow
+            label="Người thực hiện"
+            value={jobData.assignees.map(a => a.name).join(', ')}
+          />
+          <DetailRow
+            label="Ngày bắt đầu"
+            value={formatDate(jobData.fromDate)}
+          />
+          <DetailRow
+            label="Ngày kết thúc"
+            value={formatDate(jobData.toDate)}
+          />
+          <DetailRow
+            label="Dự án"
+            value={jobData.project?.name || 'Không có'}
+          />
 
 
-        {/* Thêm phần hiển thị mức độ */}
-        {jobData.level !== undefined && (
-          <View style={[
-            styles.levelContainer,
-            {
-              borderColor: jobData.level === 2 ? '#ff4444' :
-                jobData.level === 1 ? '#FF9800' :
-                  '#4CAF50'
-            }
-          ]}>
-            <Text style={[
-              styles.levelText,
+          {/* Thêm phần hiển thị mức độ */}
+          {jobData.level !== undefined && (
+            <View style={[
+              styles.levelContainer,
               {
-                color: jobData.level === 2 ? '#ff4444' :
+                borderColor: jobData.level === 2 ? '#ff4444' :
                   jobData.level === 1 ? '#FF9800' :
                     '#4CAF50'
               }
             ]}>
-              Mức độ: {jobData.level === 2 ? 'Khó' : jobData.level === 1 ? 'Trung bình' : 'Dễ'}
-            </Text>
-          </View>
-        )}
+              <Text style={[
+                styles.levelText,
+                {
+                  color: jobData.level === 2 ? '#ff4444' :
+                    jobData.level === 1 ? '#FF9800' :
+                      '#4CAF50'
+                }
+              ]}>
+                Mức độ: {jobData.level === 2 ? 'Khó' : jobData.level === 1 ? 'Trung bình' : 'Dễ'}
+              </Text>
+            </View>
+          )}
 
 
 
 
-        {/* <View style={styles.progressContainer}>
+          {/* <View style={styles.progressContainer}>
           <Text style={styles.progressLabel}>Tiến độ công việc</Text>
           <View style={styles.progressBar}>
             <View
@@ -669,149 +734,164 @@ const TaskDetailScreen = () => {
         </View> */}
 
 
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressLabel}>Tiến độ công việc</Text>
-          {jobData.assignees.some(a => a.id === currentUserId) && (
-            <TouchableOpacity
-              onPress={() => setShowProgressModal(true)}
-              style={styles.editButton}
-            >
-              <Icon name="edit" size={16} color="#3B82F6" />
-            </TouchableOpacity>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressLabel}>Tiến độ công việc</Text>
+            {jobData.assignees.some(a => a.id === currentUserId) && (
+              <TouchableOpacity
+                onPress={() => setShowProgressModal(true)}
+                style={styles.editButton}
+              >
+                <Icon name="edit" size={16} color="#3B82F6" />
+              </TouchableOpacity>
+            )}
+
+          </View>
+
+          <View style={styles.progressContainer}>
+
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${jobData.progress}%`,
+                    backgroundColor: getProgressColor(jobData.progress)
+                  }
+                ]}
+              />
+              <Text style={styles.progressText}>{jobData.progress}%</Text>
+            </View>
+          </View>
+
+
+          {/* chọn ngày */}
+          {showExtendDatePicker && (
+            <DateTimePickerModal
+              value={newEndDate}
+              mode="date"
+              display="spinner"
+              minimumDate={new Date(jobData.toDate || Date.now())} // Chỉ cho phép chọn ngày sau hạn cũ
+              onChange={handleExtendDateChange}
+            />
           )}
 
-        </View>
+          {/* Thêm cuối phần return */}
+          <Modal
+            visible={showProgressModal}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowProgressModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Cập nhập tiến độ</Text>
 
-        <View style={styles.progressContainer}>
-
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${jobData.progress}%`,
-                  backgroundColor: getProgressColor(jobData.progress)
-                }
-              ]}
-            />
-            <Text style={styles.progressText}>{jobData.progress}%</Text>
-          </View>
-        </View>
-
-        {/* Thêm cuối phần return */}
-        <Modal
-          visible={showProgressModal}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setShowProgressModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Cập nhập tiến độ</Text>
-
-              <TextInput
-                style={styles.progressInput}
-                keyboardType="numeric"
-                value={tempProgress.toString()}
-                onChangeText={(text) => {
-                  const value = Math.min(100, Math.max(0, parseInt(text) || 0));
-                  setTempProgress(value);
-                }}
-                placeholder="Nhập % tiến độ (0-100)"
-              />
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setShowProgressModal(false)}
-                >
-                  <Text style={styles.buttonText}>Hủy</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={async () => {
-                    await updateProgress(tempProgress);
-                    setShowProgressModal(false);
+                <TextInput
+                  style={styles.progressInput}
+                  keyboardType="numeric"
+                  value={tempProgress.toString()}
+                  onChangeText={(text) => {
+                    const value = Math.min(100, Math.max(0, parseInt(text) || 0));
+                    setTempProgress(value);
                   }}
-                >
-                  <Text style={styles.buttonText}>Cập nhật</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+                  placeholder="Nhập % tiến độ (0-100)"
+                />
 
-
-        <Modal
-          visible={showRejectModal}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setShowRejectModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Chọn lý do từ chối</Text>
-
-              <FlatList
-                data={rejectReasons}
-                renderItem={({ item }) => (
+                <View style={styles.modalButtons}>
                   <TouchableOpacity
-                    style={styles.reasonItem}
-                    onPress={() => {
-                      // if (item === "Lý do khác") {
-                      //   setSelectedReason(item);
-                      //   setRejectReason('');
-                      // } else {
-                      //   setSelectedReason(item.id.toString());
-                      //   setRejectReason(item.id.toString());
-                      // }
-                      setSelectedReason(item.id.toString());
-                      setRejectReason(item.name.toString());
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setShowProgressModal(false)}
+                  >
+                    <Text style={styles.buttonText}>Hủy</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={async () => {
+                      await updateProgress(tempProgress);
+                      setShowProgressModal(false);
                     }}
                   >
-                    <Text>{item.name}</Text>
-                    {selectedReason === item.id.toString() && <Icon name="check" size={16} color="green" />}
+                    <Text style={styles.buttonText}>Cập nhật</Text>
                   </TouchableOpacity>
-                )}
-                keyExtractor={(item) => item.id.toString()}
-              />
-
-              {selectedReason === "Lý do khác" && (
-                <TextInput
-                  style={styles.reasonInput}
-                  placeholder="Nhập lý do cụ thể"
-                  value={rejectReason}
-                  onChangeText={setRejectReason}
-                  multiline
-                />
-              )}
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setShowRejectModal(false)}
-                >
-                  <Text style={styles.buttonText}>Hủy</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleRejectTask}
-                >
-                  <Text style={styles.buttonText}>Xác nhận</Text>
-                </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+
+
+          <Modal
+            visible={showRejectModal}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowRejectModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Chọn lý do từ chối</Text>
+
+                <FlatList
+                  data={rejectReasons}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.reasonItem}
+                      onPress={() => {
+                        // if (item === "Lý do khác") {
+                        //   setSelectedReason(item);
+                        //   setRejectReason('');
+                        // } else {
+                        //   setSelectedReason(item.id.toString());
+                        //   setRejectReason(item.id.toString());
+                        // }
+                        setSelectedReason(item.id.toString());
+                        setRejectReason(item.name.toString());
+                      }}
+                    >
+                      <Text>{item.name}</Text>
+                      {selectedReason === item.id.toString() && <Icon name="check" size={16} color="green" />}
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={(item) => item.id.toString()}
+                />
+
+                {selectedReason === "Lý do khác" && (
+                  <TextInput
+                    style={styles.reasonInput}
+                    placeholder="Nhập lý do cụ thể"
+                    value={rejectReason}
+                    onChangeText={setRejectReason}
+                    multiline
+                  />
+                )}
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setShowRejectModal(false)}
+                  >
+                    <Text style={styles.buttonText}>Hủy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleRejectTask}
+                  >
+                    <Text style={styles.buttonText}>Xác nhận</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
 
 
-        {/* Thêm nút ở đây */}
-        {/* đang xử lý , mà chưa chọn xác nhận hoàn thành */}
-        {/* chỉ có  người thực hiện mới được quyền */}
-        {/* status = 1 là trạng thái chờ duyệt */}
-        {/* {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
+
+
+
+          {/* Thêm nút ở đây */}
+          {/* đang xử lý , mà chưa chọn xác nhận hoàn thành */}
+          {/* chỉ có  người thực hiện mới được quyền */}
+          {/* status = 1 là trạng thái chờ duyệt */}
+          {/* {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
           <TouchableOpacity
             style={styles.completeButton}
             onPress={handleMarkComplete}
@@ -821,26 +901,26 @@ const TaskDetailScreen = () => {
           </TouchableOpacity>
         )} */}
 
-        {jobData.status === 0 && jobData.assignees && jobData.assignees.some(assignee => assignee.id === currentUserId) && (
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.acceptButton}
-              onPress={handleAcceptTask}
-            >
-              <Text style={styles.buttonText}>Nhận việc</Text>
-            </TouchableOpacity>
+          {jobData.status === 0 && jobData.assignees && jobData.assignees.some(assignee => assignee.id === currentUserId) && (
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.acceptButton}
+                onPress={handleAcceptTask}
+              >
+                <Text style={styles.buttonText}>Nhận việc</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.rejecReceiveButton}
-              onPress={() => setShowRejectModal(true)}
-            >
-              <Text style={styles.buttonText}>Từ chối nhận</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+              <TouchableOpacity
+                style={styles.rejecReceiveButton}
+                onPress={() => setShowRejectModal(true)}
+              >
+                <Text style={styles.buttonText}>Từ chối nhận</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
 
-        {/* {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
+          {/* {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
   <TouchableOpacity
     style={styles.refuseButton}
     onPress={() => setShowRejectModal(true)}
@@ -850,84 +930,99 @@ const TaskDetailScreen = () => {
   </TouchableOpacity>
 )} */}
 
-        {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
-          <View style={styles.buttonRow}>
-            {/* Nút Đánh dấu hoàn thành */}
+          {jobData.status === 1 && jobData.waitFinish != 1 && jobData.assignees.some(a => a.id === currentUserId) && (
+            <View style={styles.buttonRow}>
+              {/* Nút Đánh dấu hoàn thành */}
+              <TouchableOpacity
+                style={[styles.actionButton, styles.completeButton]}
+                onPress={handleMarkComplete}
+              >
+                <Icon name="check" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Hoàn thành</Text>
+              </TouchableOpacity>
+
+              {/* Nút Từ chối */}
+              <TouchableOpacity
+                style={[styles.actionButton, styles.refuseButton]}
+                onPress={() => setShowRejectModal(true)}
+              >
+                <Icon name="times" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Từ chối</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+
+          {jobData.waitFinish === 1 && (
+            <View style={styles.waitFinishContainer}>
+              <Icon name="hourglass" size={16} color="#2ecc71" />
+              <Text style={styles.waitFinishText}>Chờ duyệt hoàn thành</Text>
+            </View>
+          )}
+
+          {jobData.waitFinish === 1 && jobData.assignees && jobData.createdBy === currentUserId && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.completeButton]}
-              onPress={handleMarkComplete}
+              style={styles.duyetButton} // Thêm một style mới cho nút này
+              onPress={handleApproveComplete} // Hàm xử lý khi nhấn nút
             >
               <Icon name="check" size={20} color="#fff" />
-              <Text style={styles.buttonText}>Hoàn thành</Text>
+              <Text style={styles.duyetButtonText}> Xác nhận hoàn thành </Text>
+              <Icon name="check" size={20} color="#fff" />
             </TouchableOpacity>
+          )}
 
-            {/* Nút Từ chối */}
+          {jobData.status === 4 && jobData.assignees.some(a => a.id === currentUserId) && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.refuseButton]}
-              onPress={() => setShowRejectModal(true)}
+              style={styles.giaHanButton} // Thêm một style mới cho nút này
+              onPress={handleGiaHan} // Hàm xử lý khi nhấn nút
             >
-              <Icon name="times" size={20} color="#fff" />
-              <Text style={styles.buttonText}>Từ chối</Text>
+              <Icon name="check" size={20} color="#fff" />
+              <Text style={styles.giaHanButtonText}> Gia hạn công việc </Text>
+              <Icon name="check" size={20} color="#fff" />
             </TouchableOpacity>
-          </View>
-        )}
-
-
-        {jobData.waitFinish === 1 && (
-          <View style={styles.waitFinishContainer}>
-            <Icon name="hourglass" size={16} color="#2ecc71" />
-            <Text style={styles.waitFinishText}>Chờ duyệt hoàn thành</Text>
-          </View>
-        )}
-
-        {jobData.waitFinish === 1 && jobData.createdBy === currentUserId && (
-          <TouchableOpacity
-            style={styles.duyetButton} // Thêm một style mới cho nút này
-            onPress={handleApproveComplete} // Hàm xử lý khi nhấn nút
-          >
-            <Icon name="check" size={20} color="#fff" />
-            <Text style={styles.duyetButtonText}> Xác nhận hoàn thành </Text>
-            <Icon name="check" size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-
-      {/* Phần bình luận */}
-      <View style={styles.commentSection}>
-        <Text style={styles.sectionTitle}>Bình luận ({commentData.length})</Text>
-
-        {/* dữ liệu  */}
-        <FlatList
-          data={commentData}
-          renderItem={renderComment}
-          keyExtractor={(item) => item.id.toString()}
-          ListEmptyComponent={
-            <Text style={styles.emptyComment}>Chưa có bình luận nào</Text>
-          }
-        />
-
-        <View style={styles.commentInputContainer}>
-          <TextInput
-            style={styles.commentInput}
-            placeholder="Thêm bình luận..."
-            value={newComment}
-            onChangeText={setNewComment}
-            multiline
-          />
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={handleSendComment}
-            disabled={!newComment.trim()}
-          >
-            <Icon name="send" size={20} color="#fff" />
-          </TouchableOpacity>
+          )}
         </View>
-      </View>
 
 
+        {/* Phần bình luận */}
+        <View style={styles.commentSection}>
+          <Text style={styles.sectionTitle}>Bình luận ({commentData.length})</Text>
 
-    </SafeAreaView>
+          {/* dữ liệu  */}
+          <FlatList
+            data={commentData}
+            renderItem={renderComment}
+            keyExtractor={(item) => item.id.toString()}
+            ListEmptyComponent={
+              <Text style={styles.emptyComment}>Chưa có bình luận nào</Text>
+            }
+            contentContainerStyle={{ paddingBottom: 80 }}
+          />
+
+          {/* Phần input comment cố định ở dưới */}
+          <View style={styles.commentInputWrapper}>
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Thêm bình luận..."
+                value={newComment}
+                onChangeText={setNewComment}
+                multiline
+              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handleSendComment}
+                disabled={!newComment.trim()}
+              >
+                <Icon name="send" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -1119,6 +1214,16 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
+  giaHanButton: {
+    backgroundColor: "#7784EE",
+    padding: 10,
+    borderRadius: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+
   progressContainer: {
     marginTop: 5,
     marginBottom: 10,
@@ -1160,11 +1265,17 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 
-
-  commentSection: {
-    marginTop: 20,
-    flex: 1,
+  giaHanButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    marginLeft: 5,
   },
+
+
+  // commentSection: {
+  //   marginTop: 20,
+  //   flex: 1,
+  // },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -1204,18 +1315,18 @@ const styles = StyleSheet.create({
     color: '#444',
     lineHeight: 20,
   },
-  commentInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 15,
-  },
+  // commentInputContainer: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   marginTop: 10,
+  //   borderTopWidth: 1,
+  //   borderTopColor: '#eee',
+  //   paddingTop: 15,
+  // },
   commentInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'red',
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 10,
@@ -1276,6 +1387,28 @@ const styles = StyleSheet.create({
   levelText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  commentSection: {
+    flex: 1,
+    marginTop: 20,
+    position: 'relative', // Thêm vào
+  },
+  commentInputWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  commentInputContainer: {
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Platform.OS === 'ios' ? 20 : 0, // Điều chỉnh cho iOS
   },
 });
 

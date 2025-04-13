@@ -70,6 +70,7 @@ public class UserService {
             Tydstate tydstate = new Tydstate();
             tydstate.setUser_id(user.getId());
             tydstate.setCheckin(LocalDateTime.now());
+            tydstate.setStatus(enum_tydstate.ChuaRaVe.getValue());
             tydstateRepository.save(tydstate);
             return ResponseEntity.ok("Check in success");
         } catch (Exception e) {
@@ -252,6 +253,14 @@ public class UserService {
                 dob = "Chưa cập nhật";
             }
 
+            Integer total = (totalPoint != null) ? totalPoint : 0;
+            Integer kpi = (kpiRegistry != null && kpiRegistry != 0) ? kpiRegistry : 1; // tránh chia 0
+
+            Float efficiency = (float) ((total * 100 / kpi ));
+            log.info("efficiency: " + efficiency);
+            log.info("total: " + total);
+            log.info("kpi: " + kpi);
+
             InfoUserResponseDTO  infoUserResponseDTO = new InfoUserResponseDTO();
             infoUserResponseDTO.setId(id);
             infoUserResponseDTO.setName(name);
@@ -261,6 +270,7 @@ public class UserService {
             infoUserResponseDTO.setTotalPoint(total_point);
             infoUserResponseDTO.setTotalHours(totalHours);
             infoUserResponseDTO.setAvatar(avatar);
+            infoUserResponseDTO.setEfficiency(efficiency.intValue());
 
 
             return ResponseEntity.ok(infoUserResponseDTO);

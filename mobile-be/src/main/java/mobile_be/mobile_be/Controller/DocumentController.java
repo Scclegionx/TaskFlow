@@ -4,6 +4,7 @@ import mobile_be.mobile_be.Model.Kpi;
 import mobile_be.mobile_be.Model.User;
 import mobile_be.mobile_be.Repository.KpiRepository;
 import mobile_be.mobile_be.Repository.UserRepository;
+import mobile_be.mobile_be.Service.DepartmentService;
 import mobile_be.mobile_be.Service.ExcelGenerator;
 import mobile_be.mobile_be.Service.UserService;
 import mobile_be.mobile_be.contains.enum_tydstate;
@@ -41,6 +42,9 @@ public class DocumentController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    DepartmentService departmentService;
 
 
     @GetMapping("/download-excel-user")
@@ -130,6 +134,39 @@ public class DocumentController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ChamCong.xlsx")
+                .body(resource);
+    }
+
+
+    @GetMapping("/download-excel-phong-ban")
+    public ResponseEntity<Resource> downloadExcelPhongBan() throws IOException {
+        String[] headers = {"Tên phòng", "Trưởng phòng", "Tổng số tổ", "Tổng số nhân sự"};
+
+        var results = departmentService.getAllDepartment(null, null);
+
+        List<String[]> data = Arrays.asList(
+                results.stream().map(department -> new String[]{
+                        String.valueOf(department.getName()),
+                        String.valueOf(department.getLeader().getName()),
+                        String.valueOf(department.getTeams().size()),
+                        String.valueOf(
+                                department.getTeams().stream()
+                                        .flatMap(team -> team.getMembers().stream())
+                                        .filter(member -> member.getStatus() == 1)
+                                        .map(member -> member.getUser().getId())
+                                        .distinct()
+                                        .count()
+                        )
+                }).toArray(String[][]::new)
+        );
+
+        byte[] excelBytes = ExcelGenerator.generateExcel(data, headers);
+
+        ByteArrayResource resource = new ByteArrayResource(excelBytes);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=PhongBan.xlsx")
                 .body(resource);
     }
 

@@ -70,6 +70,16 @@ public class DepartmentController {
         }
     }
 
+    @GetMapping("/get-teamLeader")
+    public ResponseEntity<?> getTeamLeader( @RequestParam(value = "teamId", required = false) Integer teamId) {
+        try{
+            var result = departmentService.getTeamLeader(teamId);
+            return ResponseEntity.ok(result);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body("Error getting team leader: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/create-team")
     public ResponseEntity<?> createTeam(@RequestBody TeamRequestDTO teamRequestDTO) {
         try{
@@ -117,6 +127,17 @@ public class DepartmentController {
             return ResponseEntity.ok(result);
         }catch (Exception e){
             return ResponseEntity.badRequest().body("Error adding user to team: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/remove-user-from-team")
+    public ResponseEntity<?> removeUserFromTeam(@RequestParam(value =  "userId", required = false) Integer userId,
+                                                @RequestParam(value =  "teamId", required = false) Integer teamId) {
+        try{
+            var result = departmentService.removeUserFromTeam(userId, teamId);
+            return ResponseEntity.ok(result);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body("Error removing user from team: " + e.getMessage());
         }
     }
 

@@ -261,7 +261,7 @@ const AllPersonelScreen = () => {
       });
 
       // Tạo file path
-      const fileUri = FileSystem.documentDirectory + "data.xlsx";
+      const fileUri = FileSystem.documentDirectory + "DanhSachKPI.xlsx";
 
       // Ghi file
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {

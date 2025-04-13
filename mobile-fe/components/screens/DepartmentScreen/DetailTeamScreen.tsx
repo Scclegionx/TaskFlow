@@ -51,6 +51,8 @@ const DetailTeamScreen = () => {
   const [selectedUser, setSelectedUser] = useState<Member | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
+  const [leaderId, setLeaderId] = useState<number | null>(null);
+
   const MEMBER_COLORS = ["#FEE2E2", "#D1E7DD", "#EDEBDE", "#ADDCE3"];
 
 
@@ -79,6 +81,7 @@ const DetailTeamScreen = () => {
 
       const data = await response.json();
       setTeamData(data);
+      setLeaderId(data.leaderId); // Lưu leaderId vào state
     } catch (err) {
       console.error("Error fetching departments:", error);
     } finally {
@@ -98,6 +101,11 @@ const DetailTeamScreen = () => {
       />
 
       <View style={styles.memberInfo}>
+        {item.id === leaderId && (
+          <Text style={styles.memberInfoLeader}>
+            Tổ trưởng <Icon name="star" size={14} color="#EEBF26" />
+          </Text>
+        )}
         <Text style={styles.memberName}>{item.name}</Text>
         <Text style={styles.memberEmail}>{item.email}</Text>
         {item.phoneNumber && (
@@ -105,7 +113,15 @@ const DetailTeamScreen = () => {
             <Icon name="phone" size={12} color="#666" /> {item.phoneNumber}
           </Text>
         )}
+
+
       </View>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => handleDeleteMember(item.id)}
+      >
+        <Icon name="trash" size={20} color="#ff4444" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -240,6 +256,46 @@ const DetailTeamScreen = () => {
     </Modal>
   );
 
+  const handleDeleteMember = (userId: number) => {
+    Alert.alert(
+      "Xác nhận",
+      "Bạn có chắc chắn muốn xóa thành viên này khỏi nhóm?",
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: () => deleteMember(userId),
+        },
+      ]
+    );
+  };
+
+  const deleteMember = async (userId: number) => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/department/remove-user-from-team?userId=${userId}&teamId=${teamId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        Alert.alert("Thành công", "Đã xóa thành viên khỏi nhóm");
+        fetchTeam(); // Load lại dữ liệu
+      } else {
+        throw new Error("Xóa thành viên thất bại");
+      }
+    } catch (error) {
+      console.error("Error deleting member:", error);
+      Alert.alert("Lỗi", "Không thể xóa thành viên");
+    }
+  };
+
   return (
     <View style={styles.container}>
 
@@ -259,16 +315,19 @@ const DetailTeamScreen = () => {
 
         <View style={styles.metaInfo}>
           <Text style={styles.departmentName}>
-            <Icon name="building" size={14} /> Phòng :  {teamData?.departmentName}
+            <Icon name="building" size={14} /> Phòng :
+            <Text style={styles.boldRedText}> {teamData?.departmentName}</Text>
           </Text>
 
           {teamData?.leaderName ? (
             <Text style={styles.leaderText}>
-              <Icon name="user" size={14} /> Trưởng nhóm: {teamData.leaderName}
+              <Icon name="user" size={14} /> Tổ trưởng:
+              <Text style={styles.boldRedText}> {teamData.leaderName}</Text>
             </Text>
           ) : (
             <Text style={styles.leaderText}>
-              <Icon name="exclamation-circle" size={16} /> Chưa có trưởng nhóm
+              <Icon name="exclamation-circle" size={16} />
+              <Text style={styles.warningText}> Chưa có tổ trưởng</Text>
             </Text>
           )}
         </View>
@@ -314,6 +373,26 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f5f5f5',
   },
+
+  departmentName: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 4,
+  },
+  leaderText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  boldRedText: {
+    fontWeight: 'bold',
+    color: 'green',
+    fontSize: 16,
+  },
+  warningText: {
+    color: '#FFA500',
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -322,6 +401,16 @@ const styles = StyleSheet.create({
   },
   addButton: {
     padding: 8,
+  },
+  memberInfoContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    padding: 10,
+    marginLeft: 10,
   },
   modalContainer: {
     flex: 1,
@@ -424,17 +513,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'center', // Căn giữa các text con
   },
-  departmentName: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  leaderText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
+
   description: {
     fontSize: 16,
     color: '#444',
@@ -490,15 +569,22 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   memberEmail: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
     marginTop: 2,
   },
   memberDetail: {
-    fontSize: 12,
+    fontSize: 16,
     color: '#666',
     marginTop: 4,
   },
+
+  memberInfoLeader: {
+    flex: 1,
+    fontWeight: 'bold',
+    color: 'red',
+  },
+
   emptyText: {
     textAlign: 'center',
     color: '#666',

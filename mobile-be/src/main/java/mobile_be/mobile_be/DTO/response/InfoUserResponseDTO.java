@@ -12,4 +12,5 @@ public class InfoUserResponseDTO {
     private String totalPoint; // co dang la String  : 10/1000
     private float totalHours;
     private String avatar;
+    private Integer efficiency;  // hieu suat
 }

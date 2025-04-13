@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.aspectj.weaver.loadtime.Agent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
@@ -30,7 +31,7 @@ public class Department {
     @JoinColumn(name = "leader_id")
     private User leader;
 
-    @OneToMany(mappedBy = "department",  cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "department", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Team> teams = new ArrayList<>();
 

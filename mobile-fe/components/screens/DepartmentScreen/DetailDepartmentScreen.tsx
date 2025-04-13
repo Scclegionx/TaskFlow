@@ -65,6 +65,7 @@ const DetailDepartmentScreen = () => {
   const [isUserListVisible, setIsUserListVisible] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+const [currentLeader, setCurrentLeader] = useState<User | null>(null);
 const [editTeam, setEditTeam] = useState({
   name: '',
   description: '',
@@ -230,7 +231,7 @@ const [editTeam, setEditTeam] = useState({
                 </View>
               </View>
             ) : (
-              <Text style={styles.selectorPlaceholder}>Chọn trưởng tổ</Text>
+              <Text style={styles.selectorPlaceholder}>Chọn tổ trưởng </Text>
             )}
           </TouchableOpacity>
 
@@ -311,7 +312,24 @@ const [editTeam, setEditTeam] = useState({
   };
 
 
-  const handleOpenEditModal = (team: Team) => {
+  const handleOpenEditModal = async (team: Team) => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      // Lấy thông tin trưởng nhóm hiện tại
+      const leaderResponse = await fetch(
+        `${API_BASE_URL}/department/get-teamLeader?teamId=${team.id}`,
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      
+      if (leaderResponse.ok) {
+        const leaderData = await leaderResponse.json();
+        setSelectedLeader(leaderData);
+        setCurrentLeader(leaderData);
+      }
+    } catch (error) {
+      console.error("Error fetching leader:", error);
+    }
+  
     setSelectedTeam(team);
     setEditTeam({
       name: team.name,
@@ -322,14 +340,12 @@ const [editTeam, setEditTeam] = useState({
   };
 
   const handleUpdateTeam = async () => {
-    console.log('Selected team:', editTeam.name  , 'led  :', selectedLeader);
     if (!editTeam.name || !selectedLeader) {
       Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
   
     try {
-      setIsCreating(true);
       const authToken = await AsyncStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/department/update-team`, {
         method: 'PUT',
@@ -339,24 +355,20 @@ const [editTeam, setEditTeam] = useState({
         },
         body: JSON.stringify({
           ...editTeam,
-          id: selectedTeam?.id.toString(),
-          departmentId: departmentId?.toString()
-        }),
+          id: selectedTeam?.id,
+          departmentId : departmentId,
+          teamLeaderId: selectedLeader.id // Thêm trường leaderId
+        })
       });
   
       if (response.ok) {
         Alert.alert('Thành công', 'Cập nhật tổ thành công');
-        setIsEditModalVisible(false);
         fetchDepartment();
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Lỗi', errorData.message || 'Cập nhật thất bại');
+        setIsEditModalVisible(false);
       }
     } catch (error) {
-      console.error('Lỗi khi cập nhật tổ:', error);
-      Alert.alert('Lỗi', 'Không thể kết nối đến server');
-    } finally {
-      setIsCreating(false);
+      Alert.alert('Thất bại', 'Cập nhật tổ thất bại');
+      console.error('Update error:', error);
     }
   };
 
@@ -386,7 +398,38 @@ const [editTeam, setEditTeam] = useState({
             multiline
           />
   
-          {/* Phần chọn trưởng tổ giống modal tạo mới */}
+          {/* Phần chọn trưởng tổ */}
+          <TouchableOpacity
+            style={styles.leaderSelector}
+            onPress={() => setIsUserListVisible(true)}
+          >
+            {selectedLeader ? (
+              <View style={styles.selectedLeader}>
+                <Image
+                  source={{ uri: selectedLeader.avatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s" }}
+                  style={styles.selectedAvatar}
+                />
+                <View>
+                  <Text style={styles.leaderName}>{selectedLeader.name}</Text>
+                  <Text style={styles.leaderEmail}>{selectedLeader.email}</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.selectorPlaceholder}>
+                {currentLeader?.name || 'Chọn trưởng tổ'}
+              </Text>
+            )}
+          </TouchableOpacity>
+  
+          {isUserListVisible && (
+            <View style={styles.userListContainer}>
+              <FlatList
+                data={users}
+                renderItem={renderUserItem}
+                keyExtractor={item => item.id.toString()}
+              />
+            </View>
+          )}
   
           <View style={styles.modalButtonContainer}>
             <Pressable
@@ -398,13 +441,8 @@ const [editTeam, setEditTeam] = useState({
             <Pressable
               style={[styles.modalButton, styles.createButton]}
               onPress={handleUpdateTeam}
-              disabled={isCreating}
             >
-              {isCreating ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.buttonText}>Cập nhật</Text>
-              )}
+              <Text style={styles.buttonText}>Cập nhật</Text>
             </Pressable>
           </View>
         </View>
@@ -444,7 +482,7 @@ const [editTeam, setEditTeam] = useState({
             }}
             style={styles.actionButton}
           >
-            <Icon name="edit" size={16} color="#666" />
+            <Icon name="edit" size={20} color="#666" />
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -454,7 +492,7 @@ const [editTeam, setEditTeam] = useState({
             }}
             style={styles.actionButton}
           >
-            <Icon name="trash" size={16} color="#dc3545" />
+            <Icon name="trash" size={20} color="#dc3545" />
           </TouchableOpacity>
         </View>
       </View>

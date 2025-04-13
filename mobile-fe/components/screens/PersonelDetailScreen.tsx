@@ -8,6 +8,7 @@ import { API_BASE_URL } from "@/constants/api";
 import { useLocalSearchParams } from 'expo-router';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { set } from 'lodash';
+import { ViewStyle, DimensionValue } from 'react-native';
 
 
 interface DetailRowProps {
@@ -26,6 +27,7 @@ interface inforPerson {
   totalPoint: string;
   totalHours: number;
   avatar: string;
+  efficiency: number;
 }
 
 interface Review {
@@ -247,6 +249,12 @@ const PersonelDetailScreen = () => {
     setIsActionModalVisible(true);
   };
 
+  const getProgressColor = (efficiency: number) => {
+    if (efficiency <= 30) return '#ff4444'; // Đỏ cho hiệu suất thấp
+    if (efficiency <= 60) return '#FFD700'; // Vàng cho hiệu suất trung bình
+    return '#4CAF50'; // Xanh lá cho hiệu suất cao
+  };
+
 
 
   return (
@@ -288,6 +296,25 @@ const PersonelDetailScreen = () => {
         <View style={styles.row}>
           <Text style={styles.label}>Thời gian làm việc: </Text>
           <Text style={styles.value}>{inforPersonData?.totalHours}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Hiệu suất :</Text>
+          <View style={styles.progressContainer}>
+            {/* Phần fill */}
+            <View style={[
+              styles.progressFill,
+              {
+                width: `${inforPersonData?.efficiency || 0}%` as DimensionValue,
+                backgroundColor: getProgressColor(inforPersonData?.efficiency || 0)
+              }
+            ]} />
+
+            {/* Phần text cố định bên phải */}
+            <Text style={styles.progressText}>
+              {inforPersonData?.efficiency || 0}%
+            </Text>
+          </View>
         </View>
 
 
@@ -492,6 +519,31 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f5f5f5',
   },
+  progressContainer: {
+    flex: 1,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    overflow: 'hidden',
+    position: 'relative',
+    flexDirection: 'row', // Thêm dòng này
+    alignItems: 'center', // Căn giữa theo chiều dọc
+  },
+  progressFill: {
+    height: '100%',
+    position: 'absolute',
+    left: 0,
+    borderRadius: 10,
+  },
+  progressText: {
+    position: 'absolute',
+    right: 5, // Cách lề phải 5px
+    color: '#333', // Màu chữ tối để đọc được trên mọi nền
+    fontSize: 12,
+    fontWeight: 'bold',
+    zIndex: 2, // Đảm bảo hiển thị trên phần fill
+  },
+
 
   modalOverlay: {
     flex: 1,

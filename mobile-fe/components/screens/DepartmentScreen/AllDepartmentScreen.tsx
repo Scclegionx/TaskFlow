@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, Image , Modal, Pressable} from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, Image, Modal, Pressable } from "react-native";
 import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,6 +9,9 @@ import { API_BASE_URL } from "@/constants/api";
 import { StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from "expo-router";
+import * as FileSystem from "expo-file-system";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as MediaLibrary from "expo-media-library";
 
 interface User {
   id: number;
@@ -44,8 +47,8 @@ const AllDepartmentScreen = () => {
   const [isUserListVisible, setIsUserListVisible] = useState(false);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
-const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
-const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
 
   const colors = ["#ADDCE3", "#D1E7DD", "#FEE2E2", "#EDEBDE", "#FDE8C9"];
@@ -200,7 +203,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
             onChangeText={(text) => setNewDepartment({ ...newDepartment, description: text })}
           />
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.leaderSelector}
             onPress={() => setIsUserListVisible(!isUserListVisible)}
           >
@@ -236,8 +239,8 @@ const [deleteLoading, setDeleteLoading] = useState(false);
             <Pressable style={[styles.modalButton, styles.cancelButton]} onPress={toggleModal}>
               <Text style={styles.buttonText}>Hủy</Text>
             </Pressable>
-            <Pressable 
-              style={[styles.modalButton, styles.createButton]} 
+            <Pressable
+              style={[styles.modalButton, styles.createButton]}
               onPress={handleCreateDepartment}
               disabled={!selectedLeader}
             >
@@ -259,7 +262,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Chỉnh sửa phòng ban</Text>
-  
+
           {/* Các trường input giống modal tạo mới */}
           <TextInput
             style={styles.input}
@@ -267,16 +270,16 @@ const [deleteLoading, setDeleteLoading] = useState(false);
             value={newDepartment.name}
             onChangeText={(text) => setNewDepartment({ ...newDepartment, name: text })}
           />
-  
+
           <TextInput
             style={styles.input}
             placeholder="Mô tả"
             value={newDepartment.description}
             onChangeText={(text) => setNewDepartment({ ...newDepartment, description: text })}
           />
-  
+
           {/* Phần chọn leader giống modal tạo mới */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.leaderSelector}
             onPress={() => setIsUserListVisible(!isUserListVisible)}
           >
@@ -295,7 +298,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
               <Text style={styles.selectorPlaceholder}>Chọn trưởng phòng</Text>
             )}
           </TouchableOpacity>
-  
+
           {isUserListVisible && (
             <View style={styles.userListContainer}>
               <FlatList
@@ -307,13 +310,13 @@ const [deleteLoading, setDeleteLoading] = useState(false);
               />
             </View>
           )}
-  
+
           <View style={styles.modalButtonContainer}>
             <Pressable style={[styles.modalButton, styles.cancelButton]} onPress={() => setEditModalVisible(false)}>
               <Text style={styles.buttonText}>Hủy</Text>
             </Pressable>
-            <Pressable 
-              style={[styles.modalButton, styles.createButton]} 
+            <Pressable
+              style={[styles.modalButton, styles.createButton]}
               onPress={handleUpdateDepartment}
             >
               <Text style={styles.buttonText}>Lưu thay đổi</Text>
@@ -332,52 +335,116 @@ const [deleteLoading, setDeleteLoading] = useState(false);
     >
       <View style={styles.departmentInfo}>
         <Text style={styles.departmentName}>Phòng : {item.name}</Text>
-        <Text style={styles.departmentDescription}>Mô tả : {item.description}</Text>
-        
+
+
+
+        <View style={styles.iconContainer}>
+  <Text style={styles.departmentDescription}>Mô tả : {item.description}</Text>
+
+  <View style={styles.actionButtons}>
+    <TouchableOpacity onPress={(e) => {
+      e.stopPropagation();
+      openEditModal(item);
+    }}>
+      <Icon name="edit" size={20} color="#666" style={styles.iconButton} />
+    </TouchableOpacity>
+    <TouchableOpacity
+      onPress={(e) => {
+        e.stopPropagation();
+        Alert.alert(
+          "Xác nhận",
+          "Bạn có chắc chắn muốn xóa phòng ban này?",
+          [
+            { text: "Hủy", style: "cancel" },
+            { text: "Xóa", onPress: () => handleDeleteDepartment(item.id) }
+          ]
+        );
+      }}
+      disabled={deleteLoading}
+    >
+      {deleteLoading ? (
+        <ActivityIndicator size="small" color="#ff4444" />
+      ) : (
+        <Icon name="trash" size={20} color="#ff4444" style={styles.iconButton} />
+      )}
+    </TouchableOpacity>
+  </View>
+</View>
 
         <View style={styles.leaderContainer}>
-          
+
           <Text style={styles.leaderName}>Trưởng phòng: {item.leader.name}   </Text>
           <Image
             source={{ uri: item.leader.avatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s" }}
             style={styles.avatar}
           />
-        
+
+
         </View>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity onPress={(e) => {
-            e.stopPropagation();
-            openEditModal(item);
-          }}>
-            <Icon name="edit" size={20} color="#666" style={styles.iconButton} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={(e) => {
-              e.stopPropagation();
-              Alert.alert(
-                "Xác nhận",
-                "Bạn có chắc chắn muốn xóa phòng ban này?",
-                [
-                  { text: "Hủy", style: "cancel" },
-                  { text: "Xóa", onPress: () => handleDeleteDepartment(item.id) }
-                ]
-              );
-            }}
-            disabled={deleteLoading}
-          >
-            {deleteLoading ? (
-              <ActivityIndicator size="small" color="#ff4444" />
-            ) : (
-              <Icon name="trash" size={20} color="#ff4444" style={styles.iconButton} />
-            )}
-          </TouchableOpacity>
-        </View>
-        
+
+
+
       </View>
     </TouchableOpacity>
   );
 
+  const downloadExcel = async () => {
+    try {
+      setLoading(true);
+      const authToken = await AsyncStorage.getItem("token");
+
+      const response = await fetch(`${API_BASE_URL}/document/download-excel-phong-ban`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to download");
+
+      // Convert response to blob
+      const blob = await response.blob();
+
+      // Convert blob to base64 với kiểm tra null
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (!reader.result) {
+            return reject("Không đọc được dữ liệu");
+          }
+
+          if (typeof reader.result === "string") {
+            resolve(reader.result.split(",")[1]);
+          } else {
+            resolve(Buffer.from(reader.result).toString("base64"));
+          }
+        };
+        reader.onerror = () => reject("Lỗi đọc file");
+        reader.readAsDataURL(blob);
+      });
+
+      // Tạo file path
+      const fileUri = FileSystem.documentDirectory + "PhongBan.xlsx";
+
+      // Ghi file
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Mở file
+      const contentUri = await FileSystem.getContentUriAsync(fileUri);
+      await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+        data: contentUri,
+        flags: 1,
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+    } catch (error) {
+      Alert.alert("Lỗi khi tải file" || "Lỗi không xác định");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeleteDepartment = async (id: number) => {
     try {
@@ -392,7 +459,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
           },
         }
       );
-  
+
       if (response.ok) {
         Alert.alert("Thành công", "Xóa phòng ban thành công");
         fetchDepartments();
@@ -406,7 +473,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
       setDeleteLoading(false);
     }
   };
-  
+
   // Thêm hàm mở modal chỉnh sửa
   const openEditModal = (department: Department) => {
     setSelectedDepartment(department);
@@ -419,14 +486,14 @@ const [deleteLoading, setDeleteLoading] = useState(false);
     setEditModalVisible(true);
     fetchUsers();
   };
-  
+
   // Thêm hàm cập nhật phòng ban
   const handleUpdateDepartment = async () => {
     if (!selectedDepartment || !newDepartment.name || !newDepartment.leaderId) {
       Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
       return;
     }
-  
+
     try {
       const authToken = await AsyncStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/department/update-department`, {
@@ -440,7 +507,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
           id: selectedDepartment.id.toString()
         }),
       });
-  
+
       if (response.ok) {
         Alert.alert("Thành công", "Cập nhật phòng ban thành công");
         setEditModalVisible(false);
@@ -468,7 +535,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
         </TouchableOpacity>
         <TouchableOpacity onPress={() => {
           console.log("Download button pressed");
-          // downloadExcel();
+          downloadExcel();
         }} style={{ backgroundColor: "#007BFF", padding: 10, borderRadius: 8, marginLeft: 10 }}>
           <FontAwesome name="download" size={20} color="white" />
         </TouchableOpacity>
@@ -504,25 +571,46 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#F8F9FA",
   },
+
+  iconContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between", // để mô tả và icon nằm 2 bên
+  },
+  
+  departmentDescription: {
+    flex: 1,
+    fontSize: 16,
+  },
+  
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 'auto', // đẩy icon về bên phải
+  },
+  
+  iconButton: {
+    marginLeft: 10,
+  },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  iconButton: {
-    padding: 4,
-  },
+  // actionButtons: {
+  //   flexDirection: 'row',
+  //   gap: 12,
+  // },
+  // iconButton: {
+  //   padding: 4,
+  // },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
     backgroundColor: "#ADDCE3",
-    borderRadius: 10 ,
+    borderRadius: 10,
     marginBottom: 10,
   },
   searchInput: {
@@ -556,15 +644,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 4,
   },
-  departmentDescription: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 8,
-  },
+  // departmentDescription: {
+  //   fontSize: 16,
+  //   color: "#666",
+  //   marginBottom: 8,
+  // },
+  
   leaderContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   avatar: {
     width: 30,
     height: 30,

@@ -10,7 +10,7 @@ import {
   StyleSheet,
   Image,
   Modal,
-  Alert
+  Alert,
 } from "react-native";
 import axios from "axios";
 import SockJS from "sockjs-client";
@@ -41,7 +41,8 @@ const ChatScreen = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [fileStatus, setFileStatus] = useState(null); // Trạng thái tải file
+  const [fileStatus, setFileStatus] = useState(null); 
+  const [currentDownloadingFile, setCurrentDownloadingFile] = useState(null); // Tên file đang tải// Trạng thái tải file
   const navigation = useNavigation();
   const router = useRouter();
   useEffect(() => {
@@ -79,7 +80,6 @@ const ChatScreen = () => {
             },
             attachmentUrl: msg.attachmentUrl,
             attachmentType: msg.attachmentType,
-            
           }));
 
         setMessages(formattedMessages.reverse());
@@ -98,26 +98,28 @@ const ChatScreen = () => {
         title: chatTitle,
         headerTitle: () => (
           <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: `/chat/chatdetail`,
-              params: { chatId, chatName },
-            })
-          }
+            onPress={() =>
+              router.push({
+                pathname: `/chat/chatdetail`,
+                params: { chatId, chatName },
+              })
+            }
           >
-            <Text style={{ fontSize: 18, fontWeight: "bold",  }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold" }}>
               {chatTitle}
             </Text>
           </TouchableOpacity>
         ),
         headerRight: () => (
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <TouchableOpacity onPress={() =>
+            <TouchableOpacity
+              onPress={() =>
                 router.push({
                   pathname: `/chat/meeting`,
-              params: { chatId, chatName },
-              })
-              }>
+                  params: { chatId, chatName },
+                })
+              }
+            >
               <Image
                 source={require("@/assets/images/call.png")}
                 style={{ width: 24, height: 24, marginRight: 20 }}
@@ -127,8 +129,8 @@ const ChatScreen = () => {
               onPress={() =>
                 router.push({
                   pathname: `/chat/chatdetail`,
-              params: { chatId, chatName },
-              })
+                  params: { chatId, chatName },
+                })
               }
             >
               <Ionicons name="information-circle" size={24} color="black" />
@@ -302,78 +304,82 @@ const ChatScreen = () => {
     const isSameSenderAsNext =
       index > 0 && messages[index - 1].user.id === item.user.id;
 
-      const handleDeleteMessage = async (messageId) => {
-        try {
-          const token = await AsyncStorage.getItem("token");
-          if (!token) return;
-    
-          await axios.delete(`${API_URL}/messages/${messageId}`, {
+    const handleDeleteMessage = async (messageId) => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) return;
+
+        await axios.delete(`${API_URL}/messages/${messageId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setMessages((prevMessages) =>
+          prevMessages.filter((msg) => msg.id !== messageId)
+        );
+        console.log("✅ Tin nhắn đã được xóa:", messageId);
+      } catch (error) {
+        console.error("❌ Lỗi khi xóa tin nhắn:", error);
+      }
+    };
+    const handleHideMessage = async (messageId) => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) return;
+
+        // Gọi API để ẩn tin nhắn
+        await axios.post(
+          `${API_URL}/messages/${messageId}/hide`,
+          {},
+          {
             headers: { Authorization: `Bearer ${token}` },
-          });
-    
-          setMessages((prevMessages) =>
-            prevMessages.filter((msg) => msg.id !== messageId)
-          );
-          console.log("✅ Tin nhắn đã được xóa:", messageId);
-        } catch (error) {
-          console.error("❌ Lỗi khi xóa tin nhắn:", error);
-        }
-      };
-      const handleHideMessage = async (messageId) => {
-        try {
-          const token = await AsyncStorage.getItem("token");
-          if (!token) return;
-    
-          // Gọi API để ẩn tin nhắn
-          await axios.post(
-            `${API_URL}/messages/${messageId}/hide`,
-            {},
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-    
-          // Cập nhật danh sách tin nhắn sau khi ẩn
-          setMessages((prevMessages) =>
-            prevMessages.filter((msg) => msg.id !== messageId)
-          );
-          console.log("✅ Tin nhắn đã được ẩn:", messageId);
-        } catch (error) {
-          console.error("❌ Lỗi khi ẩn tin nhắn:", error);
-        }
-      };
-      const handleDownloadFile = async (fileUrl) => {
-        try {
-          setFileStatus("Đang tải..."); // Hiển thị trạng thái đang tải
-          const fileName = fileUrl.split("/").pop(); // Lấy tên file từ URL
-          const fileUri = `${FileSystem.documentDirectory}${fileName}`; // Đường dẫn lưu file cục bộ
-      
-          const downloadResumable = FileSystem.createDownloadResumable(
-            fileUrl,
-            fileUri
-          );
-      
-          const { uri } = await downloadResumable.downloadAsync();
-          console.log("✅ File đã được tải về:", uri);
-      
-          setFileStatus("Đã tải xong"); // Cập nhật trạng thái tải xong
-      
-          // Kiểm tra xem thiết bị có hỗ trợ chia sẻ file không
-          if (await Sharing.isAvailableAsync()) {
-            setFileStatus("Đang chia sẻ..."); // Cập nhật trạng thái chia sẻ
-            await Sharing.shareAsync(uri);
-            setFileStatus("Đã chia sẻ xong"); // Cập nhật trạng thái chia sẻ xong
-          } else {
-            Alert.alert("Thông báo", "File đã được tải về thiết bị.");
           }
-        } catch (error) {
-          console.error("❌ Lỗi khi tải file:", error);
-          Alert.alert("Lỗi", "Không thể tải file. Vui lòng thử lại.");
-          setFileStatus("Lỗi khi tải file"); // Cập nhật trạng thái lỗi
-        } finally {
-          setTimeout(() => setFileStatus(null), 3000); // Ẩn trạng thái sau 3 giây
+        );
+
+        // Cập nhật danh sách tin nhắn sau khi ẩn
+        setMessages((prevMessages) =>
+          prevMessages.filter((msg) => msg.id !== messageId)
+        );
+        console.log("✅ Tin nhắn đã được ẩn:", messageId);
+      } catch (error) {
+        console.error("❌ Lỗi khi ẩn tin nhắn:", error);
+      }
+    };
+    const handleDownloadFile = async (fileUrl) => {
+      try {
+        const fileName = fileUrl.split("/").pop(); // Lấy tên file từ URL
+        setCurrentDownloadingFile(fileName); // Lưu tên file vào state
+        setFileStatus("Đang tải..."); // Hiển thị trạng thái đang tải
+    
+        const fileUri = `${FileSystem.documentDirectory}${fileName}`; // Đường dẫn lưu file cục bộ
+    
+        const downloadResumable = FileSystem.createDownloadResumable(
+          fileUrl,
+          fileUri
+        );
+    
+        const { uri } = await downloadResumable.downloadAsync();
+        console.log("✅ File đã được tải về:", uri);
+    
+        setFileStatus("Đã tải xong"); // Cập nhật trạng thái tải xong
+        setCurrentDownloadingFile(null); // Xóa tên file sau khi tải xong
+    
+        // Kiểm tra xem thiết bị có hỗ trợ chia sẻ file không
+        if (await Sharing.isAvailableAsync()) {
+          setFileStatus("Đang chia sẻ..."); // Cập nhật trạng thái chia sẻ
+          await Sharing.shareAsync(uri);
+          setFileStatus("Đã chia sẻ xong"); // Cập nhật trạng thái chia sẻ xong
+        } else {
+          Alert.alert("Thông báo", "File đã được tải về thiết bị.");
         }
-      };
+      } catch (error) {
+        console.error("❌ Lỗi khi tải file:", error);
+        Alert.alert("Lỗi", "Không thể tải file. Vui lòng thử lại.");
+        setFileStatus("Lỗi khi tải file"); // Cập nhật trạng thái lỗi
+        setCurrentDownloadingFile(null); // Xóa tên file khi xảy ra lỗi
+      } finally {
+        setTimeout(() => setFileStatus(null), 3000); // Ẩn trạng thái sau 3 giây
+      }
+    };
     return (
       <View
         style={[
@@ -388,42 +394,78 @@ const ChatScreen = () => {
             )}
           </View>
         )}
-      
+
         <TouchableOpacity
-          style={{ width: "100%"}}
+          style={{ width: "100%" }}
           onPress={() => {
             if (item.attachmentUrl) {
               if (item.attachmentType === "image") {
                 setSelectedImage(item.attachmentUrl); // Hiển thị ảnh
               } else if (item.attachmentType === "video") {
-                
               } else {
                 handleDownloadFile(item.attachmentUrl); // Tải file khác
               }
             }
           }}
           onLongPress={() => {
-            // Hiển thị menu tùy chọn khi giữ tin nhắn
+            const options = [];
+
+            // Nếu là tin nhắn của chính mình
+            if (isCurrentUser) {
+              options.push({
+                text: "Ẩn",
+                onPress: () => {
+                  // Mở alert phụ: chọn giữa Ẩn và Xóa
+                  Alert.alert(
+                    "Tin nhắn của bạn",
+                    "Bạn muốn ẩn hay xóa tin nhắn này?",
+                    [
+                      {
+                        text: "Ẩn",
+                        onPress: () => handleHideMessage(item.id),
+                      },
+                      {
+                        text: "Xóa với mọi người",
+                        onPress: () => handleDeleteMessage(item.id),
+                        style: "destructive",
+                      },
+                      {
+                        text: "Hủy",
+                        style: "cancel",
+                      },
+                    ]
+                  );
+                },
+              });
+            } else {
+              // Nếu là tin nhắn của người khác
+              options.push({
+                text: "Ẩn",
+                onPress: () => handleHideMessage(item.id),
+              });
+            }
+
+            // Chia sẻ (ai cũng có)
+            options.push({
+              text: "Chia sẻ",
+              onPress: () =>
+                router.push({
+                  pathname: "/chat/selectchat",
+                  params: { messageId: item.id },
+                }),
+            });
+
+            // Hủy (luôn ở cuối, không lọc)
+            options.push({
+              text: "Hủy",
+              style: "cancel",
+            });
+
+            // Hiển thị Alert chính
             Alert.alert(
               "Tùy chọn tin nhắn",
               "Bạn muốn làm gì với tin nhắn này?",
-              [
-                {
-                  text: "Ẩn",
-                  onPress: () => handleHideMessage(item.id),
-                },
-                isCurrentUser
-                  ? {
-                      text: "Xóa",
-                      onPress: () => handleDeleteMessage(item.id),
-                      style: "destructive",
-                    }
-                  : null,
-                {
-                  text: "Hủy",
-                  style: "cancel",
-                },
-              ].filter(Boolean) // Loại bỏ null nếu không phải tin nhắn của người dùng
+              options
             );
           }}
         >
@@ -431,7 +473,11 @@ const ChatScreen = () => {
             <Attachment
               attachmentUrl={item.attachmentUrl}
               attachmentType={item.attachmentType}
-              style={[isCurrentUser ? {alignItems:"flex-end",width:"100%"} : {alignItems:"flex-start",width:"100%"}]}
+              style={[
+                isCurrentUser
+                  ? { alignItems: "flex-end", width: "100%" }
+                  : { alignItems: "flex-start", width: "100%" },
+              ]}
             />
           )}
           {item.text && (
@@ -467,9 +513,11 @@ const ChatScreen = () => {
           inverted
         />
       )}
-            {fileStatus && (
+      {fileStatus && (
   <View style={styles.fileStatusContainer}>
-    <Text style={styles.fileStatusText}>{fileStatus}</Text>
+    <Text style={styles.fileStatusText}>
+      {fileStatus} {currentDownloadingFile ? `: ${currentDownloadingFile}` : ""}
+    </Text>
   </View>
 )}
       {/* Modal hiển thị ảnh toàn màn hình */}
@@ -490,16 +538,16 @@ const ChatScreen = () => {
         </Modal>
       )}
       {file && (
-      <View style={styles.selectedFileContainer}>
-        <Text style={styles.selectedFileName}>{file.name}</Text>
-        <TouchableOpacity
-          onPress={() => setFile(null)} // Xóa tệp đã chọn
-          style={styles.removeFileButton}
-        >
-          <Text style={styles.removeFileButtonText}>Xóa</Text>
-        </TouchableOpacity>
-      </View>
-    )}
+        <View style={styles.selectedFileContainer}>
+          <Text style={styles.selectedFileName}>{file.name}</Text>
+          <TouchableOpacity
+            onPress={() => setFile(null)} // Xóa tệp đã chọn
+            style={styles.removeFileButton}
+          >
+            <Text style={styles.removeFileButtonText}>Xóa</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <View style={styles.inputContainer}>
         <TextInput
           style={[styles.input, { height: Math.max(40, inputHeight) }]}
@@ -614,7 +662,7 @@ const styles = StyleSheet.create({
   },
   fileStatusContainer: {
     position: "absolute",
-    bottom: 20,
+    top: "50%",
     left: 0,
     right: 0,
     backgroundColor: "rgba(0, 0, 0, 0.7)",

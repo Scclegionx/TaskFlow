@@ -1,77 +1,51 @@
-// import React, { useEffect, useState } from "react";
-// import { StyleSheet, View, Alert } from "react-native";
-// import { WebView } from "react-native-webview";
-// import { Camera } from "expo-camera";
-// import { Audio } from "expo-av";
 
-// const MeetingScreen = () => {
-//   const [permissionsGranted, setPermissionsGranted] = useState(false);
-//   const meetingUrl = `https://meet.google.com/puh-fwvf-rbw`;
-
-//   const requestPermissions = async () => {
-//     const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();
-//     const { status: micStatus } = await Audio.requestPermissionsAsync();
-
-//     if (cameraStatus === "granted" && micStatus === "granted") {
-//       setPermissionsGranted(true);
-//       Alert.alert("Quyền truy cập camera và micro đã được cấp.");
-//     } else {
-//       Alert.alert("Quyền bị từ chối", "Ứng dụng cần quyền camera và micro để hoạt động.");
-//     }
-//   };
-
-//   useEffect(() => {
-//     requestPermissions();
-//   }, []);
-
-//   if (!permissionsGranted) {Alert.alert("Đang yêu cầu quyền truy cập camera và micro...")
-//     return (
-//       <View style={styles.container}>
-        
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <View style={styles.container}>
-//       <WebView
-//         source={{ uri: meetingUrl }}
-//         style={styles.webview}
-//         startInLoadingState={true}
-//         javaScriptEnabled={true}
-//         domStorageEnabled={true}
-//         mediaPlaybackRequiresUserAction={false}
-//         allowsInlineMediaPlayback={true}
-//         onError={(e) => console.error("WebView error: ", e.nativeEvent)}
-//         onHttpError={(e) => console.error("HTTP error: ", e.nativeEvent)}
-//       />
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#fff",
-//   },
-//   webview: {
-//     flex: 1,
-//   },
-// });
-
-// export default MeetingScreen;
 import React from 'react';
-import { View, Button, StyleSheet, Linking, Alert } from 'react-native';
-
+import { View, Button, StyleSheet, Linking, Alert, TouchableOpacity} from 'react-native';
+import { useLocalSearchParams } from 'expo-router'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { API_BASE_URL } from '@/constants/api';
+import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 const MeetingScreen = () => {
-  const meetingUrl = 'https://meet.jit.si/room-7f34aef9-3eec-4b24-9aee-65fddb49adf6';
-
+  const [meetingUrl, setMeetingUrl] = React.useState(''); // State để lưu URL cuộc họp
+  const {chatId,chatName} = useLocalSearchParams()// Nhận messageId từ route
+  const navigation = useNavigation();
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({
+        title: chatName,      
+      });
+    }, [navigation, chatName])
+  );
   const openMeeting = async () => {
-    const supported = await Linking.canOpenURL(meetingUrl);
-    if (supported) {
-      await Linking.openURL(meetingUrl);
-    } else {
-      Alert.alert("Không thể mở cuộc họp", "Thiết bị không hỗ trợ mở URL này.");
+    try {
+      const token = await AsyncStorage.getItem("token"); // Lấy token từ AsyncStorage
+      const response = await axios.post(
+        `${API_BASE_URL}/meetings/createOrJoin/${chatId}`, // Gọi API với chatId
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      const { meetingUrl } = response.data;
+      const configuredMeetingUrl = `${meetingUrl}?skipIntro=true&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.deeplinking.enabled=false`;
+  
+      setMeetingUrl(configuredMeetingUrl); // Lưu URL đã cấu hình
+      const supported = await Linking.canOpenURL(configuredMeetingUrl);
+  
+      if (supported) {
+        await Linking.openURL(configuredMeetingUrl); // Mở URL cuộc họp
+      } else {
+        Alert.alert("Không thể mở cuộc họp", "Thiết bị không hỗ trợ mở URL này.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo hoặc tham gia cuộc họp:", error);
+      Alert.alert("Lỗi", "Không thể tạo hoặc tham gia cuộc họp.");
     }
   };
 

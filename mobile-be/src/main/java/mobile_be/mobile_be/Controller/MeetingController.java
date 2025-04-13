@@ -18,12 +18,10 @@ import java.util.UUID;
 public class MeetingController {
 
     private final MeetingRepository meetingRepository;
-    private final UserRepository userRepository;
     private final ChatRepository chatRepository;
 
-    public MeetingController(MeetingRepository meetingRepository, UserRepository userRepository, ChatRepository chatRepository) {
+    public MeetingController(MeetingRepository meetingRepository, ChatRepository chatRepository) {
         this.meetingRepository = meetingRepository;
-        this.userRepository = userRepository;
         this.chatRepository = chatRepository;
     }
 

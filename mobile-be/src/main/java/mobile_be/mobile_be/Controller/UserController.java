@@ -279,6 +279,12 @@ public class UserController {
         return userService.deleteRating( ratingId);
     }
 
+    @GetMapping("/get-all-user")
+    public ResponseEntity<?> getAllUser() {
+        var result = userService.getAllUser();
+        return ResponseEntity.ok(result);
+    }
+
 }
 
 

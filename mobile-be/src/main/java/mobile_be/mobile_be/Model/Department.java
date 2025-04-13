@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class Department {
 
     private String description;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "leader_id")
     private User leader;
 
@@ -34,4 +35,6 @@ public class Department {
     private List<Team> teams = new ArrayList<>();
 
     private Integer status; // 0: inactive, 1: active
+
+    private LocalDateTime createdAt;
 }

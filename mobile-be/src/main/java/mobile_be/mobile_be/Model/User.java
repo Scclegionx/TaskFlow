@@ -43,4 +43,8 @@ public class User {
     @OneToMany(mappedBy = "user",fetch = FetchType.EAGER,  cascade = CascadeType.ALL)
     @JsonIgnore
     private List<TeamMember> teamMemberships = new ArrayList<>();
+
+    @OneToMany(mappedBy = "leader")
+    @JsonIgnore
+    private List<Department> departmentsLed = new ArrayList<>();
 }

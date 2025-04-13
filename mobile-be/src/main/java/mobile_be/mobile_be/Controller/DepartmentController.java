@@ -50,9 +50,10 @@ public class DepartmentController {
     }
 
     @GetMapping("/get-all-department")
-    public ResponseEntity<?> getDepartment( @RequestParam(value = "departmentId", required = false) Integer departmentId) {
+    public ResponseEntity<?> getDepartment( @RequestParam(value = "departmentId", required = false) Integer departmentId ,
+                                            @RequestParam(value = "textSearch", required = false) String textSearch) {
         try{
-            var result = departmentService.getAllDepartment(departmentId);
+            var result = departmentService.getAllDepartment(departmentId, textSearch);
             return ResponseEntity.ok(result);
         }catch (Exception e){
             return ResponseEntity.badRequest().body("Error getting department: " + e.getMessage());

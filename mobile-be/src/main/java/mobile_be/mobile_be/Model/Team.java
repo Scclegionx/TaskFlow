@@ -30,4 +30,6 @@ public class Team {
     private List<TeamMember> members = new ArrayList<>();
 
     private Integer status; // 0: inactive, 1: active
+
+    private LocalDateTime createdAt;
 }

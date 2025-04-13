@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Entity
 @Table(name = "team_member")
@@ -30,4 +32,8 @@ public class TeamMember {
     private Team team;
 
     private Integer role; // 0: member, 1: leader
+
+    private Integer status; // 0: inactive, 1: active
+
+    private LocalDateTime createdAt;
 }

@@ -1,6 +1,7 @@
 package mobile_be.mobile_be.Service;
 
 import lombok.extern.slf4j.Slf4j;
+import mobile_be.mobile_be.DTO.UserDTO;
 import mobile_be.mobile_be.DTO.response.ChamCongResponseDTO;
 import mobile_be.mobile_be.DTO.response.InfoUserResponseDTO;
 import mobile_be.mobile_be.DTO.response.RatingResponseDTO;
@@ -344,6 +345,17 @@ public class UserService {
         } catch (Exception e) {
             log.error("Error: " + e.getMessage());
             return ResponseEntity.badRequest().body("co loi trong qua trinh xoa du lieu");
+        }
+    }
+
+    public List<UserDTO> getAllUser(){
+        try {
+            List<User> userList = userRepository.findAll();
+            List<UserDTO> userDTOList = userList.stream().map(user -> new UserDTO(user)).collect(Collectors.toList());
+            return userDTOList;
+        } catch (Exception e) {
+            log.error("Error: " + e.getMessage());
+            return null;
         }
     }
 }

@@ -63,6 +63,12 @@ const DetailDepartmentScreen = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedLeader, setSelectedLeader] = useState<User | null>(null);
   const [isUserListVisible, setIsUserListVisible] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+const [editTeam, setEditTeam] = useState({
+  name: '',
+  description: '',
+});
 
   const colors = ["#ADDCE3", "#D1E7DD", "#FEE2E2", "#EDEBDE", "#FDE8C9"];
 
@@ -263,32 +269,197 @@ const DetailDepartmentScreen = () => {
     </Modal>
   );
 
+  const handleDeleteTeam = async (teamId: number) => {
+    Alert.alert(
+      "Xác nhận xóa",
+      "Bạn có chắc chắn muốn xóa tổ này?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel"
+        },
+        { 
+          text: "Xóa", 
+          onPress: async () => {
+            try {
+              const authToken = await AsyncStorage.getItem("token");
+              const response = await fetch(
+                `${API_BASE_URL}/department/delete-team?teamId=${teamId}`,
+                {
+                  method: 'DELETE',
+                  headers: {
+                    Authorization: `Bearer ${authToken}`,
+                  },
+                }
+              );
+  
+              if (response.ok) {
+                Alert.alert('Thành công', 'Xóa tổ thành công');
+                fetchDepartment();
+              } else {
+                const errorData = await response.json();
+                Alert.alert('Lỗi', errorData.message || 'Xóa tổ thất bại');
+              }
+            } catch (error) {
+              console.error('Lỗi khi xóa tổ:', error);
+              Alert.alert('Lỗi', 'Không thể kết nối đến server');
+            }
+          } 
+        }
+      ]
+    );
+  };
+
+
+  const handleOpenEditModal = (team: Team) => {
+    setSelectedTeam(team);
+    setEditTeam({
+      name: team.name,
+      description: team.description || '',
+    });
+    fetchUsers();
+    setIsEditModalVisible(true);
+  };
+
+  const handleUpdateTeam = async () => {
+    console.log('Selected team:', editTeam.name  , 'led  :', selectedLeader);
+    if (!editTeam.name || !selectedLeader) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+  
+    try {
+      setIsCreating(true);
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/department/update-team`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          ...editTeam,
+          id: selectedTeam?.id.toString(),
+          departmentId: departmentId?.toString()
+        }),
+      });
+  
+      if (response.ok) {
+        Alert.alert('Thành công', 'Cập nhật tổ thành công');
+        setIsEditModalVisible(false);
+        fetchDepartment();
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Lỗi', errorData.message || 'Cập nhật thất bại');
+      }
+    } catch (error) {
+      console.error('Lỗi khi cập nhật tổ:', error);
+      Alert.alert('Lỗi', 'Không thể kết nối đến server');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const renderEditTeamModal = () => (
+    <Modal
+      visible={isEditModalVisible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setIsEditModalVisible(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Chỉnh sửa tổ</Text>
+  
+          <TextInput
+            style={styles.input}
+            placeholder="Tên tổ *"
+            value={editTeam.name}
+            onChangeText={(text) => setEditTeam({ ...editTeam, name: text })}
+          />
+  
+          <TextInput
+            style={styles.input}
+            placeholder="Mô tả"
+            value={editTeam.description}
+            onChangeText={(text) => setEditTeam({ ...editTeam, description: text })}
+            multiline
+          />
+  
+          {/* Phần chọn trưởng tổ giống modal tạo mới */}
+  
+          <View style={styles.modalButtonContainer}>
+            <Pressable
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => setIsEditModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Hủy</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.modalButton, styles.createButton]}
+              onPress={handleUpdateTeam}
+              disabled={isCreating}
+            >
+              {isCreating ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.buttonText}>Cập nhật</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+
 
   const renderTeamItem = ({ item, index }: { item: Team, index: number }) => (
     <TouchableOpacity
       style={[styles.teamItem, { backgroundColor: colors[index % colors.length] }]}
-
-      // onPress={() => router.push(`/teamDetail/${item.id}`)}
       onPress={() => router.push({ pathname: "/Department/detailTeam", params: { teamId: item.id } })}
     >
       <View style={styles.teamHeader}>
         <Text style={styles.teamName}>{item.name}</Text>
-        <Icon name="chevron-right" size={16} color="#666" />
+        
       </View>
-
+  
       {item.description && (
-        <Text style={styles.teamDescription}>{item.description}</Text>
+        <Text style={styles.teamDescription}>Mô tả : {item.description}</Text>
       )}
-
-      <View style={styles.memberInfo}>
-        <Icon name="users" size={14} color="#666" />
-        <Text style={styles.memberCount}>
-          {item.members.length} thành viên
-        </Text>
+  
+      <View style={styles.footerContainer}>
+        <View style={styles.memberInfo}>
+          <Icon name="users" size={14} color="#666" />
+          <Text style={styles.memberCount}>
+            {item.members.length} thành viên
+          </Text>
+        </View>
+  
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              handleOpenEditModal(item);
+            }}
+            style={styles.actionButton}
+          >
+            <Icon name="edit" size={16} color="#666" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              handleDeleteTeam(item.id);
+            }}
+            style={styles.actionButton}
+          >
+            <Icon name="trash" size={16} color="#dc3545" />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -347,6 +518,7 @@ const DetailDepartmentScreen = () => {
         />
       </View>
       {renderCreateTeamModal()}
+      {renderEditTeamModal()}
     </View>
   );
 };
@@ -358,6 +530,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
 
+  teamItem: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+    minHeight: 120, // Đảm bảo chiều cao tối thiểu
+    justifyContent: 'space-between', // Căn nội dung từ trên xuống dưới
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: 8,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  actionButton: {
+    padding: 4,
+  },
+  memberInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   centeredRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -398,6 +601,15 @@ const styles = StyleSheet.create({
   selectorPlaceholder: {
     color: '#888',
   },
+
+  teamActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  // actionButton: {
+  //   padding: 4,
+  // },
   userListContainer: {
     maxHeight: 200,
     marginBottom: 16,
@@ -487,17 +699,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: '#333',
   },
-  teamItem: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
+
   teamHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -505,23 +707,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   teamName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: '#3B82F6',
   },
   teamDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
     marginBottom: 8,
   },
-  memberInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-  },
+
   memberCount: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
   },
   emptyText: {

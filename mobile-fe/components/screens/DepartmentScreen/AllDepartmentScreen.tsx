@@ -43,6 +43,10 @@ const AllDepartmentScreen = () => {
   const [selectedLeader, setSelectedLeader] = useState<User | null>(null);
   const [isUserListVisible, setIsUserListVisible] = useState(false);
 
+  const [editModalVisible, setEditModalVisible] = useState(false);
+const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+const [deleteLoading, setDeleteLoading] = useState(false);
+
 
   const colors = ["#ADDCE3", "#D1E7DD", "#FEE2E2", "#EDEBDE", "#FDE8C9"];
 
@@ -245,6 +249,80 @@ const AllDepartmentScreen = () => {
     </Modal>
   );
 
+  const renderEditModal = () => (
+    <Modal
+      visible={editModalVisible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setEditModalVisible(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Chỉnh sửa phòng ban</Text>
+  
+          {/* Các trường input giống modal tạo mới */}
+          <TextInput
+            style={styles.input}
+            placeholder="Tên phòng ban"
+            value={newDepartment.name}
+            onChangeText={(text) => setNewDepartment({ ...newDepartment, name: text })}
+          />
+  
+          <TextInput
+            style={styles.input}
+            placeholder="Mô tả"
+            value={newDepartment.description}
+            onChangeText={(text) => setNewDepartment({ ...newDepartment, description: text })}
+          />
+  
+          {/* Phần chọn leader giống modal tạo mới */}
+          <TouchableOpacity 
+            style={styles.leaderSelector}
+            onPress={() => setIsUserListVisible(!isUserListVisible)}
+          >
+            {selectedLeader ? (
+              <View style={styles.selectedLeader}>
+                <Image
+                  source={{ uri: selectedLeader.avatar || "https://via.placeholder.com/50" }}
+                  style={styles.selectedAvatar}
+                />
+                <View>
+                  <Text style={styles.leaderName}>{selectedLeader.name}</Text>
+                  <Text style={styles.leaderEmail}>{selectedLeader.email}</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.selectorPlaceholder}>Chọn trưởng phòng</Text>
+            )}
+          </TouchableOpacity>
+  
+          {isUserListVisible && (
+            <View style={styles.userListContainer}>
+              <FlatList
+                data={users}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderUserItem}
+                contentContainerStyle={styles.userListContent}
+                keyboardShouldPersistTaps="handled"
+              />
+            </View>
+          )}
+  
+          <View style={styles.modalButtonContainer}>
+            <Pressable style={[styles.modalButton, styles.cancelButton]} onPress={() => setEditModalVisible(false)}>
+              <Text style={styles.buttonText}>Hủy</Text>
+            </Pressable>
+            <Pressable 
+              style={[styles.modalButton, styles.createButton]} 
+              onPress={handleUpdateDepartment}
+            >
+              <Text style={styles.buttonText}>Lưu thay đổi</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const renderDepartmentItem = ({ item, index }: { item: Department; index: number }) => (
     <TouchableOpacity
@@ -255,18 +333,127 @@ const AllDepartmentScreen = () => {
       <View style={styles.departmentInfo}>
         <Text style={styles.departmentName}>Phòng : {item.name}</Text>
         <Text style={styles.departmentDescription}>Mô tả : {item.description}</Text>
+        
+
         <View style={styles.leaderContainer}>
+          
+          <Text style={styles.leaderName}>Trưởng phòng: {item.leader.name}   </Text>
           <Image
             source={{ uri: item.leader.avatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s" }}
             style={styles.avatar}
           />
-          <Text style={styles.leaderName}>Trưởng phòng: {item.leader.name}</Text>
         
         </View>
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity onPress={(e) => {
+            e.stopPropagation();
+            openEditModal(item);
+          }}>
+            <Icon name="edit" size={20} color="#666" style={styles.iconButton} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={(e) => {
+              e.stopPropagation();
+              Alert.alert(
+                "Xác nhận",
+                "Bạn có chắc chắn muốn xóa phòng ban này?",
+                [
+                  { text: "Hủy", style: "cancel" },
+                  { text: "Xóa", onPress: () => handleDeleteDepartment(item.id) }
+                ]
+              );
+            }}
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? (
+              <ActivityIndicator size="small" color="#ff4444" />
+            ) : (
+              <Icon name="trash" size={20} color="#ff4444" style={styles.iconButton} />
+            )}
+          </TouchableOpacity>
+        </View>
+        
       </View>
     </TouchableOpacity>
   );
 
+
+  const handleDeleteDepartment = async (id: number) => {
+    try {
+      setDeleteLoading(true);
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/department/delete-department?departmentId=${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+  
+      if (response.ok) {
+        Alert.alert("Thành công", "Xóa phòng ban thành công");
+        fetchDepartments();
+      } else {
+        throw new Error("Xóa phòng ban thất bại");
+      }
+    } catch (error) {
+      console.error("Error deleting department:", error);
+      Alert.alert("Lỗi", "Không thể xóa phòng ban");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+  
+  // Thêm hàm mở modal chỉnh sửa
+  const openEditModal = (department: Department) => {
+    setSelectedDepartment(department);
+    setNewDepartment({
+      name: department.name,
+      description: department.description,
+      leaderId: department.leader.id.toString()
+    });
+    setSelectedLeader(department.leader);
+    setEditModalVisible(true);
+    fetchUsers();
+  };
+  
+  // Thêm hàm cập nhật phòng ban
+  const handleUpdateDepartment = async () => {
+    if (!selectedDepartment || !newDepartment.name || !newDepartment.leaderId) {
+      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+  
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/department/update-department`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          ...newDepartment,
+          id: selectedDepartment.id.toString()
+        }),
+      });
+  
+      if (response.ok) {
+        Alert.alert("Thành công", "Cập nhật phòng ban thành công");
+        setEditModalVisible(false);
+        fetchDepartments();
+      } else {
+        const errorData = await response.json();
+        Alert.alert("Lỗi", errorData.message || "Cập nhật thất bại");
+      }
+    } catch (error) {
+      console.error("Error updating department:", error);
+      Alert.alert("Lỗi", "Không thể kết nối đến server");
+    }
+  };
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -306,6 +493,7 @@ const AllDepartmentScreen = () => {
         </>
       )}
       {renderCreateModal()}
+      {renderEditModal()}
     </View>
   );
 };
@@ -315,6 +503,19 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#F8F9FA",
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconButton: {
+    padding: 4,
   },
   searchContainer: {
     flexDirection: "row",

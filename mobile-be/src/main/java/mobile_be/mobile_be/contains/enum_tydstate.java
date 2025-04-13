@@ -6,7 +6,8 @@ public enum enum_tydstate {
     DiMuon(1),
     VeSom(2),
     DiMuonVeSom(3),
-    CoPhep(4); /// nghi phep
+    CoPhep(4), /// nghi phep
+    ChuaRaVe(5);
 
     private final int value;
 

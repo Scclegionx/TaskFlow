@@ -152,7 +152,7 @@ const ChamCongScreen = () => {
       });
 
       // Tạo file path
-      const fileUri = FileSystem.documentDirectory + "data.xlsx";
+      const fileUri = FileSystem.documentDirectory + "ChamCong.xlsx";
 
       // Ghi file
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {
@@ -279,6 +279,8 @@ const ChamCongScreen = () => {
         return "Đi muộn về sớm ";
       case 4:
         return "Nghỉ phép ";
+      case 5:
+        return "Chưa ra về";
       default:
         return "Không xác định ";
     }
@@ -297,6 +299,8 @@ const ChamCongScreen = () => {
         return "red"; // Đi muộn + về sớm
       case 4:
         return "blue"; // Nghỉ phép
+      case 5:
+        return "blue"; // chua về
       default:
         return "black"; // Mặc định
     }
@@ -453,7 +457,7 @@ const ChamCongScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.popupButton}
+                  style={styles.popupRaVeButton}
                   onPress={handleCheckOut}
                   disabled={actionLoading}
                 >
@@ -579,7 +583,15 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   popupButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#219653',
+    padding: 10,
+    borderRadius: 6,
+    marginVertical: 4,
+    minWidth: 150,
+    alignItems: 'center',
+  },
+  popupRaVeButton: {
+    backgroundColor: '#EB5757',
     padding: 10,
     borderRadius: 6,
     marginVertical: 4,

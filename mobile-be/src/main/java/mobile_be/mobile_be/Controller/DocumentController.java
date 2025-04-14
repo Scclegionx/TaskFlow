@@ -243,10 +243,7 @@ public class DocumentController {
     @GetMapping("/task/{taskId}")
     public ResponseEntity<List<Document>> getDocumentsByTaskId(@PathVariable("taskId") Integer taskId) {
         List<Document> documents = documentRepository.findByListTaskDocument_Id(taskId);
-        if (documents.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-        return ResponseEntity.ok(documents);
+        return ResponseEntity.ok(documents.isEmpty() ? Collections.emptyList() : documents);
     }
 
     @Transactional

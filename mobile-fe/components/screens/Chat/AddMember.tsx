@@ -81,7 +81,11 @@ const AddMemberModal = ({ visible, onClose, onAddMember, chatDetail }) => {
               renderItem={({ item }) => (
                 <View style={styles.memberRow}>
                   <Image
-                    source={{ uri: item.avatar || "https://via.placeholder.com/40" }}
+                    source={
+                      item.avatar
+                        ? { uri: item.avatar } // Nếu avatar tồn tại, sử dụng URL
+                        : require("@/assets/images/default-avatar.jpg") // Ảnh mặc định
+                    }
                     style={styles.avatar}
                   />
                   <Text style={styles.memberName}>{item.name}</Text>

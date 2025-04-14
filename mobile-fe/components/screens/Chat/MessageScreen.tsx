@@ -214,11 +214,12 @@ const MessagesScreen = () => {
                     .join(", ")
                 : "Người dùng";
 
-                const displayAvatar = item.isGroup
+              const displayAvatar = item.isGroup
                 ? item.avatarUrl
                 : item.users && Array.isArray(item.users) // Kiểm tra nếu `item.users` tồn tại và là mảng
-                  ? item.users.find((user) => user.id !== parseInt(userId))?.avatar
-                  : item.avatarUrl;
+                ? item.users.find((user) => user.id !== parseInt(userId))
+                    ?.avatar
+                : item.avatarUrl;
 
               console.log("Display Avatar:", displayAvatar);
 
@@ -240,7 +241,11 @@ const MessagesScreen = () => {
                     }}
                   >
                     <Image
-                      source={{ uri: displayAvatar }}
+                      source={
+                        displayAvatar
+                          ? { uri: displayAvatar } // Nếu `displayAvatar` tồn tại, sử dụng URL
+                          : require("../../../assets/images/default-avatar.jpg") // Ảnh mặc định
+                      }
                       style={styles.avatar}
                     />
                     <View style={{ flex: 1 }}>

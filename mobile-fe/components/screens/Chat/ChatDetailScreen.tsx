@@ -476,51 +476,50 @@ const ChatDetailScreen = () => {
       </View>
     );
   }
-//   const handleFilePress = (fileUrl: string) => {
-//     Linking.openURL(fileUrl).catch((err) =>
-//       console.error("Không thể mở file:", err)
-//     );
-//   };
+  //   const handleFilePress = (fileUrl: string) => {
+  //     Linking.openURL(fileUrl).catch((err) =>
+  //       console.error("Không thể mở file:", err)
+  //     );
+  //   };
 
+  const handleFilePress = async (fileUrl: string) => {
+    try {
+      setFileStatus("Đang tải..."); // Cập nhật trạng thái
+      const fileName = fileUrl.split("/").pop(); // Lấy tên file từ URL
+      const localUri = `${FileSystem.documentDirectory}${fileName}`;
 
-const handleFilePress = async (fileUrl: string) => {
-  try {
-    setFileStatus("Đang tải..."); // Cập nhật trạng thái
-    const fileName = fileUrl.split("/").pop(); // Lấy tên file từ URL
-    const localUri = `${FileSystem.documentDirectory}${fileName}`;
+      // Tải file về thiết bị
+      const downloadResumable = FileSystem.createDownloadResumable(
+        fileUrl,
+        localUri
+      );
 
-    // Tải file về thiết bị
-    const downloadResumable = FileSystem.createDownloadResumable(
-      fileUrl,
-      localUri
-    );
+      const { uri } = await downloadResumable.downloadAsync();
+      console.log("File đã được tải về:", uri);
 
-    const { uri } = await downloadResumable.downloadAsync();
-    console.log("File đã được tải về:", uri);
+      setFileStatus("Đã tải xong"); // Cập nhật trạng thái
 
-    setFileStatus("Đã tải xong"); // Cập nhật trạng thái
-
-    // Kiểm tra xem thiết bị có hỗ trợ mở file không
-    if (await Sharing.isAvailableAsync()) {
-      setFileStatus("Đang chia sẻ..."); // Cập nhật trạng thái
-      await Sharing.shareAsync(uri);
-      setFileStatus("Đã chia sẻ xong"); // Cập nhật trạng thái
-    } else {
-      setFileStatus("Đang mở file..."); // Cập nhật trạng thái
-      IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
-        data: uri,
-        flags: 1,
-      });
-      setFileStatus("Đã mở file"); // Cập nhật trạng thái
+      // Kiểm tra xem thiết bị có hỗ trợ mở file không
+      if (await Sharing.isAvailableAsync()) {
+        setFileStatus("Đang chia sẻ..."); // Cập nhật trạng thái
+        await Sharing.shareAsync(uri);
+        setFileStatus("Đã chia sẻ xong"); // Cập nhật trạng thái
+      } else {
+        setFileStatus("Đang mở file..."); // Cập nhật trạng thái
+        IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+          data: uri,
+          flags: 1,
+        });
+        setFileStatus("Đã mở file"); // Cập nhật trạng thái
+      }
+    } catch (err) {
+      console.error("Không thể tải hoặc mở file:", err);
+      Alert.alert("Lỗi", "Không thể tải hoặc mở file. Vui lòng thử lại.");
+      setFileStatus("Lỗi khi tải file"); // Cập nhật trạng thái
+    } finally {
+      setTimeout(() => setFileStatus(null), 3000); // Ẩn trạng thái sau 3 giây
     }
-  } catch (err) {
-    console.error("Không thể tải hoặc mở file:", err);
-    Alert.alert("Lỗi", "Không thể tải hoặc mở file. Vui lòng thử lại.");
-    setFileStatus("Lỗi khi tải file"); // Cập nhật trạng thái
-  } finally {
-    setTimeout(() => setFileStatus(null), 3000); // Ẩn trạng thái sau 3 giây
-  }
-};
+  };
   const filteredMembers = chatDetail.users.filter((user: any) =>
     user.name.toLowerCase().includes(searchText.toLowerCase())
   );
@@ -533,8 +532,8 @@ const handleFilePress = async (fileUrl: string) => {
     : null;
 
   const avatarUrl = isGroup
-    ? chatDetail.avatarUrl || "https://via.placeholder.com/100"
-    : otherUser?.avatar || "https://via.placeholder.com/100";
+    ? chatDetail.avatarUrl || require("@/assets/images/default-avatar.jpg")
+    : otherUser?.avatar || require("@/assets/images/default-avatar.jpg");
 
   return (
     <ScrollView style={styles.container}>
@@ -556,7 +555,14 @@ const handleFilePress = async (fileUrl: string) => {
         </Modal>
       )}
       <TouchableOpacity onPress={handleAvatarPress}>
-        <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+        <Image
+          source={
+            avatarUrl == ""
+              ? { uri: avatarUrl } // Nếu avatar tồn tại, sử dụng URL
+              : require("@/assets/images/default-avatar.jpg") // Ảnh mặc định
+          }
+          style={styles.avatar}
+        />
       </TouchableOpacity>
 
       <Text style={styles.name}>{chatName}</Text>
@@ -619,9 +625,11 @@ const handleFilePress = async (fileUrl: string) => {
                   }}
                 >
                   <Image
-                    source={{
-                      uri: user.avatar || "https://via.placeholder.com/100",
-                    }}
+                    source={
+                      user.avatar
+                        ? { uri: user.avatar } // Nếu avatar tồn tại, sử dụng URL
+                        : require("@/assets/images/default-avatar.jpg") // Ảnh mặc định
+                    }
                     style={styles.memberAvatar}
                   />
                   <Text style={styles.memberName}>
@@ -654,11 +662,11 @@ const handleFilePress = async (fileUrl: string) => {
           )}
         </View>
       )}
-    {fileStatus && (
-  <View style={styles.fileStatusContainer}>
-    <Text style={styles.fileStatusText}>{fileStatus}</Text>
-  </View>
-)}
+      {fileStatus && (
+        <View style={styles.fileStatusContainer}>
+          <Text style={styles.fileStatusText}>{fileStatus}</Text>
+        </View>
+      )}
       <View style={styles.tabSection}>
         <View style={styles.tabRow}>
           {["image", "video", "pdf", "raw"].map((type) => (

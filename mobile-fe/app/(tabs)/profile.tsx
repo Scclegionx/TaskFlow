@@ -110,12 +110,12 @@ const Profile = () => {
   return (
     <View style={styles.profileContainer}>
       <TouchableOpacity onPress={pickImage} style={styles.profileCard}>
-        {user.avatar ? (
+        {user.avatar=="" ? (
           <Image source={{ uri: user.avatar }} style={styles.profileAvatar} />
         ) : (
-          <View style={styles.profileAvatarPlaceholder}>
-            <Text>🖼️</Text>
-          </View>
+          <Image
+            source={require("@/assets/images/default-avatar.jpg")} style={styles.profileAvatar}/>
+             // Đường dẫn đến ảnh mặc định>
         )}
       </TouchableOpacity>
 

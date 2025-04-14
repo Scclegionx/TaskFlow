@@ -24,7 +24,7 @@ const CreateGroupScreen = () => {
   const [selectedUsers, setSelectedUsers] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-    const navigation = useNavigation();
+  const navigation = useNavigation();
 
   // ✅ Gọi API lấy danh sách bạn bè
   useEffect(() => {
@@ -106,8 +106,11 @@ const CreateGroupScreen = () => {
       );
       console.log("response", response.data);
       Alert.alert("Thành công", "Nhóm đã được tạo!");
-      router.push({ pathname: `/chat/${response.data.id}`, params: { chatName: response.data.chatName } });
- // Chuyển đến nhóm chat
+      router.push({
+        pathname: `/chat/${response.data.id}`,
+        params: { chatName: response.data.chatName },
+      });
+      // Chuyển đến nhóm chat
     } catch (error) {
       console.error("Lỗi khi tạo nhóm:", error);
       Alert.alert("Lỗi", "Không thể tạo nhóm");
@@ -155,9 +158,11 @@ const CreateGroupScreen = () => {
               onPress={() => toggleSelection(item.id)}
             >
               <Image
-                source={{
-                  uri: item.avatar || "https://via.placeholder.com/50",
-                }}
+                source={
+                  item.avatar
+                    ? { uri: item.avatar } // Nếu avatar tồn tại, sử dụng URL
+                    : require("@/assets/images/default-avatar.jpg") // Ảnh mặc định
+                }
                 style={styles.avatar}
               />
               <View style={styles.friendInfo}>

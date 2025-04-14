@@ -390,7 +390,14 @@ const ChatScreen = () => {
         {!isCurrentUser && (
           <View style={styles.avatarContainer}>
             {!isSameSenderAsPrevious && (
-              <Image source={{ uri: item.user.avatar }} style={styles.avatar} />
+              <Image
+              source={
+                item.user.avatar
+                  ? { uri: item.user.avatar } // Nếu avatar tồn tại, sử dụng URL
+                  : require("@/assets/images/default-avatar.jpg") // Ảnh mặc định
+              }
+              style={styles.avatar}
+            />
             )}
           </View>
         )}

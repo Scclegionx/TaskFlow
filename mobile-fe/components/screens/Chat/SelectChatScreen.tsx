@@ -7,18 +7,28 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Alert
+  Alert,
+  Image,
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@/constants/api";
 import { useLocalSearchParams } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { useLayoutEffect } from "react";
+
 const SelectChatScreen = () => {
-  const { messageId } = useLocalSearchParams()// Nhận messageId từ route
+  const { messageId } = useLocalSearchParams(); // Nhận messageId từ route
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const navigation = useNavigation();
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Chọn nhóm chat", // Tiêu đề của header
+    });
+  }, [navigation]);
   useEffect(() => {
     fetchChats();
   }, []);
@@ -28,24 +38,35 @@ const SelectChatScreen = () => {
     try {
       const token = await AsyncStorage.getItem("token");
       const userId = await AsyncStorage.getItem("userId");
-  
+
       const response = await axios.get(`${API_BASE_URL}/chat/list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       const formattedChats = response.data
         .filter((chat) => !chat.deletedForUsers.includes(parseInt(userId)))
-        .map((chat) => ({
-          ...chat,
-          chatName: chat.chatName || "Không có tên", // Gán giá trị mặc định nếu `chatName` không tồn tại
-        }));
-  
+        .map((chat) => {
+          const otherUser =
+            !chat.isGroup &&
+            chat.users.find((user) => user.id !== parseInt(userId));
+
+          return {
+            ...chat,
+            chatName: chat.isGroup
+              ? chat.chatName || "Không có tên"
+              : otherUser?.name || "Không có tên",
+            avatarUrl: chat.isGroup
+              ? chat.avatarUrl || null
+              : otherUser?.avatar || null,
+          };
+        });
+
       formattedChats.sort((a, b) => {
         const timeA = new Date(a.lastMessageTime);
         const timeB = new Date(b.lastMessageTime);
         return timeB - timeA; // Sắp xếp theo thứ tự giảm dần
       });
-  
+
       console.log("Danh sách chat:", formattedChats);
       setChats(formattedChats);
     } catch (error) {
@@ -63,12 +84,13 @@ const SelectChatScreen = () => {
         `${API_BASE_URL}/messages/${messageId}/share`,
         targetChatId,
         {
-          headers: { Authorization: `Bearer ${token}` ,"Content-Type": "application/json" },
-          
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       Alert.alert("Thành công", "Tin nhắn đã được chia sẻ thành công");
-      
     } catch (error) {
       console.error("Lỗi khi chia sẻ tin nhắn:", error);
       Alert.alert("Lỗi", "Không thể chia sẻ tin nhắn");
@@ -100,7 +122,17 @@ const SelectChatScreen = () => {
               style={styles.chatItem}
               onPress={() => handleShareMessage(item.id)}
             >
-              <Text style={styles.chatName}>{item.chatName}</Text>
+              <View style={styles.chatRow}>
+                <Image
+                  source={
+                    item.avatarUrl
+                      ? { uri: item.avatarUrl }
+                      : require("@/assets/images/default-avatar.jpg")
+                  }
+                  style={styles.chatAvatar}
+                />
+                <Text style={styles.chatName}>{item.chatName}</Text>
+              </View>
             </TouchableOpacity>
           )}
         />
@@ -120,10 +152,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   chatItem: {
-    padding: 15,
+    padding: 8,
     backgroundColor: "#F9F9F9",
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 5,
   },
-  chatName: { fontSize: 16, fontWeight: "bold" },
+  chatRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  chatAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: "#ccc", // Màu nền nếu ảnh không tải được
+  },
+  chatName: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });

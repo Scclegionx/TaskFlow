@@ -8,7 +8,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { searchProjects } from "@/hooks/useProjectApi";
 import { searchSchedules } from "@/hooks/useScheduleApi";
-
+import axios from "axios";
+import { API_BASE_URL } from "@/constants/api";
 interface User {
     name: string;
     email: string;
@@ -28,42 +29,101 @@ const Header = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [chats, setChats] = useState<SearchResult[]>([]);
+  const [filteredChats, setFilteredChats] = useState<SearchResult[]>([]);
 
-    const handleSearch = async (text: string) => {
-        setSearchQuery(text);
-        if (!text.trim()) {
-            setSearchResults([]);
-            return;
-        }
 
-        setIsSearching(true);
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchChats = async () => {
         try {
-            let results: SearchResult[] = [];
-            if (pathname === '/project') {
-                results = await searchProjects(text);
-            } else if (pathname === '/calendar') {
-                results = await searchSchedules(text);
-            }
-            setSearchResults(results);
+          const token = await AsyncStorage.getItem("token");
+          const userId = await AsyncStorage.getItem("userId");
+  
+          const response = await axios.get(`${API_BASE_URL}/chat/list`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+  
+          const formattedChats = response.data.map((chat) => {
+            const otherUser = !chat.isGroup
+              ? chat.users.find((user) => user.id !== parseInt(userId))
+              : null;
+  
+            return {
+              id: chat.id,
+              name: chat.isGroup ? chat.chatName : otherUser?.name || "Không có tên",
+              avatarUrl: chat.isGroup ? chat.avatarUrl : otherUser?.avatar || null,
+            };
+          });
+  
+          setChats(formattedChats);
         } catch (error) {
-            console.error('Lỗi tìm kiếm:', error);
-        } finally {
-            setIsSearching(false);
+          console.error("Lỗi khi tải danh sách chat:", error);
         }
-    };
+      };
+  
+      fetchChats();
+    }, [])
+  );
+
+
+
+
+  
+
+  const handleSearch = async (text: string) => {
+    setSearchQuery(text);
+  
+    if (!text.trim()) {
+      setSearchResults([]);
+      setFilteredChats([]);
+      return;
+    }
+  
+    setIsSearching(true);
+  
+    try {
+      let results: SearchResult[] = [];
+  
+      if (pathname === '/project') {
+        results = await searchProjects(text);
+      } else if (pathname === '/calendar') {
+        results = await searchSchedules(text);
+      } else if (pathname === '/message') {
+        const filtered = chats.filter((chat) =>
+          chat.name?.toLowerCase().includes(text.toLowerCase())
+        );
+        setFilteredChats(filtered);
+        return; // Không cần xử lý thêm nếu đang tìm kiếm chat
+      }
+  
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Lỗi tìm kiếm:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
     const handleResultPress = (result: SearchResult) => {
         if (pathname === '/project') {
-            router.push({ 
-                pathname: "/Project/projectdetail", 
-                params: { project: JSON.stringify(result) } 
-            });
+          router.push({
+            pathname: "/Project/projectdetail",
+            params: { project: JSON.stringify(result) },
+          });
         } else if (pathname === '/calendar') {
-            router.push(`/Schedule/detailSchedule?id=${result.id}`);
+          router.push(`/Schedule/detailSchedule?id=${result.id}`);
+        } else if (pathname === '/message') {
+          router.push({
+            pathname: `/chat/${result.id}`,
+            params: { chatName: result.name },
+          });
         }
+      
         setSearchQuery('');
         setSearchResults([]);
-    };
+        setFilteredChats([]);
+      };
 
     useFocusEffect(
         React.useCallback(() => {
@@ -88,36 +148,39 @@ const Header = () => {
     const getSearchPlaceholder = () => {
         if (pathname === '/project') return "Tìm kiếm dự án...";
         if (pathname === '/calendar') return "Tìm kiếm lịch trình...";
+        if (pathname === '/message') return "Tìm kiếm nhóm chat...";
         return "Tìm kiếm...";
     };
 
     const renderSearchResult = (item: SearchResult) => {
-        const isProject = pathname === '/project';
-        const icon = isProject ? 'folder-outline' : 'calendar-outline';
-        const subtitle = isProject ? 'Dự án' : 'Lịch trình';
-        
+        let icon = 'folder-outline';
+        let subtitle = 'Dự án';
+      
+        if (pathname === '/calendar') {
+          icon = 'calendar-outline';
+          subtitle = 'Lịch trình';
+        } else if (pathname === '/message') {
+          icon = 'chatbubble-outline';
+          subtitle = 'Chat';
+        }
+      
         return (
-            <TouchableOpacity 
-                style={styles.resultItem}
-                onPress={() => handleResultPress(item)}
-            >
-                <View style={styles.resultContent}>
-                    <View style={styles.resultIconContainer}>
-                        <Ionicons name={icon} size={20} color="#6B7280" />
-                    </View>
-                    <View style={styles.resultTextContainer}>
-                        <Text style={styles.resultTitle}>
-                            {item.name || item.title}
-                        </Text>
-                        <Text style={styles.resultSubtitle}>
-                            {subtitle}
-                        </Text>
-                    </View>
-                </View>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.resultItem}
+            onPress={() => handleResultPress(item)}
+          >
+            <View style={styles.resultContent}>
+              <View style={styles.resultIconContainer}>
+                <Ionicons name={icon} size={20} color="#6B7280" />
+              </View>
+              <View style={styles.resultTextContainer}>
+                <Text style={styles.resultTitle}>{item.name || item.title}</Text>
+                <Text style={styles.resultSubtitle}>{subtitle}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
         );
-    };
-
+      };
     return (
         <LinearGradient
             colors={['#3B82F6', '#2563EB']}
@@ -158,30 +221,33 @@ const Header = () => {
                 </View>
                 
                 {/* Search Results */}
-                {searchResults.length > 0 && (
-                    <View style={styles.resultsContainer}>
-                        <FlatList
-                            data={searchResults}
-                            keyExtractor={(item) => item.id.toString()}
-                            renderItem={({ item }) => renderSearchResult(item)}
-                            style={styles.resultsList}
-                            ListHeaderComponent={() => (
-                                <View style={styles.resultsHeader}>
-                                    <Text style={styles.resultsHeaderText}>
-                                        {pathname === '/project' ? 'Dự án' : 'Lịch trình'} tìm thấy
-                                    </Text>
-                                </View>
-                            )}
-                            ListFooterComponent={() => (
-                                <View style={styles.resultsFooter}>
-                                    <Text style={styles.resultsFooterText}>
-                                        Nhấn để xem chi tiết
-                                    </Text>
-                                </View>
-                            )}
-                        />
-                    </View>
-                )}
+                {(searchResults.length > 0 || filteredChats.length > 0) && (
+  <View style={styles.resultsContainer}>
+    <FlatList
+      data={pathname === '/message' ? filteredChats : searchResults}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={({ item }) => renderSearchResult(item)}
+      style={styles.resultsList}
+      ListHeaderComponent={() => (
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsHeaderText}>
+            {pathname === '/project'
+              ? 'Dự án tìm thấy'
+              : pathname === '/calendar'
+              ? 'Lịch trình tìm thấy'
+              : 'Chat tìm thấy'}
+          </Text>
+        </View>
+      )}
+      ListFooterComponent={() => (
+        <View style={styles.resultsFooter}>
+          <Text style={styles.resultsFooterText}>Nhấn để xem chi tiết</Text>
+        </View>
+      )}
+    />
+  </View>
+)}
+                
             </View>
         </LinearGradient>
     );

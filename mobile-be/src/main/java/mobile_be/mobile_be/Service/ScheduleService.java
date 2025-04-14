@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ScheduleService {
@@ -67,6 +68,16 @@ public class ScheduleService {
 
     public Optional<Schedule> getScheduleById(Long id) {
         return scheduleRepository.findById(id);
+    }
+
+    public List<Map<String, Object>> searchSchedules(String query, Integer userId) {
+        List<Schedule> schedules = scheduleRepository.searchSchedules(query, userId);
+        return schedules.stream().map(schedule -> {
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", schedule.getId());
+            result.put("title", schedule.getTitle());
+            return result;
+        }).collect(Collectors.toList());
     }
 
 }

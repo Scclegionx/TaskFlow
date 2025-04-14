@@ -167,4 +167,9 @@ public class ProjectController {
                     .body(e.getMessage());
         }
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchProjects(@RequestParam String query) {
+        return ResponseEntity.ok(projectService.searchProjects(query));
+    }
 }

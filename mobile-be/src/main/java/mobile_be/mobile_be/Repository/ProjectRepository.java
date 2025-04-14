@@ -207,4 +207,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     @Query(value = "SELECT COUNT(*) FROM project_members WHERE project_id = :projectId", nativeQuery = true)
     Integer countMembersByProjectId(Integer projectId);
 
+    @Query("SELECT p FROM Project p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', ?1, '%'))")
+    List<Project> searchProjects(String query);
+
 }

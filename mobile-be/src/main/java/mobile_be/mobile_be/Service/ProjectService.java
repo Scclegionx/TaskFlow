@@ -579,4 +579,14 @@ public class ProjectService {
             throw new RuntimeException("Lỗi khi xóa thành viên: " + e.getMessage());
         }
     }
+
+    public List<Map<String, Object>> searchProjects(String query) {
+        List<Project> projects = projectRepository.searchProjects(query);
+        return projects.stream().map(project -> {
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", project.getId());
+            result.put("name", project.getName());
+            return result;
+        }).collect(Collectors.toList());
+    }
 }

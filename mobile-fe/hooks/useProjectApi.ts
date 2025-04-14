@@ -142,3 +142,15 @@ export const formatDateTime = (dateString: string) => {
         minute: '2-digit'
     });
 };
+
+export const searchProjects = async (query: string) => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) {
+        throw new Error("Token không tồn tại");
+    }
+    const response = await axios.get(`${API_URL_project}/search`, {
+        params: { query },
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

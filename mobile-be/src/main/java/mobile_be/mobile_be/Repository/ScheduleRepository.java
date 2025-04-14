@@ -38,6 +38,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     """)
     List<Object[]> findHighlightedDatesByUserId(Integer userId);
 
+    @Query("SELECT s FROM Schedule s WHERE s.user.id = ?2 AND LOWER(s.title) LIKE LOWER(CONCAT('%', ?1, '%'))")
+    List<Schedule> searchSchedules(String query, Integer userId);
+
     Optional<Schedule> findById(Long id);
     void deleteById(@NonNull Long id);
 }

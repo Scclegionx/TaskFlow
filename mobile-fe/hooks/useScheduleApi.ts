@@ -66,3 +66,20 @@ export const getScheduleById = async (id: number) => {
     });
     return response.data;
 };
+
+export const searchSchedules = async (query: string) => {
+    const token = await AsyncStorage.getItem('token');
+    const userId = await AsyncStorage.getItem('userId');
+    if (!token || !userId) {
+        throw new Error("Token hoặc userId không tồn tại");
+    }
+    
+    const response = await axios.get(`${API_URL_SCHEDULES_URL}/search`, {
+        params: {
+            query,
+            userId
+        },
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

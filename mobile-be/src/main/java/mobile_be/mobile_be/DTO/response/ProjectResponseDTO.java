@@ -19,4 +19,5 @@ public class ProjectResponseDTO {
     private List<TaskDTO> tasks;
     // tien do, lay so nguyen cho de ve bieu do
     private Integer progress;
+    private Integer memberNumber;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal} from 'react-native';
+import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Image} from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import {getSchedulesByDate, getHighlightedDates, deleteSchedule} from '@/hooks/useScheduleApi';
 import { useRouter} from "expo-router";
@@ -162,147 +162,173 @@ const CalendarScreen = () => {
     };
 
     return (
-        <ScrollView
-            style={styles.container}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 30 }}
-            keyboardShouldPersistTaps="handled"
-        >
-            {/* Lịch */}
-            <View style={styles.calendarContainer}>
-                <Calendar
-                    onDayPress={(day) => setSelectedDate(day.dateString)}
-                    markedDates={{
-                        ...highlightedDates,
-                        [selectedDate]: { 
-                            selected: true, 
-                            selectedColor: '#EF4444',
-                            dotColor: '#EF4444'
-                        }
-                    }}
-                    theme={{
-                        todayTextColor: '#EF4444',
-                        selectedDayBackgroundColor: '#EF4444',
-                        arrowColor: '#EF4444',
-                        textDayFontSize: 16,
-                        textMonthFontSize: 18,
-                        textDayHeaderFontSize: 14,
-                        backgroundColor: 'white',
-                        calendarBackground: 'white',
-                        textSectionTitleColor: '#374151',
-                        dayTextColor: '#1F2937',
-                        textDisabledColor: '#9CA3AF',
-                        dotColor: '#EF4444',
-                        selectedDotColor: 'white',
-                        monthTextColor: '#EF4444',
-                        indicatorColor: '#EF4444',
-                        textDayFontWeight: '500',
-                        textMonthFontWeight: 'bold',
-                        textDayHeaderFontWeight: '500',
-                        stylesheet: {
-                            calendar: {
-                                header: {
-                                    arrow: {
-                                        color: '#EF4444'
+        <View style={styles.mainContainer}>
+            <Image 
+                source={require('../../assets/images/calendar-background.jpg')}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+            />
+            <View style={styles.contentContainer}>
+                <ScrollView
+                    style={styles.scrollView}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 30 }}
+                >
+                    {/* Lịch */}
+                    <View style={styles.calendarContainer}>
+                        <Calendar
+                            onDayPress={(day) => setSelectedDate(day.dateString)}
+                            markedDates={{
+                                ...highlightedDates,
+                                [selectedDate]: { 
+                                    selected: true, 
+                                    selectedColor: '#EF4444',
+                                    dotColor: '#EF4444'
+                                }
+                            }}
+                            theme={{
+                                todayTextColor: '#EF4444',
+                                selectedDayBackgroundColor: '#EF4444',
+                                arrowColor: '#EF4444',
+                                textDayFontSize: 16,
+                                textMonthFontSize: 18,
+                                textDayHeaderFontSize: 14,
+                                backgroundColor: 'white',
+                                calendarBackground: 'white',
+                                textSectionTitleColor: '#374151',
+                                dayTextColor: '#1F2937',
+                                textDisabledColor: '#9CA3AF',
+                                dotColor: '#EF4444',
+                                selectedDotColor: 'white',
+                                monthTextColor: '#EF4444',
+                                indicatorColor: '#EF4444',
+                                textDayFontWeight: '500',
+                                textMonthFontWeight: 'bold',
+                                textDayHeaderFontWeight: '500',
+                                stylesheet: {
+                                    calendar: {
+                                        header: {
+                                            arrow: {
+                                                color: '#EF4444'
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                        }
-                    }}
-                />
-            </View>
+                            }}
+                        />
+                    </View>
 
-            {/* Tiêu đề lịch trình */}
-            <View style={styles.sectionTitleContainer}>
-                <View style={styles.titleWrapper}>
-                    <MaterialIcons name="event-note" size={24} color="#EF4444" />
-                    <Text style={styles.sectionTitle}>
-                        Lịch trình cho {selectedDate || 'hôm nay'}
-                    </Text>
-                </View>
-                <TouchableOpacity 
-                    style={styles.createButton}
-                    onPress={() => router.push("/Schedule/createSchedule")}
-                >
-                    <Ionicons name="add" size={24} color="white" />
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.listContainer}>
-                {schedules.length > 0 ? (
-                    schedules.map((item) => (
+                    {/* Tiêu đề lịch trình */}
+                    <View style={styles.sectionTitleContainer}>
+                        <View style={styles.titleWrapper}>
+                            <MaterialIcons name="event-note" size={24} color="#EF4444" />
+                            <Text style={styles.sectionTitle}>
+                                Lịch trình cho {selectedDate || 'hôm nay'}
+                            </Text>
+                        </View>
                         <TouchableOpacity 
-                            key={item.id}
-                            onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
-                            onLongPress={() => handleLongPress(item)}
-                            style={styles.itemCard}
+                            style={styles.createButton}
+                            onPress={() => router.push("/Schedule/createSchedule")}
                         >
-                            <View style={styles.itemHeader}>
-                                <MaterialIcons name="event" size={20} color="#EF4444" />
-                                <Text style={styles.itemTitle}>{item.title}</Text>
-                            </View>
-                            <View style={styles.itemTimeContainer}>
-                                <FontAwesome name="clock-o" size={16} color="#6B7280" />
-                                <Text style={styles.itemTime}>
-                                    {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
-                                </Text>
-                            </View>
-                            <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
-                                <Text style={styles.priorityText}>
-                                    {getPriorityLabel(item.priority)}
-                                </Text>
-                            </View>
+                            <Ionicons name="add" size={24} color="white" />
                         </TouchableOpacity>
-                    ))
-                ) : (
-                    <View style={styles.emptyState}>
-                        <MaterialIcons name="event-busy" size={48} color="#9CA3AF" />
-                        <Text style={styles.emptyStateText}>Không có lịch trình</Text>
                     </View>
-                )}
-            </View>
 
-            <Modal transparent visible={modalVisible} animationType="fade">
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <View style={styles.titleWrapper}>
-                                <MaterialIcons name="event-note" size={24} color="#EF4444" />
-                                <Text style={styles.modalTitle}>Chọn thao tác</Text>
+                    <View style={styles.listContainer}>
+                        {schedules.length > 0 ? (
+                            schedules.map((item) => (
+                                <TouchableOpacity 
+                                    key={item.id}
+                                    onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
+                                    onLongPress={() => handleLongPress(item)}
+                                    style={styles.itemCard}
+                                >
+                                    <View style={styles.itemHeader}>
+                                        <MaterialIcons name="event" size={20} color="#EF4444" />
+                                        <Text style={styles.itemTitle}>{item.title}</Text>
+                                    </View>
+                                    <View style={styles.itemTimeContainer}>
+                                        <FontAwesome name="clock-o" size={16} color="#6B7280" />
+                                        <Text style={styles.itemTime}>
+                                            {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
+                                        </Text>
+                                    </View>
+                                    <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
+                                        <Text style={styles.priorityText}>
+                                            {getPriorityLabel(item.priority)}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))
+                        ) : (
+                            <View style={styles.emptyState}>
+                                <MaterialIcons name="event-busy" size={48} color="#9CA3AF" />
+                                <Text style={styles.emptyStateText}>Không có lịch trình</Text>
                             </View>
-                            <TouchableOpacity 
-                                style={styles.closeButton}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <AntDesign name="close" size={24} color="#6B7280" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.modalButtonContainer}>
-                            <TouchableOpacity 
-                                style={[styles.modalButton, styles.editButton]} 
-                                onPress={onEdit}
-                            >
-                                <AntDesign name="edit" size={20} color="white" />
-                                <Text style={styles.buttonText}>Sửa</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                style={[styles.modalButton, styles.deleteButton]} 
-                                onPress={onDelete}
-                            >
-                                <AntDesign name="delete" size={20} color="white" />
-                                <Text style={styles.buttonText}>Xóa</Text>
-                            </TouchableOpacity>
-                        </View>
+                        )}
                     </View>
-                </View>
-            </Modal>
-        </ScrollView>
+
+                    <Modal transparent visible={modalVisible} animationType="fade">
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <View style={styles.titleWrapper}>
+                                        <MaterialIcons name="event-note" size={24} color="#EF4444" />
+                                        <Text style={styles.modalTitle}>Chọn thao tác</Text>
+                                    </View>
+                                    <TouchableOpacity 
+                                        style={styles.closeButton}
+                                        onPress={() => setModalVisible(false)}
+                                    >
+                                        <AntDesign name="close" size={24} color="#6B7280" />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <View style={styles.modalButtonContainer}>
+                                    <TouchableOpacity 
+                                        style={[styles.modalButton, styles.editButton]} 
+                                        onPress={onEdit}
+                                    >
+                                        <AntDesign name="edit" size={20} color="white" />
+                                        <Text style={styles.buttonText}>Sửa</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity 
+                                        style={[styles.modalButton, styles.deleteButton]} 
+                                        onPress={onDelete}
+                                    >
+                                        <AntDesign name="delete" size={20} color="white" />
+                                        <Text style={styles.buttonText}>Xóa</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                    </Modal>
+                </ScrollView>
+            </View>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    mainContainer: {
+        flex: 1,
+        position: 'relative',
+    },
+    backgroundImage: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        opacity: 1,
+    },
+    contentContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    },
+    scrollView: {
+        flex: 1,
+        padding: 16,
+    },
     container: {
         flex: 1,
         padding: 16,

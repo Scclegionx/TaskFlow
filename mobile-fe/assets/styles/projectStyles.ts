@@ -4,7 +4,18 @@ export const styles = StyleSheet.create({
     // Styles cho ProjectScreen
     container: { 
         flex: 1,
+        position: 'relative',
         backgroundColor: "#f0f2f5",
+    },
+    backgroundImage: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        opacity: 1,
+    },
+    contentContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
     },
     headerContainer: {
         flexDirection: 'row',
@@ -72,7 +83,6 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         backgroundColor: 'transparent',
-        transform: [{ scale: 1 }],
     },
     projectCardPressed: {
         transform: [{ scale: 0.98 }],
@@ -387,5 +397,76 @@ export const styles = StyleSheet.create({
     },
     moreButton: {
         padding: 4,
+    },
+
+    // Styles cho filter container
+    filterContainer: {
+        flexDirection: 'row',
+        marginHorizontal: 16,
+        marginBottom: 16,
+        backgroundColor: 'white',
+        borderRadius: 8,
+        padding: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    filterButton: {
+        flex: 1,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 4,
+        alignItems: 'center',
+    },
+    filterButtonActive: {
+        backgroundColor: '#8B5CF6',
+    },
+    filterText: {
+        color: '#374151',
+        fontWeight: '500',
+    },
+    filterTextActive: {
+        color: 'white',
+    },
+
+    // Styles cho pagination
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        backgroundColor: 'white',
+        marginHorizontal: 16,
+        marginBottom: 80,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    paginationButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 4,
+        backgroundColor: '#8B5CF6',
+    },
+    paginationButtonDisabled: {
+        backgroundColor: '#E5E7EB',
+    },
+    paginationText: {
+        color: '#8B5CF6',
+        fontWeight: '500',
+        fontSize: 14,
+    },
+    paginationTextDisabled: {
+        color: '#9CA3AF',
+    },
+    paginationTextActive: {
+        color: 'white',
+        fontWeight: '500',
+        fontSize: 14,
     },
 });

@@ -61,4 +61,9 @@ public class ScheduleController {
         return schedule.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> searchSchedules(@RequestParam String query, @RequestParam Integer userId) {
+        return ResponseEntity.ok(scheduleService.searchSchedules(query, userId));
+    }
+
 }

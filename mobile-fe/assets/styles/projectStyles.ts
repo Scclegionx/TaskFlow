@@ -4,7 +4,18 @@ export const styles = StyleSheet.create({
     // Styles cho ProjectScreen
     container: { 
         flex: 1,
+        position: 'relative',
         backgroundColor: "#f0f2f5",
+    },
+    backgroundImage: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        opacity: 1,
+    },
+    contentContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
     },
     headerContainer: {
         flexDirection: 'row',

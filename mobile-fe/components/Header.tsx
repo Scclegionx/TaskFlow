@@ -1,36 +1,54 @@
-import React ,{ useEffect, useState }from "react";
+import React, { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, TextInput, StyleSheet,TouchableOpacity , Image } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Avatar } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from 'expo-linear-gradient';
+
+interface User {
+    name: string;
+    email: string;
+    avatar: any;
+}
+
 const Header = () => {
     const router = useRouter();
-    const [user, setUser] = useState({ name: '', email: '', avatar: '' });
+    const [user, setUser] = useState<User>({ name: '', email: '', avatar: null });
 
     useFocusEffect(
         React.useCallback(() => {
             const loadUser = async () => {
                 const name = await AsyncStorage.getItem('username') || 'Người dùng';
                 const email = await AsyncStorage.getItem('email') || 'email';
-                const avatar = await AsyncStorage.getItem('avatar') || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s';
-                setUser({ name, email, avatar });
+                const avatar = await AsyncStorage.getItem('avatar');
+                
+                // Kiểm tra nếu avatar là null hoặc chuỗi rỗng
+                const defaultAvatar = require('../assets/images/default-avatar.jpg');
+                const userAvatar = avatar && avatar !== 'null' ? { uri: avatar } : defaultAvatar;
+
+                setUser({ 
+                    name, 
+                    email, 
+                    avatar: userAvatar
+                });
             };
             loadUser();
         }, [])
     );
 
     return (
-        <View style={styles.container}>
+        <LinearGradient
+            colors={['#3B82F6', '#2563EB']}
+            style={styles.container}
+        >
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.userInfo}>
                     <Avatar.Image
                         size={40}
-                        source={{
-                            uri: user.avatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0Sk010pigAtfv0VKmNOWxpUHr9b3eeipUPg&s",
-                        }}
+                        source={user.avatar}
                         style={styles.avatar}
                     />
                     <Text style={styles.title} numberOfLines={1}>
@@ -38,24 +56,24 @@ const Header = () => {
                     </Text>
                 </View>
                 <View style={styles.headerIcons}>
-                    <Ionicons name="mail-outline" size={24} color="black" style={styles.icon} />
+                    <Ionicons name="mail-outline" size={24} color="white" style={styles.icon} />
                     <TouchableOpacity onPress={() => router.push("/notifications")}>
-                        <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
+                        <Ionicons name="notifications-outline" size={24} color="white" style={styles.icon} />
                     </TouchableOpacity>
-                    <Ionicons name="menu" size={28} color="black" />
+                    <Ionicons name="menu" size={28} color="white" />
                 </View>
             </View>
 
             {/* Search Bar */}
             <View style={styles.searchBar}>
-                <Ionicons name="search" size={20} color="gray" style={styles.searchIcon} />
+                <Ionicons name="search" size={20} color="#6B7280" style={styles.searchIcon} />
                 <TextInput
                     placeholder="Tìm kiếm"
-                    placeholderTextColor="#888"
+                    placeholderTextColor="#6B7280"
                     style={styles.input}
                 />
             </View>
-        </View>
+        </LinearGradient>
     );
 };
 
@@ -63,9 +81,8 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: 40,
         padding: 20,
-        backgroundColor: "#fff",
         borderBottomWidth: 1,
-        borderBottomColor: "#ddd",
+        borderBottomColor: "#E5E7EB",
     },
     header: {
         flexDirection: "row",
@@ -80,10 +97,9 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: "bold",
-        color: "#222",
+        color: "white",
         marginLeft: 10,
         maxWidth: 200,
-        fontFamily: "Roboto", // Giới hạn chiều rộng để tránh tràn
     },
     headerIcons: {
         flexDirection: "row",
@@ -93,15 +109,23 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
     avatar: {
-        backgroundColor: "#ddd",
+        backgroundColor: "white",
     },
     searchBar: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#f2f2f2",
+        backgroundColor: "white",
         borderRadius: 10,
         paddingHorizontal: 10,
         paddingVertical: 8,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     searchIcon: {
         marginRight: 10,
@@ -109,7 +133,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        color: "#333",
+        color: "#1F2937",
     },
 });
 

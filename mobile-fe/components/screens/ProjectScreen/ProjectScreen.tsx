@@ -126,113 +126,120 @@ const ProjectScreen = () => {
 
     return (
         <View style={projectStyles.container}>
-            <View style={projectStyles.headerContainer}>
-                <Ionicons name="folder" size={24} color="#1F2937" />
-                <Text style={projectStyles.header}>Danh sách dự án</Text>
-            </View>
+            <Image 
+                source={require('../../../assets/images/project-background.jpg')}
+                style={projectStyles.backgroundImage}
+                resizeMode="cover"
+            />
+            <View style={projectStyles.contentContainer}>
+                <View style={projectStyles.headerContainer}>
+                    <Ionicons name="folder" size={24} color="#1F2937" />
+                    <Text style={projectStyles.header}>Danh sách dự án</Text>
+                </View>
 
-            <View style={projectStyles.filterContainer}>
-                <TouchableOpacity 
-                    style={[projectStyles.filterButton, filter === 'all' && projectStyles.filterButtonActive]}
-                    onPress={() => {
-                        setFilter('all');
-                        setCurrentPage(0);
-                    }}
-                >
-                    <Text style={[projectStyles.filterText, filter === 'all' && projectStyles.filterTextActive]}>Tất cả</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[projectStyles.filterButton, filter === 'mine' && projectStyles.filterButtonActive]}
-                    onPress={() => {
-                        setFilter('mine');
-                        setCurrentPage(0);
-                    }}
-                >
-                    <Text style={[projectStyles.filterText, filter === 'mine' && projectStyles.filterTextActive]}>Của tôi</Text>
-                </TouchableOpacity>
-            </View>
+                <View style={projectStyles.filterContainer}>
+                    <TouchableOpacity 
+                        style={[projectStyles.filterButton, filter === 'all' && projectStyles.filterButtonActive]}
+                        onPress={() => {
+                            setFilter('all');
+                            setCurrentPage(0);
+                        }}
+                    >
+                        <Text style={[projectStyles.filterText, filter === 'all' && projectStyles.filterTextActive]}>Tất cả</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[projectStyles.filterButton, filter === 'mine' && projectStyles.filterButtonActive]}
+                        onPress={() => {
+                            setFilter('mine');
+                            setCurrentPage(0);
+                        }}
+                    >
+                        <Text style={[projectStyles.filterText, filter === 'mine' && projectStyles.filterTextActive]}>Của tôi</Text>
+                    </TouchableOpacity>
+                </View>
 
-            <ScrollView style={projectStyles.listContainer}>
-                {loading ? (
-                    <View style={projectStyles.emptyContainer}>
-                        <ActivityIndicator size="large" color="#8B5CF6" />
-                    </View>
-                ) : projects.length === 0 ? (
-                    <View style={projectStyles.emptyContainer}>
-                        <Ionicons name="folder-open" size={48} color="#9CA3AF" />
-                        <Text style={projectStyles.emptyText}>Không có dự án nào</Text>
-                        <Text style={projectStyles.emptySubText}>
-                            Tạo dự án mới để bắt đầu quản lý công việc của bạn
-                        </Text>
-                    </View>
-                ) : (
-                    <View>
-                        {projects.map((project) => (
-                            <TouchableOpacity
-                                key={project.id}
-                                style={[
-                                    projectStyles.projectItemContainer,
-                                    pressedProjectId === project.id && projectStyles.projectCardPressed,
-                                ]}
-                                onPress={() => handleProjectPress(project)}
-                                onPressIn={() => setPressedProjectId(project.id)}
-                                onPressOut={() => setPressedProjectId(null)}
-                                activeOpacity={0.7}
-                            >
-                                <ProjectItem 
-                                    project={project} 
-                                    onDelete={handleDeleteProject}
-                                    defaultAvatar={getDefaultAvatar()}
-                                />
-                            </TouchableOpacity>
-                        ))}
-
-                        {totalPages > 1 && (
-                            <View style={projectStyles.paginationContainer}>
+                <ScrollView style={projectStyles.listContainer}>
+                    {loading ? (
+                        <View style={projectStyles.emptyContainer}>
+                            <ActivityIndicator size="large" color="#8B5CF6" />
+                        </View>
+                    ) : projects.length === 0 ? (
+                        <View style={projectStyles.emptyContainer}>
+                            <Ionicons name="folder-open" size={48} color="#9CA3AF" />
+                            <Text style={projectStyles.emptyText}>Không có dự án nào</Text>
+                            <Text style={projectStyles.emptySubText}>
+                                Tạo dự án mới để bắt đầu quản lý công việc của bạn
+                            </Text>
+                        </View>
+                    ) : (
+                        <View>
+                            {projects.map((project) => (
                                 <TouchableOpacity
+                                    key={project.id}
                                     style={[
-                                        projectStyles.paginationButton,
-                                        currentPage === 0 && projectStyles.paginationButtonDisabled
+                                        projectStyles.projectItemContainer,
+                                        pressedProjectId === project.id && projectStyles.projectCardPressed,
                                     ]}
-                                    onPress={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 0}
+                                    onPress={() => handleProjectPress(project)}
+                                    onPressIn={() => setPressedProjectId(project.id)}
+                                    onPressOut={() => setPressedProjectId(null)}
+                                    activeOpacity={0.7}
                                 >
-                                    <Text style={[
-                                        currentPage === 0 ? projectStyles.paginationTextDisabled : projectStyles.paginationTextActive
-                                    ]}>Trước</Text>
+                                    <ProjectItem 
+                                        project={project} 
+                                        onDelete={handleDeleteProject}
+                                        defaultAvatar={getDefaultAvatar()}
+                                    />
                                 </TouchableOpacity>
-                                <Text style={projectStyles.paginationText}>
-                                    Trang {currentPage + 1} / {totalPages}
-                                </Text>
-                                <TouchableOpacity
-                                    style={[
-                                        projectStyles.paginationButton,
-                                        currentPage === totalPages - 1 && projectStyles.paginationButtonDisabled
-                                    ]}
-                                    onPress={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === totalPages - 1}
-                                >
-                                    <Text style={[
-                                        currentPage === totalPages - 1 ? projectStyles.paginationTextDisabled : projectStyles.paginationTextActive
-                                    ]}>Sau</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    </View>
-                )}
-            </ScrollView>
+                            ))}
 
-            <TouchableOpacity
-                style={projectStyles.fab}
-                onPress={() => router.push('/Project/createProject')}
-            >
-                <LinearGradient
-                    colors={['#8B5CF6', '#6D28D9']}
-                    style={projectStyles.fabGradient}
+                            {totalPages > 1 && (
+                                <View style={projectStyles.paginationContainer}>
+                                    <TouchableOpacity
+                                        style={[
+                                            projectStyles.paginationButton,
+                                            currentPage === 0 && projectStyles.paginationButtonDisabled
+                                        ]}
+                                        onPress={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 0}
+                                    >
+                                        <Text style={[
+                                            currentPage === 0 ? projectStyles.paginationTextDisabled : projectStyles.paginationTextActive
+                                        ]}>Trước</Text>
+                                    </TouchableOpacity>
+                                    <Text style={projectStyles.paginationText}>
+                                        Trang {currentPage + 1} / {totalPages}
+                                    </Text>
+                                    <TouchableOpacity
+                                        style={[
+                                            projectStyles.paginationButton,
+                                            currentPage === totalPages - 1 && projectStyles.paginationButtonDisabled
+                                        ]}
+                                        onPress={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages - 1}
+                                    >
+                                        <Text style={[
+                                            currentPage === totalPages - 1 ? projectStyles.paginationTextDisabled : projectStyles.paginationTextActive
+                                        ]}>Sau</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        </View>
+                    )}
+                </ScrollView>
+
+                <TouchableOpacity
+                    style={projectStyles.fab}
+                    onPress={() => router.push('/Project/createProject')}
                 >
-                    <Ionicons name="add" size={24} color="white" />
-                </LinearGradient>
-            </TouchableOpacity>
+                    <LinearGradient
+                        colors={['#8B5CF6', '#6D28D9']}
+                        style={projectStyles.fabGradient}
+                    >
+                        <Ionicons name="add" size={24} color="white" />
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };

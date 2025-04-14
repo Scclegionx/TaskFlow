@@ -10,6 +10,7 @@ import {
   Platform,
   Modal,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { createTask } from "@/hooks/useTaskApi";
@@ -20,6 +21,7 @@ import { API_BASE_URL } from "@/constants/api";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
+import { set } from "lodash";
 const CreateTaskScreen = () => {
   const router = useRouter();
   const { projectId } = useLocalSearchParams();
@@ -40,6 +42,7 @@ const CreateTaskScreen = () => {
   const [showLevelPicker, setShowLevelPicker] = useState(false);
   const [showSubTaskForm, setShowSubTaskForm] = useState(false);
   const [documents, setDocuments] = useState([]);
+  const [isUploading, setIsUploading] = useState(false); // Trạng thái upload
   const [subTasks, setSubTasks] = useState<
     Array<{
       title: string;
@@ -80,12 +83,17 @@ const CreateTaskScreen = () => {
     }
   };
   const handleUploadDocuments = async (taskId) => {
+    if (!documents || documents.length === 0) {
+      console.log("Không có tài liệu để tải lên.");
+      return; // Không thực hiện upload nếu không có tài liệu
+    }
     if (!taskId || isNaN(taskId)) {
       console.error("Invalid taskId:", taskId);
       Alert.alert("Lỗi", "Không thể tải tài liệu vì taskId không hợp lệ.");
       return;
     }
     try {
+      setIsUploading(true);
       console.log("Danh sách tài liệu trước khi tải lên:", documents);
 
       const formData = new FormData();
@@ -115,6 +123,7 @@ const CreateTaskScreen = () => {
 
       console.log("Tài liệu đã tải lên:", response.data);
       Alert.alert("Thành công", "Tài liệu đã được tải lên.");
+      setIsUploading(false); // Đặt trạng thái upload về false sau khi hoàn thành
     } catch (error) {
       console.error("Lỗi khi tải tài liệu:", error);
       Alert.alert("Lỗi", "Không thể tải tài liệu. Vui lòng thử lại.");
@@ -477,6 +486,12 @@ const CreateTaskScreen = () => {
               <Text style={styles.addDocumentText}>+ Thêm tài liệu</Text>
             </TouchableOpacity>
           </View>
+          {isUploading && (
+            <View style={styles.uploadingOverlay}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.uploadingText}>Đang tải tài liệu...</Text>
+            </View>
+          )}
 
           <View style={styles.subTasksSection}>
             <Text style={styles.sectionTitle}>Công việc con</Text>
@@ -1078,6 +1093,23 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontSize: 16,
     fontWeight: "500",
+  },
+  uploadingOverlay: {
+    position: "absolute",
+    top: -40,
+    left: -40,
+    right: -40,
+    bottom: -40,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  uploadingText: {
+    marginTop: 10,
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

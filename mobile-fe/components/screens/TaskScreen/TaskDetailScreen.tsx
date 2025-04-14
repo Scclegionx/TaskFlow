@@ -11,12 +11,8 @@ import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import DateTimePickerModal from "@react-native-community/datetimepicker";
-
-import axios from 'axios'; // Cần cài đặt axios hoặc sử dụng fetch
-
-
-
-
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 interface DetailRowProps {
   label: string;
   value: string;
@@ -95,13 +91,81 @@ const TaskDetailScreen = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [showExtendDatePicker, setShowExtendDatePicker] = useState(false);
   const [newEndDate, setNewEndDate] = useState<Date>(new Date());
-
+  const [documents, setDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+const [isDocumentModalVisible, setIsDocumentModalVisible] = useState(false);
+const [downloadingFile, setDownloadingFile] = useState<string | null>(null); // Lưu tên file đang tải
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Chi tiết công việc" }); // Cập nhật tiêu đề
   }, [navigation]);
 
-
+  const fetchTaskDocuments = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem("token");
+      if (!authToken) throw new Error("Vui lòng đăng nhập");
+  
+      const response = await fetch(`${API_BASE_URL}/document/task/${taskId}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+  
+      if (!response.ok) throw new Error("Không thể tải danh sách tài liệu");
+  
+      const documents = await response.json();
+  
+      // Xử lý dữ liệu để lấy tên file từ `pathFile`
+      const formattedDocuments = documents.map((doc) => ({
+        id: doc.id,
+        name: doc.pathFile.split("/").pop(), // Lấy tên file từ URL
+        url: doc.pathFile, // URL đầy đủ để tải file
+        type: doc.typeFile, // Loại file (pdf, doc, v.v.)
+      }));
+  
+      setDocuments(formattedDocuments); // Lưu danh sách tài liệu vào state
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách tài liệu:", error);
+      Alert.alert("Lỗi", "Không thể tải danh sách tài liệu");
+    }
+  };
+  useEffect(() => {
+    if (taskId) {
+      fetchTaskDocuments();
+    }
+  }, [taskId]);
+  const handleDownloadFile = async (fileUrl: string) => {
+    try {
+      const fileName = fileUrl.split("/").pop(); // Lấy tên file từ URL
+      setDownloadingFile(fileName); // Lưu tên file vào state
+      // Alert.alert("Thông báo", `Đang tải file: ${fileName}`); // Hiển thị tên file đang tải
+  
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`; // Đường dẫn lưu file cục bộ
+  
+      const downloadResumable = FileSystem.createDownloadResumable(
+        fileUrl,
+        fileUri
+      );
+  
+      const { uri } = await downloadResumable.downloadAsync();
+      console.log("✅ File đã được tải về:", uri);
+  
+      setDownloadingFile(null); // Xóa tên file sau khi tải xong
+  
+      // Kiểm tra xem thiết bị có hỗ trợ chia sẻ file không
+      if (await Sharing.isAvailableAsync()) {
+        // Alert.alert("Thông báo", `Đang chia sẻ file: ${fileName}`);
+        await Sharing.shareAsync(uri);
+        // Alert.alert("Thông báo", `Đã chia sẻ file: ${fileName}`);
+      } else {
+        Alert.alert("Thông báo", `File đã được tải về: ${fileName}`);
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi tải file:", error);
+      Alert.alert("Lỗi", `Không thể tải file: ${fileName}. Vui lòng thử lại.`);
+      setDownloadingFile(null); // Xóa tên file khi xảy ra lỗi
+    }
+  };
 
   useEffect(() => {
 
@@ -657,7 +721,6 @@ const TaskDetailScreen = () => {
 
    
       <SafeAreaView style={styles.container}>
-
         <View style={styles.header}>
           <Text style={styles.title}>{jobData.title}</Text>
           <View style={[styles.statusBadge, { backgroundColor: statusBackgroundMap[jobData.status] }]}>
@@ -685,7 +748,59 @@ const TaskDetailScreen = () => {
             label="Dự án"
             value={jobData.project?.name || 'Không có'}
           />
-
+          <DetailRow
+            label="Tài liệu"
+            value={(<TouchableOpacity
+              style={styles.viewDocumentsButton}
+              onPress={() => setIsDocumentModalVisible(true)} // Hiển thị popup
+            >
+              <Text style={styles.viewDocumentsButtonText}>Xem tài liệu</Text>
+            </TouchableOpacity>)}
+          />
+          
+<Modal
+  visible={isDocumentModalVisible}
+  animationType="slide"
+  transparent={true}
+  onRequestClose={() => setIsDocumentModalVisible(false)} // Đóng popup khi nhấn ra ngoài
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Danh sách tài liệu</Text>
+      {documents.length > 0 ? (
+        <FlatList
+        data={documents}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.documentItem}>
+            <Text style={styles.documentName} numberOfLines={1} ellipsizeMode="tail">
+              {item.name}
+            </Text>
+            <TouchableOpacity
+              style={styles.downloadButton}
+              onPress={() => handleDownloadFile(item.url)}
+              disabled={downloadingFile === item.name} // Vô hiệu hóa nút nếu đang tải file này
+            >
+              <Text style={downloadingFile === item.name ? styles.disabledDownloadButtonText : styles.downloadButtonText}>
+                {downloadingFile === item.name ? "Đang tải..." : "Tải xuống"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 10 }}
+      />
+      ) : (
+        <Text style={styles.emptyText}>Không có tài liệu nào</Text>
+      )}
+      <TouchableOpacity
+        style={[styles.modalButtonn, styles.cancelButtonn]}
+        onPress={() => setIsDocumentModalVisible(false)} // Đóng popup
+      >
+        <Text style={styles.buttonText}>Đóng</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
 
           {/* Thêm phần hiển thị mức độ */}
           {jobData.level !== undefined && (
@@ -1015,8 +1130,6 @@ const TaskDetailScreen = () => {
             </View>
           </View>
         </View>
-
-
       </SafeAreaView>
    
   );
@@ -1406,6 +1519,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Platform.OS === 'ios' ? 20 : 0, // Điều chỉnh cho iOS
   },
+  viewDocumentsButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  viewDocumentsButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  
+  documentSection: {
+    padding: 8,
+    backgroundColor: "#F9F9F9",
+    borderRadius: 8,
+    maxHeight: 200, // Giới hạn chiều cao để tạo thanh cuộn nếu danh sách dài
+  },
+  documentItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  documentName: {
+    fontSize: 12,
+    color: "#333",
+    flex: 1,
+  },
+  downloadButton: {
+    backgroundColor: "#3B82F6",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  downloadButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  disabledDownloadButtonText: {
+    color: "#ccc", // Màu xám khi nút bị vô hiệu hóa
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#666",
+  },
+  buttonClose: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  modalButtonn: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+  },
+  cancelButtonn: {
+    backgroundColor: '#F8B0A9',
+  },
+  
 });
 
 export default TaskDetailScreen;

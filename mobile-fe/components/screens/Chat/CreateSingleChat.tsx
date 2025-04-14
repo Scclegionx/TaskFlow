@@ -114,13 +114,13 @@ const SelectUserScreen = () => {
               onPress={() => startChat(item.id, item.name)}
             >
               <Image
-                source={
-                  item.user.avatar
-                    ? { uri: item.user.avatar } // Nếu avatar tồn tại, sử dụng URL
-                    : require("@/assets/images/default-avatar.jpg") // Ảnh mặc định
-                }
-                style={styles.avatar}
-              />
+  source={
+    item.avatar
+      ? { uri: item.avatar } // Nếu avatar tồn tại, sử dụng URL
+      : require("@/assets/images/default-avatar.jpg") // Ảnh mặc định
+  }
+  style={styles.avatar}
+/>
               <Text style={styles.userName}>{item.name}</Text>
             </TouchableOpacity>
           )}

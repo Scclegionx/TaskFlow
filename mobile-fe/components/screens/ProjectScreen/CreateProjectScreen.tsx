@@ -9,7 +9,21 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from 'react-native-toast-message';
 
 // Tách phần tìm kiếm thành component Modal riêng
-const UserSearchModal = ({ visible, searchResults, onSelectUser, searchInput, onChangeSearch, onClose }) => {
+const UserSearchModal = ({ 
+    visible, 
+    searchResults, 
+    onSelectUser, 
+    searchInput, 
+    onChangeSearch, 
+    onClose 
+}: {
+    visible: boolean;
+    searchResults: any[];
+    onSelectUser: (user: any) => void;
+    searchInput: string;
+    onChangeSearch: (text: string) => void;
+    onClose: () => void;
+}) => {
     return (
         <Modal
             visible={visible}
@@ -41,9 +55,7 @@ const UserSearchModal = ({ visible, searchResults, onSelectUser, searchInput, on
                                 onPress={() => onSelectUser(item)}
                             >
                                 <Image 
-                                    source={{ 
-                                        uri: item.avatar || 'https://your-default-avatar-url.com/default.png'
-                                    }} 
+                                    source={item.avatar ? { uri: item.avatar } : getDefaultAvatar()}
                                     style={styles.avatar}
                                 />
                                 <View style={styles.userInfo}>
@@ -60,6 +72,10 @@ const UserSearchModal = ({ visible, searchResults, onSelectUser, searchInput, on
             </View>
         </Modal>
     );
+};
+
+const getDefaultAvatar = () => {
+    return require('../../../assets/images/default-avatar.jpg');
 };
 
 const CreateProjectScreen = () => {
@@ -86,7 +102,7 @@ const CreateProjectScreen = () => {
                 setSelectedUsers([{
                     id: Number(userId),
                     name: "Bạn",
-                    avatar: userAvatar || 'https://your-default-avatar-url.com/default.png'
+                    avatar: userAvatar || require('../../../assets/images/default-avatar.jpg')
                 }]);
             }
         };
@@ -123,7 +139,7 @@ const CreateProjectScreen = () => {
             setSelectedUsers([...selectedUsers, {
                 id: user.id,
                 name: user.name,
-                avatar: user.avatar || 'https://your-default-avatar-url.com/default.png'
+                avatar: user.avatar || getDefaultAvatar()
             }]);
             Toast.show({
                 type: 'success',
@@ -283,7 +299,10 @@ const CreateProjectScreen = () => {
                         {selectedUsers.map((item) => (
                             <View key={item.id} style={styles.memberCard}>
                                 <View style={styles.memberInfo}>
-                                    <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                                    <Image 
+                                        source={typeof item.avatar === 'string' ? { uri: item.avatar } : item.avatar} 
+                                        style={styles.avatar} 
+                                    />
                                     <Text style={styles.userName}>{item.name}</Text>
                                     {item.id !== createdBy && (
                                         <TouchableOpacity 

@@ -101,6 +101,10 @@ const getTaskStatusColor = (status: string | number): string => {
     }
 };
 
+const getDefaultAvatar = () => {
+    return require('../../assets/images/default-avatar.jpg');
+};
+
 export default function ProjectDetail() {
     const navigation = useNavigation();
     const route = useRoute();
@@ -329,7 +333,7 @@ export default function ProjectDetail() {
                                 <View style={styles.memberInfo}>
                                     <View style={styles.memberAvatarContainer}>
                                         <Image 
-                                            source={{ uri: item.avatar }} 
+                                            source={item.avatar ? { uri: item.avatar } : getDefaultAvatar()}
                                             style={styles.memberAvatar}
                                         />
                                         <View style={styles.memberDetails}>
@@ -383,7 +387,14 @@ export default function ProjectDetail() {
                                     style={styles.searchResultItem}
                                     onPress={() => handleAddMember(item.id)}
                                 >
-                                    <Text>{item.name} ({item.email})</Text>
+                                    <Image 
+                                        source={item.avatar ? { uri: item.avatar } : getDefaultAvatar()}
+                                        style={styles.avatar}
+                                    />
+                                    <View style={styles.userInfo}>
+                                        <Text style={styles.userName}>{item.name}</Text>
+                                        <Text style={styles.userEmail}>{item.email}</Text>
+                                    </View>
                                 </TouchableOpacity>
                             )}
                         />
@@ -462,7 +473,7 @@ export default function ProjectDetail() {
                                                 <View style={styles.assigneeContainer}>
                                                     <View style={styles.assignedAvatar}>
                                                         <Image 
-                                                            source={{ uri: item.assignees[0].avatar }} 
+                                                            source={item.assignees[0].avatar ? { uri: item.assignees[0].avatar } : getDefaultAvatar()}
                                                             style={styles.avatarImage}
                                                         />
                                                         {userRole === 'ADMIN' && (
@@ -907,5 +918,22 @@ const styles = StyleSheet.create({
     },
     taskGradient: {
         padding: 20,
+    },
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 10,
+    },
+    userInfo: {
+        flex: 1,
+    },
+    userName: {
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    userEmail: {
+        fontSize: 14,
+        color: "#6B7280",
     },
 });

@@ -204,4 +204,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     @Query("SELECT DISTINCT p FROM Project p JOIN p.projectMembers pm WHERE pm.user.id = ?1")
     Page<Project> findByProjectMembersUserId(Integer userId, Pageable pageable);
 
+    @Query(value = "SELECT COUNT(*) FROM project_members WHERE project_id = :projectId", nativeQuery = true)
+    Integer countMembersByProjectId(Integer projectId);
+
 }

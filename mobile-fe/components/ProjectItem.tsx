@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, Pressable, Animated, StyleSheet, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Modal, Pressable, Animated, StyleSheet, Alert, Image } from "react-native";
 import { MoreHorizontal } from "lucide-react-native";
 import { styles } from "../assets/styles/projectStyles";
 import { getStatusText } from "@/hooks/useProjectApi";
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 
 interface ProjectItemProps {
     project: {
@@ -16,10 +17,12 @@ interface ProjectItemProps {
         status: number;
         fromDate?: Date | null;
         toDate?: Date | null;
-        members?: any;
+        memberNumber?: number;
         tasks?: any;
+        createdAt: Date;
     };
-    onDelete: (projectId: number) => Promise<void>;
+    onDelete: (projectId: number) => void;
+    defaultAvatar: any;
 }
 
 const getStatusColor = (status: number): readonly [string, string] => {
@@ -47,7 +50,7 @@ const getStatusIcon = (status: number): keyof typeof MaterialCommunityIcons.glyp
     }
 };
 
-const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
+const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete, defaultAvatar }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [fadeAnim] = useState(new Animated.Value(0));
     const router = useRouter();
@@ -107,7 +110,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
     };
 
     return (
-        <Animated.View style={styles.projectCard}>
+        <View style={styles.projectCard}>
             <View style={styles.cardGradient}>
                 <LinearGradient
                     colors={['#FFFFFF', '#F3F4F6', '#E5E7EB', '#D1D5DB']}
@@ -125,7 +128,6 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
                 <View style={styles.cardContent}>
                     <View style={styles.cardHeader}>
                         <View style={styles.titleContainer}>
-                            <MaterialCommunityIcons name="folder-outline" size={24} color="#8B5CF6" />
                             <Text style={[styles.projectTitle, { color: '#1F2937' }]}>{project.name}</Text>
                         </View>
                         <TouchableOpacity onPress={showPopupMenu} style={styles.moreButton}>
@@ -152,7 +154,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
                         <View style={styles.membersContainer}>
                             <MaterialCommunityIcons name="account-group" size={18} color="#6B7280" />
                             <Text style={[styles.membersText, { color: '#6B7280' }]}>
-                                {project.members?.length || 0} thành viên
+                                {project.memberNumber || 0} thành viên
                             </Text>
                         </View>
                     </View>
@@ -211,7 +213,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete }) => {
                     </Animated.View>
                 </Pressable>
             </Modal>
-        </Animated.View>
+        </View>
     );
 };
 

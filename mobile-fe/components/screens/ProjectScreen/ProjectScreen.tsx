@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert, Pressable, StyleSheet, ScrollView, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from "react";
@@ -20,7 +20,7 @@ interface IProject {
     status: number;
     fromDate?: Date | null;
     toDate?: Date | null;
-    members?: any;
+    memberNumber?: number;
     tasks?: any;
     createdAt: Date;
 }
@@ -62,6 +62,8 @@ const ProjectScreen = () => {
                 5
             );
 
+            console.log(response.content);
+
             const formattedData: IProject[] = response.content
                 .map((item: any) => ({
                     id: item.id,
@@ -71,7 +73,7 @@ const ProjectScreen = () => {
                     status: item.status,
                     fromDate: item.fromDate ? new Date(item.fromDate) : null,
                     toDate: item.toDate ? new Date(item.toDate) : null,
-                    members: item.members,
+                    memberNumber: item.memberNumber || 0,
                     tasks: item.tasks,
                     createdAt: new Date(item.createdAt)
                 }));
@@ -112,6 +114,10 @@ const ProjectScreen = () => {
             pathname: "/Project/projectdetail", 
             params: { project: JSON.stringify(project) } 
         });
+    };
+
+    const getDefaultAvatar = () => {
+        return require('../../../assets/images/default-avatar.jpg');
     };
 
     if (loading) {
@@ -176,6 +182,7 @@ const ProjectScreen = () => {
                                 <ProjectItem 
                                     project={project} 
                                     onDelete={handleDeleteProject}
+                                    defaultAvatar={getDefaultAvatar()}
                                 />
                             </TouchableOpacity>
                         ))}

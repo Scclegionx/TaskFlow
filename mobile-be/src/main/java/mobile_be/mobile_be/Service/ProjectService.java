@@ -368,10 +368,8 @@ public class ProjectService {
         
         Page<Project> projects;
         if (userId != null) {
-            // Lấy dự án của user
             projects = projectRepository.findByProjectMembersUserId(userId, pageable);
         } else {
-            // Lấy tất cả dự án
             projects = projectRepository.findAll(pageable);
         }
         
@@ -391,6 +389,10 @@ public class ProjectService {
             int totalTaskFinished = projectRepository.totalTaskFinishInProject(project.getId());
             int progress = totalTask == 0 ? 0 : (totalTaskFinished * 100) / totalTask;
             dto.setProgress(progress);
+            
+            // Lấy số lượng thành viên
+            int memberNumber = projectRepository.countMembersByProjectId(project.getId());
+            dto.setMemberNumber(memberNumber);
             
             return dto;
         });

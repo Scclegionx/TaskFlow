@@ -1,16 +1,16 @@
 import React from "react";
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert, Pressable } from "react-native";
-import { useNavigation } from "expo-router";
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert, Pressable, StyleSheet, ScrollView } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from "react";
 import ProjectItem from "../../ProjectItem";
-import { styles } from "@/assets/styles/projectStyles";
+import { styles as projectStyles } from "../../../assets/styles/projectStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { AntDesign } from "@expo/vector-icons";
-import { getProjects, getStatusText, deleteProject } from "@/hooks/useProjectApi";
+import { getProjects, deleteProject } from "@/hooks/useProjectApi";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 interface IProject {
     id: number;
@@ -25,11 +25,29 @@ interface IProject {
     createdAt: Date;
 }
 
-export default function ProjectsScreen() {
+interface ProjectResponse {
+    content: IProject[];
+    totalPages: number;
+    totalElements: number;
+    size: number;
+    number: number;
+}
+
+type RootStackParamList = {
+    CreateProject: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const ProjectScreen = () => {
     const router = useRouter();
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp>();
     const [projects, setProjects] = useState<IProject[]>([]);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<'all' | 'mine'>('all');
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [pressedProjectId, setPressedProjectId] = useState<number | null>(null);
 
     const loadProjects = async () => {
         try {
@@ -38,8 +56,13 @@ export default function ProjectsScreen() {
                 throw new Error("Không tìm thấy thông tin người dùng");
             }
 
-            const data = await getProjects(parseInt(userId));
-            const formattedData: IProject[] = data
+            const response = await getProjects(
+                filter === 'mine' ? parseInt(userId) : undefined,
+                currentPage,
+                5
+            );
+
+            const formattedData: IProject[] = response.content
                 .map((item: any) => ({
                     id: item.id,
                     name: item.name,
@@ -51,10 +74,10 @@ export default function ProjectsScreen() {
                     members: item.members,
                     tasks: item.tasks,
                     createdAt: new Date(item.createdAt)
-                }))
-                .sort((a: IProject, b: IProject) => b.createdAt.getTime() - a.createdAt.getTime());
+                }));
             
             setProjects(formattedData);
+            setTotalPages(response.totalPages);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
             Alert.alert("Lỗi", "Không thể tải danh sách dự án");
@@ -77,27 +100,18 @@ export default function ProjectsScreen() {
         React.useCallback(() => {
             navigation.setOptions({ title: "Dự án" });
             loadProjects();
-        }, [])
+        }, [filter, currentPage])
     );
 
-    const renderItem = ({ item }: { item: IProject }) => {
-        return (
-            <Pressable
-                onPress={() => router.push({ 
-                    pathname: "/Project/projectdetail", 
-                    params: { project: JSON.stringify(item) } 
-                })}
-                style={({ pressed }) => [
-                    styles.projectItemContainer,
-                    pressed && styles.projectCardPressed
-                ]}
-            >
-                <ProjectItem 
-                    project={item} 
-                    onDelete={handleDeleteProject}
-                />
-            </Pressable>
-        );
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleProjectPress = (project: IProject) => {
+        router.push({ 
+            pathname: "/Project/projectdetail", 
+            params: { project: JSON.stringify(project) } 
+        });
     };
 
     if (loading) {
@@ -105,42 +119,115 @@ export default function ProjectsScreen() {
     }
 
     return (
-        <LinearGradient 
-            colors={['#f0f2f5', '#e9ecef']} 
-            style={styles.container}
-        >
-            <View style={styles.headerContainer}>
-                <MaterialCommunityIcons name="view-dashboard" size={28} color="#3A7BDD" />
-                <Text style={styles.header}>Danh sách dự án</Text>
+        <View style={projectStyles.container}>
+            <View style={projectStyles.headerContainer}>
+                <Ionicons name="folder" size={24} color="#1F2937" />
+                <Text style={projectStyles.header}>Danh sách dự án</Text>
             </View>
 
-            {projects.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <MaterialCommunityIcons name="folder-open-outline" size={64} color="#3A7BDD" />
-                    <Text style={styles.emptyText}>Chưa có dự án nào</Text>
-                    <Text style={styles.emptySubText}>Hãy tạo dự án đầu tiên của bạn</Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={projects}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={renderItem}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.listContainer}
-                />
-            )}
+            <View style={projectStyles.filterContainer}>
+                <TouchableOpacity 
+                    style={[projectStyles.filterButton, filter === 'all' && projectStyles.filterButtonActive]}
+                    onPress={() => {
+                        setFilter('all');
+                        setCurrentPage(0);
+                    }}
+                >
+                    <Text style={[projectStyles.filterText, filter === 'all' && projectStyles.filterTextActive]}>Tất cả</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    style={[projectStyles.filterButton, filter === 'mine' && projectStyles.filterButtonActive]}
+                    onPress={() => {
+                        setFilter('mine');
+                        setCurrentPage(0);
+                    }}
+                >
+                    <Text style={[projectStyles.filterText, filter === 'mine' && projectStyles.filterTextActive]}>Của tôi</Text>
+                </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity 
-                style={styles.fab}
-                onPress={() => router.push("/Project/createProject")}
+            <ScrollView style={projectStyles.listContainer}>
+                {loading ? (
+                    <View style={projectStyles.emptyContainer}>
+                        <ActivityIndicator size="large" color="#8B5CF6" />
+                    </View>
+                ) : projects.length === 0 ? (
+                    <View style={projectStyles.emptyContainer}>
+                        <Ionicons name="folder-open" size={48} color="#9CA3AF" />
+                        <Text style={projectStyles.emptyText}>Không có dự án nào</Text>
+                        <Text style={projectStyles.emptySubText}>
+                            Tạo dự án mới để bắt đầu quản lý công việc của bạn
+                        </Text>
+                    </View>
+                ) : (
+                    <View>
+                        {projects.map((project) => (
+                            <TouchableOpacity
+                                key={project.id}
+                                style={[
+                                    projectStyles.projectItemContainer,
+                                    pressedProjectId === project.id && projectStyles.projectCardPressed,
+                                ]}
+                                onPress={() => handleProjectPress(project)}
+                                onPressIn={() => setPressedProjectId(project.id)}
+                                onPressOut={() => setPressedProjectId(null)}
+                                activeOpacity={0.7}
+                            >
+                                <ProjectItem 
+                                    project={project} 
+                                    onDelete={handleDeleteProject}
+                                />
+                            </TouchableOpacity>
+                        ))}
+
+                        {totalPages > 1 && (
+                            <View style={projectStyles.paginationContainer}>
+                                <TouchableOpacity
+                                    style={[
+                                        projectStyles.paginationButton,
+                                        currentPage === 0 && projectStyles.paginationButtonDisabled
+                                    ]}
+                                    onPress={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 0}
+                                >
+                                    <Text style={[
+                                        currentPage === 0 ? projectStyles.paginationTextDisabled : projectStyles.paginationTextActive
+                                    ]}>Trước</Text>
+                                </TouchableOpacity>
+                                <Text style={projectStyles.paginationText}>
+                                    Trang {currentPage + 1} / {totalPages}
+                                </Text>
+                                <TouchableOpacity
+                                    style={[
+                                        projectStyles.paginationButton,
+                                        currentPage === totalPages - 1 && projectStyles.paginationButtonDisabled
+                                    ]}
+                                    onPress={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages - 1}
+                                >
+                                    <Text style={[
+                                        currentPage === totalPages - 1 ? projectStyles.paginationTextDisabled : projectStyles.paginationTextActive
+                                    ]}>Sau</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                )}
+            </ScrollView>
+
+            <TouchableOpacity
+                style={projectStyles.fab}
+                onPress={() => router.push('/Project/createProject')}
             >
                 <LinearGradient
-                    colors={['#3A7BDD', '#3A6073']}
-                    style={styles.fabGradient}
+                    colors={['#8B5CF6', '#6D28D9']}
+                    style={projectStyles.fabGradient}
                 >
-                    <AntDesign name="plus" size={24} color="white" />
+                    <Ionicons name="add" size={24} color="white" />
                 </LinearGradient>
             </TouchableOpacity>
-        </LinearGradient>
+        </View>
     );
-}
+};
+
+export default ProjectScreen;

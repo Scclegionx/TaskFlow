@@ -17,6 +17,10 @@ import mobile_be.mobile_be.Repository.UserRepository;
 import mobile_be.mobile_be.Exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
@@ -359,26 +363,37 @@ public class ProjectService {
         }).collect(Collectors.toList());
     }
     @Transactional
-    public List<ProjectResponseDTO> getProject(Integer userId) {
-        // Lấy danh sách project mà user là thành viên thông qua ProjectMember
-        List<Project> projects = projectRepository.findByProjectMembersUserId(userId);
+    public Page<ProjectResponseDTO> getProject(Integer userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         
-        return projects.stream()
-                .map(project -> {
-                    ProjectResponseDTO dto = new ProjectResponseDTO();
-                    dto.setId(project.getId());
-                    dto.setName(project.getName());
-                    dto.setDescription(project.getDescription());
-                    dto.setCreatedBy(project.getCreatedBy() != null ? project.getCreatedBy().getName() : null);
-                    dto.setStatus(project.getStatus());
-                    dto.setFromDate(project.getFromDate());
-                    dto.setToDate(project.getToDate());
-                    dto.setCreatedAt(project.getCreatedAt());
-                    dto.setMembers(null); // Không lấy members
-                    dto.setTasks(null);   // Không lấy tasks
-                    return dto;
-                })
-                .collect(Collectors.toList());
+        Page<Project> projects;
+        if (userId != null) {
+            // Lấy dự án của user
+            projects = projectRepository.findByProjectMembersUserId(userId, pageable);
+        } else {
+            // Lấy tất cả dự án
+            projects = projectRepository.findAll(pageable);
+        }
+        
+        return projects.map(project -> {
+            ProjectResponseDTO dto = new ProjectResponseDTO();
+            dto.setId(project.getId());
+            dto.setName(project.getName());
+            dto.setDescription(project.getDescription());
+            dto.setCreatedBy(project.getCreatedBy() != null ? project.getCreatedBy().getName() : null);
+            dto.setStatus(project.getStatus());
+            dto.setFromDate(project.getFromDate());
+            dto.setToDate(project.getToDate());
+            dto.setCreatedAt(project.getCreatedAt());
+            
+            // Tính progress
+            int totalTask = projectRepository.findAllTaskInProject(project.getId());
+            int totalTaskFinished = projectRepository.totalTaskFinishInProject(project.getId());
+            int progress = totalTask == 0 ? 0 : (totalTaskFinished * 100) / totalTask;
+            dto.setProgress(progress);
+            
+            return dto;
+        });
     }
     @Transactional
     public ProjectResponseDTO getProjectById(Integer id) {

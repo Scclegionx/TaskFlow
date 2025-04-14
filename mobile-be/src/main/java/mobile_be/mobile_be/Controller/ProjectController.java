@@ -73,8 +73,11 @@ public class ProjectController {
 
 
     @GetMapping("/get-project")
-    public ResponseEntity<?> getProject(@RequestParam Integer userId) {
-        return ResponseEntity.ok(projectService.getProject(userId));
+    public ResponseEntity<?> getProject(
+        @RequestParam(required = false) Integer userId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "5") int size) {
+        return ResponseEntity.ok(projectService.getProject(userId, page, size));
     }
 
     // api lay ra  nhan su cua du an

@@ -4,6 +4,8 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import mobile_be.mobile_be.Model.Project;
 import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -200,6 +202,6 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     List<User> getAllMemberInProject(Integer projectId, String textSearch);
 
     @Query("SELECT DISTINCT p FROM Project p JOIN p.projectMembers pm WHERE pm.user.id = ?1")
-    List<Project> findByProjectMembersUserId(Integer userId);
+    Page<Project> findByProjectMembersUserId(Integer userId, Pageable pageable);
 
 }

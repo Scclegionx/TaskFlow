@@ -37,12 +37,18 @@ export const getProjects = async (userId?: number, page: number = 0, size: numbe
     return response.data;
 };
 
-export const getProjectById = async (id: number) => {
+export const getProjectById = async (id: number, memberPage: number = 0, memberSize: number = 3, taskPage: number = 0, taskSize: number = 5) => {
     const token = await AsyncStorage.getItem("token");
     if (!token) {
         throw new Error("Token không tồn tại");
     }
     const response = await axios.get(`${API_URL_project}/${id}`, {
+        params: {
+            memberPage,
+            memberSize,
+            taskPage,
+            taskSize
+        },
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

@@ -122,6 +122,10 @@ export default function ProjectDetail() {
     const [newTaskDescription, setNewTaskDescription] = useState("");
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+    const [memberPage, setMemberPage] = useState(0);
+    const [taskPage, setTaskPage] = useState(0);
+    const [totalMembers, setTotalMembers] = useState(0);
+    const [totalTasks, setTotalTasks] = useState(0);
 
     useFocusEffect(
         useCallback(() => {
@@ -160,19 +164,20 @@ export default function ProjectDetail() {
 
     const loadProjects = async () => {
         try {
-            const data = await getProjectById(project.id);
-            // Lấy danh sách task chính và sắp xếp theo thời gian tạo
-            const mainTasks = await getMainTasks(project.id);
-            const sortedTasks = mainTasks.sort((a: ITask, b: ITask) => {
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            });
-            setItemProject({...data, tasks: sortedTasks});
+            const data = await getProjectById(project.id, memberPage, 3, taskPage, 5);
+            setTotalMembers(data.totalMembers);
+            setTotalTasks(data.totalTasks);
+            setItemProject(data);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadProjects();
+    }, [memberPage, taskPage]);
 
     const debouncedSearch = debounce(async (email: string) => {
         if (email.length > 0) {
@@ -318,13 +323,34 @@ export default function ProjectDetail() {
                     end={{ x: 1, y: 1 }}
                 >
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>👥 Thành viên</Text>
+                        <Text style={styles.sectionTitle}>👥 Thành viên ({totalMembers})</Text>
                         {userRole === 'ADMIN' && (
                             <TouchableOpacity onPress={() => setShowAddMember(true)}>
                                 <AntDesign name="plus" size={24} color="#007BFF" />
                             </TouchableOpacity>
                         )}
                     </View>
+                    {totalMembers > 3 && (
+                        <View style={styles.paginationContainer}>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, memberPage === 0 && styles.disabledButton]}
+                                onPress={() => setMemberPage(prev => Math.max(0, prev - 1))}
+                                disabled={memberPage === 0}
+                            >
+                                <AntDesign name="left" size={16} color={memberPage === 0 ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
+                            <Text style={styles.paginationText}>
+                                Trang {memberPage + 1} / {Math.ceil(totalMembers / 3)}
+                            </Text>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, (memberPage + 1) * 3 >= totalMembers && styles.disabledButton]}
+                                onPress={() => setMemberPage(prev => prev + 1)}
+                                disabled={(memberPage + 1) * 3 >= totalMembers}
+                            >
+                                <AntDesign name="right" size={16} color={(memberPage + 1) * 3 >= totalMembers ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
+                        </View>
+                    )}
                     <FlatList
                         data={ItemProject?.members}
                         keyExtractor={(member) => member.id.toString()}
@@ -420,7 +446,7 @@ export default function ProjectDetail() {
                     end={{ x: 1, y: 1 }}
                 >
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>📌 Công việc</Text>
+                        <Text style={styles.sectionTitle}>📌 Công việc ({totalTasks})</Text>
                         {userRole === 'ADMIN' && (
                             <TouchableOpacity 
                                 onPress={() => router.push({
@@ -432,6 +458,27 @@ export default function ProjectDetail() {
                             </TouchableOpacity>
                         )}
                     </View>
+                    {totalTasks > 5 && (
+                        <View style={styles.paginationContainer}>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, taskPage === 0 && styles.disabledButton]}
+                                onPress={() => setTaskPage(prev => Math.max(0, prev - 1))}
+                                disabled={taskPage === 0}
+                            >
+                                <AntDesign name="left" size={16} color={taskPage === 0 ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
+                            <Text style={styles.paginationText}>
+                                Trang {taskPage + 1} / {Math.ceil(totalTasks / 5)}
+                            </Text>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, (taskPage + 1) * 5 >= totalTasks && styles.disabledButton]}
+                                onPress={() => setTaskPage(prev => prev + 1)}
+                                disabled={(taskPage + 1) * 5 >= totalTasks}
+                            >
+                                <AntDesign name="right" size={16} color={(taskPage + 1) * 5 >= totalTasks ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
+                        </View>
+                    )}
                     {ItemProject?.tasks && ItemProject.tasks.length > 0 ? (
                         <FlatList
                             data={ItemProject.tasks}
@@ -935,5 +982,25 @@ const styles = StyleSheet.create({
     userEmail: {
         fontSize: 14,
         color: "#6B7280",
+    },
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    paginationButton: {
+        padding: 8,
+        borderRadius: 5,
+        backgroundColor: '#F0F0F0',
+        marginHorizontal: 5,
+    },
+    disabledButton: {
+        backgroundColor: '#E0E0E0',
+    },
+    paginationText: {
+        marginHorizontal: 10,
+        color: '#666',
     },
 });

@@ -54,8 +54,13 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getAllProject(name,projectId));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponseDTO> getProjectById(@PathVariable Integer id) {
-        return ResponseEntity.ok(projectService.getProjectById(id));
+    public ResponseEntity<ProjectResponseDTO> getProjectById(
+        @PathVariable Integer id,
+        @RequestParam(defaultValue = "0") Integer memberPage,
+        @RequestParam(defaultValue = "3") Integer memberSize,
+        @RequestParam(defaultValue = "0") Integer taskPage,
+        @RequestParam(defaultValue = "5") Integer taskSize) {
+        return ResponseEntity.ok(projectService.getProjectById(id, memberPage, memberSize, taskPage, taskSize));
     }
 
 

@@ -3,6 +3,7 @@ package mobile_be.mobile_be.Controller;
 import mobile_be.mobile_be.Model.Schedule;
 import mobile_be.mobile_be.Service.ScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,10 +28,12 @@ public class ScheduleController {
     @GetMapping
     public ResponseEntity<?> getSchedulesByDate(
         @RequestParam String date,
-        @RequestParam Integer userId
+        @RequestParam Integer userId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "5") int size
     ) {
         LocalDate parsedDate = LocalDate.parse(date);
-        List<Schedule> schedules = scheduleService.getSchedulesByDate(parsedDate, userId);
+        Page<Schedule> schedules = scheduleService.getSchedulesByDate(parsedDate, userId, page, size);
         return ResponseEntity.ok(schedules);
     }
 

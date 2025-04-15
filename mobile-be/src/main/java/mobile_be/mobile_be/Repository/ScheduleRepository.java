@@ -2,6 +2,8 @@ package mobile_be.mobile_be.Repository;
 
 import lombok.NonNull;
 import mobile_be.mobile_be.Model.Schedule;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -21,9 +23,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             WHEN s.priority = 'HIGH' THEN 2
             WHEN s.priority = 'NORMAL' THEN 1
             WHEN s.priority = 'LOW' THEN 0
-        END DESC
+        END DESC,
+        s.startTime ASC
     """)
-    List<Schedule> findSchedulesByDateAndUserId(LocalDate date, Integer userId);
+    Page<Schedule> findSchedulesByDateAndUserId(LocalDate date, Integer userId, Pageable pageable);
 
     @Query("""
     SELECT DATE(s.startTime),

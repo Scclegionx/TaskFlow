@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.CreateProjectRequest;
 import mobile_be.mobile_be.DTO.response.ProjectResponseDTO;
 import mobile_be.mobile_be.DTO.request.UpdateProjectRequest;
+import mobile_be.mobile_be.DTO.response.TaskResponseDTO;
+import mobile_be.mobile_be.DTO.response.UserResponseDTO;
 import mobile_be.mobile_be.Model.Project;
 import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Service.ProjectService;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 
+import java.util.List;
 import java.util.Map;
 
 @CrossOrigin(origins = "*")
@@ -54,8 +57,13 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getAllProject(name,projectId));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponseDTO> getProjectById(@PathVariable Integer id) {
-        return ResponseEntity.ok(projectService.getProjectById(id));
+    public ResponseEntity<ProjectResponseDTO> getProjectById(
+        @PathVariable Integer id,
+        @RequestParam(defaultValue = "0") Integer memberPage,
+        @RequestParam(defaultValue = "3") Integer memberSize,
+        @RequestParam(defaultValue = "0") Integer taskPage,
+        @RequestParam(defaultValue = "5") Integer taskSize) {
+        return ResponseEntity.ok(projectService.getProjectById(id, memberPage, memberSize, taskPage, taskSize));
     }
 
 
@@ -171,5 +179,19 @@ public class ProjectController {
     @GetMapping("/search")
     public ResponseEntity<?> searchProjects(@RequestParam String query) {
         return ResponseEntity.ok(projectService.searchProjects(query));
+    }
+
+    @GetMapping("/{projectId}/search-members")
+    public ResponseEntity<List<UserResponseDTO>> searchMembersInProject(
+        @PathVariable Integer projectId,
+        @RequestParam(required = false) String searchText) {
+        return ResponseEntity.ok(projectService.searchMembersInProject(projectId, searchText));
+    }
+
+    @GetMapping("/{projectId}/search-tasks")
+    public ResponseEntity<List<TaskResponseDTO>> searchTasksInProject(
+        @PathVariable Integer projectId,
+        @RequestParam(required = false) String searchText) {
+        return ResponseEntity.ok(projectService.searchTasksInProject(projectId, searchText));
     }
 }

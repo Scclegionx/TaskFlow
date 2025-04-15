@@ -3,6 +3,10 @@ package mobile_be.mobile_be.Service;
 import mobile_be.mobile_be.Model.Schedule;
 import mobile_be.mobile_be.Repository.ScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -20,8 +24,12 @@ public class ScheduleService {
         return scheduleRepository.save(schedule);
     }
 
-    public List<Schedule> getSchedulesByDate(LocalDate date, Integer userId) {
-        return scheduleRepository.findSchedulesByDateAndUserId(date, userId);
+    public Page<Schedule> getSchedulesByDate(LocalDate date, Integer userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(
+            Sort.Order.desc("priority"),
+            Sort.Order.asc("startTime")
+        ));
+        return scheduleRepository.findSchedulesByDateAndUserId(date, userId, pageable);
     }
 
     public Map<String, String> getHighlightedDates(Integer userId) {
@@ -53,6 +61,7 @@ public class ScheduleService {
             schedule.setStartTime(updatedSchedule.getStartTime());
             schedule.setEndTime(updatedSchedule.getEndTime());
             schedule.setPriority(updatedSchedule.getPriority());
+            schedule.setContent(updatedSchedule.getContent());
 
             return scheduleRepository.save(schedule);
         });

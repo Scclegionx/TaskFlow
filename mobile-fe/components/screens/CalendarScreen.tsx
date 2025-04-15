@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Image} from 'react-native';
+import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Image, ActivityIndicator} from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import {getSchedulesByDate, getHighlightedDates, deleteSchedule} from '@/hooks/useScheduleApi';
 import { useRouter} from "expo-router";
@@ -29,6 +29,9 @@ const CalendarScreen = () => {
     const [selectedDate, setSelectedDate] = useState('');
     const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [highlightedDates, setHighlightedDates] = useState<{[key: string]: any}>({});
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [loading, setLoading] = useState(false);
     const today = new Date().toISOString().split('T')[0];
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -58,12 +61,16 @@ const CalendarScreen = () => {
         }
     }, [selectedDate]);
 
-    const fetchSchedules = async (date: string) => {
+    const fetchSchedules = async (date: string, page: number = 0) => {
+        setLoading(true);
         try {
-            const data = await getSchedulesByDate(date);
-            setSchedules(data);
+            const data = await getSchedulesByDate(date, page, 5);
+            setSchedules(data.content);
+            setTotalPages(data.totalPages);
         } catch (error) {
             console.error('Lỗi khi lấy lịch trình:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -161,6 +168,11 @@ const CalendarScreen = () => {
         });
     };
 
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        fetchSchedules(selectedDate, newPage);
+    };
+
     return (
         <View style={styles.mainContainer}>
             <Image 
@@ -235,31 +247,68 @@ const CalendarScreen = () => {
                     </View>
 
                     <View style={styles.listContainer}>
-                        {schedules.length > 0 ? (
-                            schedules.map((item) => (
-                                <TouchableOpacity 
-                                    key={item.id}
-                                    onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
-                                    onLongPress={() => handleLongPress(item)}
-                                    style={styles.itemCard}
-                                >
-                                    <View style={styles.itemHeader}>
-                                        <MaterialIcons name="event" size={20} color="#EF4444" />
-                                        <Text style={styles.itemTitle}>{item.title}</Text>
-                                    </View>
-                                    <View style={styles.itemTimeContainer}>
-                                        <FontAwesome name="clock-o" size={16} color="#6B7280" />
-                                        <Text style={styles.itemTime}>
-                                            {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
+                        {loading ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color="#EF4444" />
+                            </View>
+                        ) : schedules.length > 0 ? (
+                            <>
+                                {schedules.map((item) => (
+                                    <TouchableOpacity 
+                                        key={item.id}
+                                        onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
+                                        onLongPress={() => handleLongPress(item)}
+                                        style={styles.itemCard}
+                                    >
+                                        <View style={styles.itemHeader}>
+                                            <MaterialIcons name="event" size={20} color="#EF4444" />
+                                            <Text style={styles.itemTitle}>{item.title}</Text>
+                                        </View>
+                                        <View style={styles.itemTimeContainer}>
+                                            <FontAwesome name="clock-o" size={16} color="#6B7280" />
+                                            <Text style={styles.itemTime}>
+                                                {new Date(item.startTime).toLocaleTimeString('vi-VN')} - {new Date(item.endTime).toLocaleTimeString('vi-VN')}
+                                            </Text>
+                                        </View>
+                                        <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
+                                            <Text style={styles.priorityText}>
+                                                {getPriorityLabel(item.priority)}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                                {totalPages > 1 && (
+                                    <View style={styles.paginationContainer}>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.paginationButton,
+                                                currentPage === 0 && styles.paginationButtonDisabled
+                                            ]}
+                                            onPress={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 0}
+                                        >
+                                            <Text style={[
+                                                currentPage === 0 ? styles.paginationTextDisabled : styles.paginationTextActive
+                                            ]}>Trước</Text>
+                                        </TouchableOpacity>
+                                        <Text style={styles.paginationText}>
+                                            Trang {currentPage + 1} / {totalPages}
                                         </Text>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.paginationButton,
+                                                currentPage === totalPages - 1 && styles.paginationButtonDisabled
+                                            ]}
+                                            onPress={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage === totalPages - 1}
+                                        >
+                                            <Text style={[
+                                                currentPage === totalPages - 1 ? styles.paginationTextDisabled : styles.paginationTextActive
+                                            ]}>Sau</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                    <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
-                                        <Text style={styles.priorityText}>
-                                            {getPriorityLabel(item.priority)}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                            ))
+                                )}
+                            </>
                         ) : (
                             <View style={styles.emptyState}>
                                 <MaterialIcons name="event-busy" size={48} color="#9CA3AF" />
@@ -496,6 +545,46 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
+    },
+    loadingContainer: {
+        padding: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: 'white',
+        borderRadius: 16,
+        marginTop: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    paginationButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        backgroundColor: '#EF4444',
+    },
+    paginationButtonDisabled: {
+        backgroundColor: '#E5E7EB',
+    },
+    paginationText: {
+        fontSize: 14,
+        color: '#6B7280',
+        fontWeight: '500',
+    },
+    paginationTextActive: {
+        color: 'white',
+        fontWeight: '600',
+    },
+    paginationTextDisabled: {
+        color: '#9CA3AF',
     },
 });
 

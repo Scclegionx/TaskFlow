@@ -2,14 +2,16 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL_SCHEDULES_URL } from '@/constants/api';
 
-export const getSchedulesByDate = async (date: string) => {
+export const getSchedulesByDate = async (date: string, page: number = 0, size: number = 5) => {
     const token = await AsyncStorage.getItem('token');
     const userId = await AsyncStorage.getItem('userId');
     
     const response = await axios.get(`${API_URL_SCHEDULES_URL}`, {
         params: {
             date: date,
-            userId: userId
+            userId: userId,
+            page: page,
+            size: size
         },
         headers: { Authorization: `Bearer ${token}` },
     });

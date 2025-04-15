@@ -8,13 +8,15 @@ import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/nativ
 import { useRouter } from 'expo-router';
 import { 
     getProjectById, getStatusText, searchUserByEmail, 
-    addProjectMember, removeProjectMember, formatDateTime 
+    addProjectMember, removeProjectMember, formatDateTime,
+    searchProjectMembers, searchProjectTasks
 } from "@/hooks/useProjectApi";
 import { AntDesign } from "@expo/vector-icons";
 import { debounce } from "lodash";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createTask, deleteTask, assignTask, getMainTasks } from "@/hooks/useTaskApi";
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ItemProject {
     id: number;
@@ -106,7 +108,6 @@ const getDefaultAvatar = () => {
 };
 
 export default function ProjectDetail() {
-    const navigation = useNavigation();
     const route = useRoute();
     const router = useRouter();
     const [ItemProject, setItemProject] = useState<ItemProject>();
@@ -122,6 +123,16 @@ export default function ProjectDetail() {
     const [newTaskDescription, setNewTaskDescription] = useState("");
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+    const [memberPage, setMemberPage] = useState(0);
+    const [taskPage, setTaskPage] = useState(0);
+    const [totalMembers, setTotalMembers] = useState(0);
+    const [totalTasks, setTotalTasks] = useState(0);
+    const [memberSearchText, setMemberSearchText] = useState("");
+    const [taskSearchText, setTaskSearchText] = useState("");
+    const [memberSearchResults, setMemberSearchResults] = useState<any[]>([]);
+    const [taskSearchResults, setTaskSearchResults] = useState<any[]>([]);
+    const [showMemberSearch, setShowMemberSearch] = useState(false);
+    const [showTaskSearch, setShowTaskSearch] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -160,19 +171,20 @@ export default function ProjectDetail() {
 
     const loadProjects = async () => {
         try {
-            const data = await getProjectById(project.id);
-            // Lấy danh sách task chính và sắp xếp theo thời gian tạo
-            const mainTasks = await getMainTasks(project.id);
-            const sortedTasks = mainTasks.sort((a: ITask, b: ITask) => {
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            });
-            setItemProject({...data, tasks: sortedTasks});
+            const data = await getProjectById(project.id, memberPage, 3, taskPage, 5);
+            setTotalMembers(data.totalMembers);
+            setTotalTasks(data.totalTasks);
+            setItemProject(data);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu dự án:", error);
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadProjects();
+    }, [memberPage, taskPage]);
 
     const debouncedSearch = debounce(async (email: string) => {
         if (email.length > 0) {
@@ -287,6 +299,63 @@ export default function ProjectDetail() {
         }
     };
 
+    const debouncedSearchMembers = useCallback(
+        debounce(async (text: string) => {
+            if (!text.trim()) {
+                setMemberSearchResults([]);
+                return;
+            }
+            try {
+                const results = await searchProjectMembers(project.id, text);
+                console.log("results", results);
+                setMemberSearchResults(results);
+            } catch (error) {
+                console.error('Lỗi tìm kiếm thành viên:', error);
+                setMemberSearchResults([]);
+            }
+        }, 300),
+        [project.id]
+    );
+
+    const debouncedSearchTasks = useCallback(
+        debounce(async (text: string) => {
+            if (!text.trim()) {
+                setTaskSearchResults([]);
+                return;
+            }
+            try {
+                const results = await searchProjectTasks(project.id, text);
+                setTaskSearchResults(results);
+            } catch (error) {
+                console.error('Lỗi tìm kiếm công việc:', error);
+                setTaskSearchResults([]);
+            }
+        }, 300),
+        [project.id]
+    );
+
+    const handleMemberSearch = (text: string) => {
+        setMemberSearchText(text);
+        setShowMemberSearch(true);
+        debouncedSearchMembers(text);
+    };
+
+    const handleTaskSearch = (text: string) => {
+        setTaskSearchText(text);
+        setShowTaskSearch(true);
+        debouncedSearchTasks(text);
+    };
+
+    const handleSelectMember = (member: any) => {
+        setMemberSearchText(member.fullName);
+        setShowMemberSearch(false);
+    };
+
+    const handleSelectTask = (task: any) => {
+        setTaskSearchText(task.title);
+        setShowTaskSearch(false);
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <Animated.View style={styles.card}>
@@ -318,13 +387,68 @@ export default function ProjectDetail() {
                     end={{ x: 1, y: 1 }}
                 >
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>👥 Thành viên</Text>
+                        <Text style={styles.sectionTitle}>👥 Thành viên ({totalMembers})</Text>
                         {userRole === 'ADMIN' && (
                             <TouchableOpacity onPress={() => setShowAddMember(true)}>
                                 <AntDesign name="plus" size={24} color="#007BFF" />
                             </TouchableOpacity>
                         )}
                     </View>
+                    
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Tìm kiếm thành viên..."
+                            value={memberSearchText}
+                            onChangeText={handleMemberSearch}
+                        />
+                        {showMemberSearch && memberSearchResults.length > 0 && (
+                            <View style={styles.searchResults}>
+                                <View style={styles.resultsHeader}>
+                                    <Text style={styles.resultsHeaderText}>Thành viên tìm thấy</Text>
+                                </View>
+                                <ScrollView 
+                                    style={styles.resultsContent}
+                                    nestedScrollEnabled={true}
+                                    scrollEnabled={true}
+                                    showsVerticalScrollIndicator={true}
+                                >
+                                    {memberSearchResults.map((item) => (
+                                        <View key={item.id} style={styles.memberItem}>
+                                            <View style={styles.memberInfo}>
+                                                <View style={styles.memberAvatarContainer}>
+                                                    <Image 
+                                                        source={item.avatar ? { uri: item.avatar } : getDefaultAvatar()}
+                                                        style={styles.memberAvatar}
+                                                    />
+                                                    <View style={styles.memberDetails}>
+                                                        <Text style={styles.memberName}>
+                                                            {item.name}
+                                                        </Text>
+                                                        <Text style={styles.memberEmail}>
+                                                            {item.email}
+                                                        </Text>
+                                                        <Text style={[styles.roleText, { color: item.role === 'ADMIN' ? '#007BFF' : '#666' }]}>
+                                                            {item.role}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                            {userRole === 'ADMIN' && item.id !== currentUserId && (
+                                                <TouchableOpacity onPress={() => handleRemoveMember(item.id)}>
+                                                    <AntDesign name="delete" size={20} color="#FF4D67" />
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                                <View style={styles.resultsFooter}>
+                                    <Text style={styles.resultsFooterText}>Nhấn để chọn</Text>
+                                </View>
+                            </View>
+                        )}
+                    </View>
+
                     <FlatList
                         data={ItemProject?.members}
                         keyExtractor={(member) => member.id.toString()}
@@ -358,6 +482,28 @@ export default function ProjectDetail() {
                         )}
                         scrollEnabled={false}
                     />
+
+                    {totalMembers > 3 && (
+                        <View style={styles.paginationContainer}>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, memberPage === 0 && styles.disabledButton]}
+                                onPress={() => setMemberPage(prev => Math.max(0, prev - 1))}
+                                disabled={memberPage === 0}
+                            >
+                                <AntDesign name="left" size={16} color={memberPage === 0 ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
+                            <Text style={styles.paginationText}>
+                                Trang {memberPage + 1} / {Math.ceil(totalMembers / 3)}
+                            </Text>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, (memberPage + 1) * 3 >= totalMembers && styles.disabledButton]}
+                                onPress={() => setMemberPage(prev => prev + 1)}
+                                disabled={(memberPage + 1) * 3 >= totalMembers}
+                            >
+                                <AntDesign name="right" size={16} color={(memberPage + 1) * 3 >= totalMembers ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </LinearGradient>
             </Animated.View>
 
@@ -420,7 +566,7 @@ export default function ProjectDetail() {
                     end={{ x: 1, y: 1 }}
                 >
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>📌 Công việc</Text>
+                        <Text style={styles.sectionTitle}>📌 Công việc ({totalTasks})</Text>
                         {userRole === 'ADMIN' && (
                             <TouchableOpacity 
                                 onPress={() => router.push({
@@ -432,6 +578,109 @@ export default function ProjectDetail() {
                             </TouchableOpacity>
                         )}
                     </View>
+
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Tìm kiếm công việc..."
+                            value={taskSearchText}
+                            onChangeText={handleTaskSearch}
+                        />
+                        {showTaskSearch && taskSearchResults.length > 0 && (
+                            <View style={styles.searchResults}>
+                                <View style={styles.resultsHeader}>
+                                    <Text style={styles.resultsHeaderText}>Công việc tìm thấy</Text>
+                                </View>
+                                <ScrollView 
+                                    style={styles.resultsContent}
+                                    nestedScrollEnabled={true}
+                                    scrollEnabled={true}
+                                    showsVerticalScrollIndicator={true}
+                                >
+                                    {taskSearchResults.map((item) => (
+                                        <View key={item.id} style={[styles.taskItem, userRole === 'ADMIN' && styles.taskItemClickable]}>
+                                            <TouchableOpacity 
+                                                style={styles.taskContent}
+                                                onPress={() => handleTaskPress(item.id)}
+                                            >
+                                                <View style={styles.taskHeader}>
+                                                    <Text style={styles.taskTitle}>
+                                                        🔹 {item.title}
+                                                    </Text>
+                                                    {userRole === 'ADMIN' && (
+                                                        <TouchableOpacity 
+                                                            style={styles.deleteButton}
+                                                            onPress={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRemoveTask(item.id);
+                                                            }}
+                                                        >
+                                                            <AntDesign name="close" size={16} color="#FF4D67" />
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
+                                                <Text style={styles.taskDescription}>{item.description}</Text>
+                                                <Text style={styles.taskDate}>
+                                                    {formatDateTime(item.createdAt)}
+                                                </Text>
+                                                <View style={styles.taskFooter}>
+                                                    <Text style={[styles.statusText, { color: getTaskStatusColor(item.status) }]}>
+                                                        {getTaskStatusText(item.status)}
+                                                    </Text>
+                                                    {item.assignees && item.assignees.length > 0 ? (
+                                                        <View style={styles.assigneeContainer}>
+                                                            <View style={styles.assignedAvatar}>
+                                                                <Image 
+                                                                    source={item.assignees[0].avatar ? { uri: item.assignees[0].avatar } : getDefaultAvatar()}
+                                                                    style={styles.avatarImage}
+                                                                />
+                                                                {userRole === 'ADMIN' && (
+                                                                    <TouchableOpacity 
+                                                                        style={styles.changeAssignBadge}
+                                                                        onPress={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleShowAssignModal(item.id);
+                                                                        }}
+                                                                    >
+                                                                        <AntDesign name="edit" size={8} color="#FFF" />
+                                                                    </TouchableOpacity>
+                                                                )}
+                                                            </View>
+                                                            {item.assignees.length > 1 && (
+                                                                <View style={styles.assigneeCount}>
+                                                                    <Text style={styles.assigneeCountText}>
+                                                                        +{item.assignees.length - 1}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+                                                        </View>
+                                                    ) : (
+                                                        userRole === 'ADMIN' ? (
+                                                            <TouchableOpacity 
+                                                                style={styles.assignButton}
+                                                                onPress={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleShowAssignModal(item.id);
+                                                                }}
+                                                            >
+                                                                <AntDesign name="adduser" size={20} color="#007BFF" />
+                                                            </TouchableOpacity>
+                                                        ) : (
+                                                            <Text style={styles.noAssigneeText}>Chưa có người được gán</Text>
+                                                        )
+                                                    )}
+                                                </View>
+                                            </TouchableOpacity>
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                                <View style={styles.resultsFooter}>
+                                    <Text style={styles.resultsFooterText}>Nhấn để chọn</Text>
+                                </View>
+                            </View>
+                        )}
+                    </View>
+
                     {ItemProject?.tasks && ItemProject.tasks.length > 0 ? (
                         <FlatList
                             data={ItemProject.tasks}
@@ -520,6 +769,28 @@ export default function ProjectDetail() {
                     ) : (
                         <View style={styles.emptyContainer}>
                             <Text style={styles.emptyText}>Chưa có nhiệm vụ nào</Text>
+                        </View>
+                    )}
+
+                    {totalTasks > 5 && (
+                        <View style={styles.paginationContainer}>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, taskPage === 0 && styles.disabledButton]}
+                                onPress={() => setTaskPage(prev => Math.max(0, prev - 1))}
+                                disabled={taskPage === 0}
+                            >
+                                <AntDesign name="left" size={16} color={taskPage === 0 ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
+                            <Text style={styles.paginationText}>
+                                Trang {taskPage + 1} / {Math.ceil(totalTasks / 5)}
+                            </Text>
+                            <TouchableOpacity 
+                                style={[styles.paginationButton, (taskPage + 1) * 5 >= totalTasks && styles.disabledButton]}
+                                onPress={() => setTaskPage(prev => prev + 1)}
+                                disabled={(taskPage + 1) * 5 >= totalTasks}
+                            >
+                                <AntDesign name="right" size={16} color={(taskPage + 1) * 5 >= totalTasks ? "#999" : "#007BFF"} />
+                            </TouchableOpacity>
                         </View>
                     )}
                 </LinearGradient>
@@ -664,9 +935,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 12,
         paddingHorizontal: 15,
-        backgroundColor: "#F9FAFB",
-        borderRadius: 10,
-        marginBottom: 10,
+        backgroundColor: "#F3F4F6",
+        borderRadius: 8,
+        marginBottom: 8,
+        marginHorizontal: 8,
+        marginTop: 8,
         borderWidth: 1,
         borderColor: "#E5E7EB",
     },
@@ -711,9 +984,11 @@ const styles = StyleSheet.create({
     },
     taskItem: {
         padding: 15,
-        backgroundColor: "#F9FAFB",
-        borderRadius: 12,
-        marginBottom: 12,
+        backgroundColor: "#F3F4F6",
+        borderRadius: 8,
+        marginBottom: 8,
+        marginHorizontal: 8,
+        marginTop: 8,
         borderWidth: 1,
         borderColor: "#E5E7EB",
         shadowColor: "#000",
@@ -813,18 +1088,25 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     searchInput: {
-        borderWidth: 1,
-        borderColor: "#E5E7EB",
+        backgroundColor: '#fff',
         borderRadius: 10,
-        padding: 12,
-        marginBottom: 15,
-        backgroundColor: "#F9FAFB",
-        fontSize: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     searchResultItem: {
         padding: 12,
         borderBottomWidth: 1,
-        borderBottomColor: "#E5E7EB",
+        borderBottomColor: '#E5E7EB',
     },
     closeButton: {
         backgroundColor: "#3B82F6",
@@ -935,5 +1217,106 @@ const styles = StyleSheet.create({
     userEmail: {
         fontSize: 14,
         color: "#6B7280",
+    },
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    paginationButton: {
+        padding: 8,
+        borderRadius: 5,
+        backgroundColor: '#F0F0F0',
+        marginHorizontal: 5,
+    },
+    disabledButton: {
+        backgroundColor: '#E0E0E0',
+    },
+    paginationText: {
+        marginHorizontal: 10,
+        color: '#666',
+    },
+    searchContainer: {
+        marginBottom: 16,
+        position: 'relative',
+    },
+    searchResults: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 10,
+        marginTop: 5,
+        maxHeight: 300,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 1000,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    resultsHeader: {
+        padding: 12,
+        backgroundColor: '#E5E7EB',
+        borderBottomWidth: 1,
+        borderBottomColor: '#D1D5DB',
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+    },
+    resultsHeaderText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1F2937',
+    },
+    resultsFooter: {
+        padding: 12,
+        backgroundColor: '#E5E7EB',
+        borderTopWidth: 1,
+        borderTopColor: '#D1D5DB',
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10,
+        alignItems: 'center',
+    },
+    resultsFooterText: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    resultsContent: {
+        maxHeight: 200,
+        paddingVertical: 8,
+    },
+    searchResultContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    searchResultIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#F3F4F6',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    searchResultTextContainer: {
+        flex: 1,
+    },
+    searchResultText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#1F2937',
+        marginBottom: 4,
+    },
+    searchResultSubtitle: {
+        fontSize: 14,
+        color: '#6B7280',
     },
 });

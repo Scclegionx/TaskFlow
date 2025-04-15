@@ -20,4 +20,10 @@ public class ProjectResponseDTO {
     // tien do, lay so nguyen cho de ve bieu do
     private Integer progress;
     private Integer memberNumber;
+    private Integer totalMembers;
+    private Integer totalTasks;
+    private Integer memberPage;
+    private Integer memberSize;
+    private Integer taskPage;
+    private Integer taskSize;
 }

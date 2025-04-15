@@ -12,6 +12,7 @@ const CreateScheduleScreen = () => {
     const [startTime, setStartTime] = useState(new Date());
     const [endTime, setEndTime] = useState(new Date());
     const [priority, setPriority] = useState('NORMAL');
+    const [content, setContent] = useState('');
     const [showStartPicker, setShowStartPicker] = useState(false);
     const [showEndPicker, setShowEndPicker] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -66,6 +67,7 @@ const CreateScheduleScreen = () => {
                 startTime: convertToLocalISO(mergedStartTime),
                 endTime: convertToLocalISO(mergedEndTime),
                 priority,
+                content,
                 user: { id: userId },
             };
             console.log("Đang gửi dữ liệu:", scheduleData);
@@ -166,6 +168,17 @@ const CreateScheduleScreen = () => {
                         </TouchableOpacity>
                     ))}
                 </View>
+
+                <Text style={styles.label}>Nội dung</Text>
+                <TextInput
+                    style={[styles.input, styles.contentInput]}
+                    placeholder="Nhập nội dung lịch trình..."
+                    value={content}
+                    onChangeText={setContent}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                />
 
                 <TouchableOpacity
                     style={[styles.createButton, loading && styles.disabledButton]}
@@ -299,6 +312,10 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
+    },
+    contentInput: {
+        height: 100,
+        textAlignVertical: 'top',
     },
 });
 

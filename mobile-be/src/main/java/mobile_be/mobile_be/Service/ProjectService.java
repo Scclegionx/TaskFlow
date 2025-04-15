@@ -398,7 +398,7 @@ public class ProjectService {
         });
     }
     @Transactional
-    public ProjectResponseDTO getProjectById(Integer id) {
+    public ProjectResponseDTO getProjectById(Integer id, Integer memberPage, Integer memberSize, Integer taskPage, Integer taskSize) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy dự án"));
 
@@ -411,8 +411,27 @@ public class ProjectService {
         dto.setFromDate(project.getFromDate());
         dto.setToDate(project.getToDate());
         
+        // Lấy tổng số thành viên và công việc
+        int totalMembers = projectRepository.countMembersByProjectId(id);
+        int totalTasks = projectRepository.findAllTaskInProject(id);
+        dto.setTotalMembers(totalMembers);
+        dto.setTotalTasks(totalTasks);
+        
+        // Set thông tin phân trang
+        dto.setMemberPage(memberPage);
+        dto.setMemberSize(memberSize);
+        dto.setTaskPage(taskPage);
+        dto.setTaskSize(taskSize);
+        
+        // Lấy danh sách thành viên với phân trang và sắp xếp theo tên
+        List<ProjectMember> members = project.getProjectMembers().stream()
+                .sorted((a, b) -> a.getUser().getName().compareToIgnoreCase(b.getUser().getName()))
+                .skip(memberPage * memberSize)
+                .limit(memberSize)
+                .collect(Collectors.toList());
+                
         // Map members với role
-        List<ProjectMemberDTO> memberDTOs = project.getProjectMembers().stream()
+        List<ProjectMemberDTO> memberDTOs = members.stream()
                 .map(pm -> {
                     ProjectMemberDTO memberDTO = new ProjectMemberDTO();
                     memberDTO.setId(pm.getUser().getId());
@@ -425,12 +444,13 @@ public class ProjectService {
                 .collect(Collectors.toList());
         dto.setMembers(memberDTOs);
 
-        // Đảm bảo tasks và assignees được load
-        List<Task> tasks = new ArrayList<>(project.getTasks());
-        for (Task task : tasks) {
-            task.getAssignees().size(); // Force load assignees
-        }
-        
+        // Lấy danh sách công việc với phân trang và sắp xếp theo createdAt
+        List<Task> tasks = project.getTasks().stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .skip(taskPage * taskSize)
+                .limit(taskSize)
+                .collect(Collectors.toList());
+                
         // Map tasks với assignees
         dto.setTasks(projectMapper.mapTasks(tasks));
 
@@ -588,5 +608,34 @@ public class ProjectService {
             result.put("name", project.getName());
             return result;
         }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<UserResponseDTO> searchMembersInProject(Integer projectId, String searchText) {
+        List<User> users = projectRepository.searchMembersInProject(projectId, searchText);
+        return users.stream()
+                .map(user -> {
+                    UserResponseDTO dto = userMapper.toDTO(user);
+                    dto.setAvatar(user.getAvatar());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<TaskResponseDTO> searchTasksInProject(Integer projectId, String searchText) {
+        List<Task> tasks = projectRepository.searchTasksInProject(projectId, searchText);
+        return tasks.stream()
+                .map(task -> {
+                    TaskResponseDTO dto = taskMapper.toDTO(task);
+                    if(task.getCreatedBy() != null) {
+                        User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                        if(user != null) {
+                            dto.setNameCreatedBy(user.getName());
+                        }
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }

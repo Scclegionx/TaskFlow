@@ -29,6 +29,9 @@ public class Schedule {
     @Column(nullable = false)
     private Priority priority;
 
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
     public enum Priority {
         LOW, NORMAL, HIGH
     }

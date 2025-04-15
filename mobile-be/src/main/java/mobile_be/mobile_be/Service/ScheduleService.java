@@ -61,6 +61,7 @@ public class ScheduleService {
             schedule.setStartTime(updatedSchedule.getStartTime());
             schedule.setEndTime(updatedSchedule.getEndTime());
             schedule.setPriority(updatedSchedule.getPriority());
+            schedule.setContent(updatedSchedule.getContent());
 
             return scheduleRepository.save(schedule);
         });

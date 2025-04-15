@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { getScheduleById, deleteSchedule } from '@/hooks/useScheduleApi';
 import moment from 'moment';
 
 interface Schedule {
     id: number;
     title: string;
-    description: string;
+    content: string;
     startTime: string;
     endTime: string;
     priority: 'HIGH' | 'NORMAL' | 'LOW';
@@ -17,10 +17,10 @@ interface Schedule {
     };
 }
 
-const PRIORITY_LABELS: Record<string, string> = {
-    'LOW': 'Thấp 🟢',
-    'NORMAL': 'Bình thường 🟡',
-    'HIGH': 'Cao 🔴'
+const PRIORITY_LABELS: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+    'LOW': { label: 'Thấp', icon: 'arrow-down-circle', color: '#10B981' },
+    'NORMAL': { label: 'Bình thường', icon: 'remove-circle', color: '#F59E0B' },
+    'HIGH': { label: 'Cao', icon: 'arrow-up-circle', color: '#EF4444' }
 };
 
 const ScheduleDetailScreen = () => {
@@ -29,37 +29,63 @@ const ScheduleDetailScreen = () => {
     const [schedule, setSchedule] = useState<Schedule | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchSchedule = async () => {
-            try {
-                const scheduleId = typeof id === 'string' ? parseInt(id) : 0;
-                const data = await getScheduleById(scheduleId);
-                setSchedule(data);
-            } catch (error) {
-                Alert.alert('Lỗi', 'Không thể tải dữ liệu lịch trình');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchSchedule();
-    }, [id]);
-
-    const handleDelete = async () => {
+    const fetchSchedule = async () => {
         try {
             const scheduleId = typeof id === 'string' ? parseInt(id) : 0;
-            await deleteSchedule(scheduleId);
-            Alert.alert('Thành công', 'Đã xóa lịch trình', [{ text: 'OK', onPress: () => router.back() }]);
+            const data = await getScheduleById(scheduleId);
+            setSchedule(data);
         } catch (error) {
-            Alert.alert('Lỗi', 'Không thể xóa lịch trình');
+            Alert.alert('Lỗi', 'Không thể tải dữ liệu lịch trình');
+        } finally {
+            setLoading(false);
         }
     };
 
+    useFocusEffect(
+        useCallback(() => {
+            fetchSchedule();
+        }, [id])
+    );
+
+    const handleDelete = async () => {
+        Alert.alert(
+            'Xác nhận xóa',
+            'Bạn có chắc chắn muốn xóa lịch trình này?',
+            [
+                { text: 'Hủy', style: 'cancel' },
+                {
+                    text: 'Xóa',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const scheduleId = typeof id === 'string' ? parseInt(id) : 0;
+                            await deleteSchedule(scheduleId);
+                            Alert.alert('Thành công', 'Đã xóa lịch trình', [{ text: 'OK', onPress: () => router.back() }]);
+                        } catch (error) {
+                            Alert.alert('Lỗi', 'Không thể xóa lịch trình');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     if (loading) {
-        return <ActivityIndicator size="large" color="#EF4444" style={styles.loader} />;
+        return (
+            <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#3B82F6" />
+                <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+            </View>
+        );
     }
 
     if (!schedule) {
-        return <Text style={styles.errorText}>Không tìm thấy lịch trình</Text>;
+        return (
+            <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle" size={48} color="#EF4444" />
+                <Text style={styles.errorText}>Không tìm thấy lịch trình</Text>
+            </View>
+        );
     }
 
     const formattedDate = moment(schedule.startTime).format('DD/MM/YYYY');
@@ -68,7 +94,7 @@ const ScheduleDetailScreen = () => {
     const durationHours = Math.floor(durationMinutes / 60);
     const remainingMinutes = durationMinutes % 60;
     const formattedDuration = `${durationHours} giờ ${remainingMinutes} phút`;
-    const priorityLabel = PRIORITY_LABELS[schedule.priority] || 'Không xác định';
+    const priorityInfo = PRIORITY_LABELS[schedule.priority];
 
     return (
         <ScrollView 
@@ -76,36 +102,83 @@ const ScheduleDetailScreen = () => {
             contentContainerStyle={{ paddingBottom: 20 }}
             showsVerticalScrollIndicator={false}
         >
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            {/* <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <Ionicons name="arrow-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             
             <View style={styles.header}>
                 <View style={styles.avatar}>
                     <Text style={styles.avatarText}>{schedule.user.name?.charAt(0)}</Text>
                 </View>
-                <View>
+                <View style={styles.headerContent}>
                     <Text style={styles.title}>{schedule.title}</Text>
-                    <Text style={styles.creator}>Người tạo: {schedule.user.name}</Text>
+                    <View style={styles.creatorContainer}>
+                        <Ionicons name="person" size={16} color="#6B7280" />
+                        <Text style={styles.creator}>Người tạo: {schedule.user.name}</Text>
+                    </View>
                 </View>
             </View>
 
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.image} />
+            <View style={styles.imageContainer}>
+                <Image 
+                    source={require('@/assets/images/react-logo.png')} 
+                    style={styles.image}
+                    resizeMode="cover"
+                />
+                <View style={styles.imageOverlay}>
+                    <View style={styles.priorityBadge}>
+                        <Ionicons name={priorityInfo.icon} size={16} color="white" />
+                        <Text style={styles.priorityText}>{priorityInfo.label}</Text>
+                    </View>
+                </View>
+            </View>
 
             <View style={styles.infoContainer}>
-                <Text style={styles.sectionTitle}>Thông tin</Text>
-                <Text style={styles.description}>{schedule.description}</Text>
-                <Text style={styles.detail}>📅 Ngày bắt đầu: {formattedDate}</Text>
-                <Text style={styles.detail}>🕒 Giờ bắt đầu: {formattedTime}</Text>
-                <Text style={styles.detail}>⏳ Thời lượng: {formattedDuration}</Text>
-                <Text style={styles.detail}>🚀 Độ ưu tiên: {priorityLabel}</Text>
+                <View style={styles.sectionHeader}>
+                    <Ionicons name="information-circle" size={24} color="#3B82F6" />
+                    <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
+                </View>
+                
+                <View style={styles.descriptionContainer}>
+                    <Ionicons name="document-text" size={20} color="#6B7280" style={styles.descriptionIcon} />
+                    <Text style={styles.description}>{schedule.content}</Text>
+                </View>
+
+                <View style={styles.detailsContainer}>
+                    <View style={styles.detailItem}>
+                        <Ionicons name="calendar" size={20} color="#3B82F6" />
+                        <Text style={styles.detailText}>Ngày bắt đầu: {formattedDate}</Text>
+                    </View>
+                    
+                    <View style={styles.detailItem}>
+                        <Ionicons name="time" size={20} color="#3B82F6" />
+                        <Text style={styles.detailText}>Giờ bắt đầu: {formattedTime}</Text>
+                    </View>
+                    
+                    <View style={styles.detailItem}>
+                        <Ionicons name="hourglass" size={20} color="#3B82F6" />
+                        <Text style={styles.detailText}>Thời lượng: {formattedDuration}</Text>
+                    </View>
+                    
+                    <View style={styles.detailItem}>
+                        <Ionicons name={priorityInfo.icon} size={20} color={priorityInfo.color} />
+                        <Text style={[styles.detailText, { color: priorityInfo.color }]}>
+                            Độ ưu tiên: {priorityInfo.label}
+                        </Text>
+                    </View>
+                </View>
             </View>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/Schedule/editSchedule?id=${schedule.id}`)}>
+                <TouchableOpacity 
+                    style={styles.editButton} 
+                    onPress={() => router.push(`/Schedule/editSchedule?id=${schedule.id}`)}
+                >
+                    <Ionicons name="create" size={20} color="white" style={styles.buttonIcon} />
                     <Text style={styles.buttonText}>Sửa</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                    <Ionicons name="trash" size={20} color="white" style={styles.buttonIcon} />
                     <Text style={styles.buttonText}>Xóa</Text>
                 </TouchableOpacity>
             </View>
@@ -118,6 +191,29 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
         backgroundColor: '#F8FAFC',
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: '#6B7280',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+    },
+    errorText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: '#EF4444',
+        fontWeight: '500',
     },
     backButton: {
         width: 40,
@@ -146,11 +242,14 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
     },
+    headerContent: {
+        flex: 1,
+    },
     avatar: {
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#EF4444',
+        backgroundColor: '#3B82F6',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
@@ -166,20 +265,48 @@ const styles = StyleSheet.create({
         color: '#1F2937',
         marginBottom: 4,
     },
+    creatorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     creator: {
         fontSize: 14,
         color: '#6B7280',
+        marginLeft: 4,
     },
-    image: {
-        width: '100%',
-        height: 200,
-        borderRadius: 16,
+    imageContainer: {
+        position: 'relative',
         marginBottom: 24,
+        borderRadius: 16,
+        overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
+    },
+    image: {
+        width: '100%',
+        height: 200,
+    },
+    imageOverlay: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+    },
+    priorityBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    priorityText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 4,
     },
     infoContainer: {
         backgroundColor: 'white',
@@ -191,28 +318,48 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
     },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#1F2937',
-        marginBottom: 16,
+        marginLeft: 8,
+    },
+    descriptionContainer: {
+        flexDirection: 'row',
+        marginBottom: 20,
+        padding: 12,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+    },
+    descriptionIcon: {
+        marginRight: 12,
+        marginTop: 2,
     },
     description: {
+        flex: 1,
         fontSize: 16,
         color: '#374151',
         lineHeight: 24,
-        marginBottom: 16,
     },
-    detail: {
-        fontSize: 16,
-        color: '#374151',
-        marginBottom: 12,
+    detailsContainer: {
+        gap: 12,
+    },
+    detailItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        padding: 12,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
     },
-    detailIcon: {
-        marginRight: 8,
-        color: '#EF4444',
+    detailText: {
+        fontSize: 16,
+        color: '#374151',
+        marginLeft: 12,
     },
     buttonContainer: {
         flexDirection: 'row',
@@ -226,6 +373,8 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
         shadowColor: '#EF4444',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -238,29 +387,21 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
         shadowColor: '#3B82F6',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 5,
     },
+    buttonIcon: {
+        marginRight: 8,
+    },
     buttonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
-    },
-    loader: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    errorText: {
-        flex: 1,
-        textAlign: 'center',
-        marginTop: 20,
-        color: '#EF4444',
-        fontSize: 16,
-        fontWeight: '500',
     },
 });
 

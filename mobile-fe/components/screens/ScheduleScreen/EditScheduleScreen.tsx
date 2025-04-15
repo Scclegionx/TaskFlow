@@ -14,6 +14,7 @@ const EditScheduleScreen = () => {
     const [startTime, setStartTime] = useState(new Date());
     const [endTime, setEndTime] = useState(new Date());
     const [priority, setPriority] = useState('NORMAL');
+    const [content, setContent] = useState('');
     const [showStartPicker, setShowStartPicker] = useState(false);
     const [showEndPicker, setShowEndPicker] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -38,6 +39,7 @@ const EditScheduleScreen = () => {
             setStartTime(new Date(data.startTime));
             setEndTime(new Date(data.endTime));
             setPriority(data.priority);
+            setContent(data.content || '');
         } catch (error) {
             console.error("Lỗi lấy lịch trình:", error);
             Alert.alert("Lỗi", "Không thể lấy dữ liệu lịch trình!");
@@ -65,12 +67,17 @@ const EditScheduleScreen = () => {
 
         setLoading(true);
         try {
+            const startTimeUTC = new Date(mergedStartTime.getTime() - mergedStartTime.getTimezoneOffset() * 60000);
+            const endTimeUTC = new Date(mergedEndTime.getTime() - mergedEndTime.getTimezoneOffset() * 60000);
+
             const updatedData = {
                 title,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
+                startTime: startTimeUTC.toISOString(),
+                endTime: endTimeUTC.toISOString(),
                 priority,
+                content,
             };
+            console.log("updatedData", updatedData);
             await updateSchedule(scheduleId, updatedData);
             Alert.alert("Thành công", "Lịch trình đã được cập nhật!");
             router.back();
@@ -140,12 +147,23 @@ const EditScheduleScreen = () => {
                                     style={[styles.priorityButton, priority === key && styles.selectedPriority]}
                                     onPress={() => setPriority(key)}
                                 >
-                                    <Text style={{ color: priority === key ? 'white' : 'black' }}>
+                                    <Text style={[styles.priorityText, priority === key && styles.selectedPriorityText]}>
                                         {value}
                                     </Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
+
+                        <Text style={styles.label}>Nội dung</Text>
+                        <TextInput
+                            style={[styles.input, styles.contentInput]}
+                            placeholder="Nhập nội dung lịch trình..."
+                            value={content}
+                            onChangeText={setContent}
+                            multiline
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                        />
                     </View>
 
                     <TouchableOpacity style={styles.saveButton} onPress={handleUpdateSchedule}>
@@ -266,6 +284,10 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
+    },
+    contentInput: {
+        height: 100,
+        textAlignVertical: 'top',
     },
 });
 

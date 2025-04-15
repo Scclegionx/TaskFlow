@@ -31,9 +31,10 @@ export default function AddUser() {
                     name,
                     email,
                     gender: 1,
+                    password,
                     phoneNumber: "",
                     dateOfBirth: "",
-                    roles: [{ id: 1, name: "USER" }],
+                    roles: [{ id: 2, name: "USER" }],
                     active: true,
                 }),
             });

@@ -5,6 +5,7 @@ import mobile_be.mobile_be.Repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,9 +16,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/admin")
 public class AdminController {
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public AdminController(UserRepository userRepository) {
+    public AdminController(UserRepository userRepository ) {
         this.userRepository = userRepository;
+        this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     // Lấy danh sách tất cả user (Chỉ ADMIN mới được gọi)
@@ -60,7 +63,16 @@ public class AdminController {
         if (!roles.contains("ADMIN")) {
             return ResponseEntity.status(403).body("Không có quyền: Bạn không phải là admin!");
         }
-
+        if (userRepository.existsByEmail(user.getEmail())) {
+            return ResponseEntity.status(400).body("Email đã tồn tại!");
+        }
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            return ResponseEntity.status(400).body("Mật khẩu không được để trống!");
+        }
+        //Mã hóa mật khẩu
+        String encodedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(encodedPassword);
+        user.setRoles(user.getRoles());
         userRepository.save(user);
         return ResponseEntity.ok("Thêm người dùng thành công!");
     }
@@ -89,4 +101,45 @@ public class AdminController {
         userRepository.deleteById(id);
         return ResponseEntity.ok("Xóa người dùng thành công!");
     }
+
+    @PutMapping("/update-user/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Integer id, @RequestBody User updatedUser, @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("Unauthorized: You are not logged in!");
+        }
+
+        User adminUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
+
+        Set<String> roles = adminUser.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.toSet());
+
+        if (!roles.contains("ADMIN")) {
+            return ResponseEntity.status(403).body("Forbidden: You are not an admin!");
+        }
+
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+
+        // Update user details
+        existingUser.setName(updatedUser.getName());
+        existingUser.setEmail(updatedUser.getEmail());
+        existingUser.setPhoneNumber(updatedUser.getPhoneNumber());
+        existingUser.setGender(updatedUser.getGender());
+        existingUser.setDateOfBirth(updatedUser.getDateOfBirth());
+        existingUser.setActive(updatedUser.isActive());
+        existingUser.setAvatar(updatedUser.getAvatar());
+        existingUser.setRoles(updatedUser.getRoles());
+        // Add other fields to update as needed
+        // If password is provided, encode it and set it
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(updatedUser.getPassword());
+            existingUser.setPassword(encodedPassword);
+        }
+
+        userRepository.save(existingUser);
+        return ResponseEntity.ok(existingUser);
+    }
+
 }

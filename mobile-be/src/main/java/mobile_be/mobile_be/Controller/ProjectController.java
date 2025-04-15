@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.CreateProjectRequest;
 import mobile_be.mobile_be.DTO.response.ProjectResponseDTO;
 import mobile_be.mobile_be.DTO.request.UpdateProjectRequest;
+import mobile_be.mobile_be.DTO.response.TaskResponseDTO;
+import mobile_be.mobile_be.DTO.response.UserResponseDTO;
 import mobile_be.mobile_be.Model.Project;
 import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Service.ProjectService;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 
+import java.util.List;
 import java.util.Map;
 
 @CrossOrigin(origins = "*")
@@ -176,5 +179,19 @@ public class ProjectController {
     @GetMapping("/search")
     public ResponseEntity<?> searchProjects(@RequestParam String query) {
         return ResponseEntity.ok(projectService.searchProjects(query));
+    }
+
+    @GetMapping("/{projectId}/search-members")
+    public ResponseEntity<List<UserResponseDTO>> searchMembersInProject(
+        @PathVariable Integer projectId,
+        @RequestParam(required = false) String searchText) {
+        return ResponseEntity.ok(projectService.searchMembersInProject(projectId, searchText));
+    }
+
+    @GetMapping("/{projectId}/search-tasks")
+    public ResponseEntity<List<TaskResponseDTO>> searchTasksInProject(
+        @PathVariable Integer projectId,
+        @RequestParam(required = false) String searchText) {
+        return ResponseEntity.ok(projectService.searchTasksInProject(projectId, searchText));
     }
 }

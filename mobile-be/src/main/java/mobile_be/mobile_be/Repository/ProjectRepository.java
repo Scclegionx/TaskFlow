@@ -210,4 +210,19 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     @Query("SELECT p FROM Project p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', ?1, '%'))")
     List<Project> searchProjects(String query);
 
+    @Query(value = "SELECT u.* FROM users u " +
+            "JOIN project_members pm ON u.id = pm.user_id " +
+            "WHERE pm.project_id = :projectId " +
+            "AND (:searchText IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
+            "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :searchText, '%'))) " +
+            "ORDER BY u.name ASC", nativeQuery = true)
+    List<User> searchMembersInProject(Integer projectId, String searchText);
+
+    @Query(value = "SELECT t.* FROM tasks t " +
+            "WHERE t.project_id = :projectId " +
+            "AND (:searchText IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
+            "OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%'))) " +
+            "ORDER BY t.created_at DESC", nativeQuery = true)
+    List<Task> searchTasksInProject(Integer projectId, String searchText);
+
 }

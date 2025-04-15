@@ -37,21 +37,32 @@ export const getProjects = async (userId?: number, page: number = 0, size: numbe
     return response.data;
 };
 
-export const getProjectById = async (id: number, memberPage: number = 0, memberSize: number = 3, taskPage: number = 0, taskSize: number = 5) => {
-    const token = await AsyncStorage.getItem("token");
-    if (!token) {
-        throw new Error("Token không tồn tại");
+export const getProjectById = async (
+    id: number, 
+    memberPage: number = 0, 
+    memberSize: number = 3, 
+    taskPage: number = 0, 
+    taskSize: number = 5,
+) => {
+    try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+            throw new Error("Token không tồn tại");
+        }
+        const response = await axios.get(`${API_URL_project}/${id}`, {
+            params: {
+                memberPage,
+                memberSize,
+                taskPage,
+                taskSize,
+            },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching project:', error);
+        throw error;
     }
-    const response = await axios.get(`${API_URL_project}/${id}`, {
-        params: {
-            memberPage,
-            memberSize,
-            taskPage,
-            taskSize
-        },
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
 };
 
 export const getStatusText = (status: number): string => {
@@ -159,4 +170,38 @@ export const searchProjects = async (query: string) => {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
+};
+
+export const searchProjectMembers = async (projectId: number, searchText: string) => {
+    try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+            throw new Error("Token không tồn tại");
+        }
+        const response = await axios.get(`${API_URL_project}/${projectId}/search-members`, {
+            params: { searchText },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi tìm kiếm thành viên:', error);
+        throw error;
+    }
+};
+
+export const searchProjectTasks = async (projectId: number, searchText: string) => {
+    try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+            throw new Error("Token không tồn tại");
+        }
+        const response = await axios.get(`${API_URL_project}/${projectId}/search-tasks`, {
+            params: { searchText },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi tìm kiếm công việc:', error);
+        throw error;
+    }
 };

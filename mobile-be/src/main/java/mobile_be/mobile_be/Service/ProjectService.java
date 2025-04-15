@@ -609,4 +609,33 @@ public class ProjectService {
             return result;
         }).collect(Collectors.toList());
     }
+
+    @Transactional
+    public List<UserResponseDTO> searchMembersInProject(Integer projectId, String searchText) {
+        List<User> users = projectRepository.searchMembersInProject(projectId, searchText);
+        return users.stream()
+                .map(user -> {
+                    UserResponseDTO dto = userMapper.toDTO(user);
+                    dto.setAvatar(user.getAvatar());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<TaskResponseDTO> searchTasksInProject(Integer projectId, String searchText) {
+        List<Task> tasks = projectRepository.searchTasksInProject(projectId, searchText);
+        return tasks.stream()
+                .map(task -> {
+                    TaskResponseDTO dto = taskMapper.toDTO(task);
+                    if(task.getCreatedBy() != null) {
+                        User user = userRepository.findById(task.getCreatedBy()).orElse(null);
+                        if(user != null) {
+                            dto.setNameCreatedBy(user.getName());
+                        }
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
 }

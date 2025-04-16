@@ -1,13 +1,18 @@
 package mobile_be.mobile_be.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.request.TaskRequest;
+import mobile_be.mobile_be.DTO.response.TaskHistoryResponseDTO;
 import mobile_be.mobile_be.Model.*;
 import mobile_be.mobile_be.Repository.*;
 import mobile_be.mobile_be.contains.enum_projectStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import mobile_be.mobile_be.contains.enum_taskStatus;
@@ -47,6 +52,12 @@ public class TaskService {
     @Autowired
     private MailService mailService;
 
+    @Autowired
+    private TaskHistoryRepository taskHistoryRepository;
+
+    @Autowired
+    private final ObjectMapper objectMapper;
+
 
     @Scheduled(fixedRate = 60 * 60 * 1000) // chay moi tieng 1 lan
     public void scanTaskOverDue() {
@@ -83,6 +94,7 @@ public class TaskService {
     // type == 1 la duoc giao
 
     public Map<String, Integer> getTaskCountByStatus(Integer type, Integer userId) {
+        log.info("getTaskCountByStatus type: {}, userId: {}", type, userId);
         List<Object[]> results = new ArrayList<>();
         if (type == null){
             results = taskRepository.getAllTaskCountByStatus();
@@ -379,8 +391,14 @@ public class TaskService {
     }
 
     @Transactional
-    public Task updateTask(TaskRequest taskRequest) {
+    public Task updateTask(TaskRequest taskRequest, Integer userId) {
         Task task = taskRepository.findById(taskRequest.getId());
+        try{
+            // Lưu lại lịch sử thay đổi
+            saveHistory(task.getId(), userId);
+        }catch (Exception e){
+            log.error("Lỗi khi lưu lịch sử thay đổi: {}", e.getMessage());
+        }
 
         // Kiểm tra quyền (chỉ ADMIN của project mới được cập nhật)
         Project project = task.getProject();
@@ -519,5 +537,75 @@ public class TaskService {
         List<Task> subTasks = taskRepository.findByParentId(parentId);
         log.info("Found {} subtasks", subTasks.size());
         return subTasks;
+    }
+
+    public List<TaskHistoryResponseDTO> getTaskHistory(Integer taskHistoryId, String textSearch) {
+        log.info("Getting task history for task ID: {}", taskHistoryId);
+        List<TaskHistory> taskHistories = taskHistoryRepository.getTaskHistory(taskHistoryId, textSearch);
+        List<TaskHistoryResponseDTO> taskHistoryResponseDTOs = new ArrayList<>();
+        for (TaskHistory taskHistory : taskHistories) {
+            TaskHistoryResponseDTO taskHistoryResponseDTO = new TaskHistoryResponseDTO();
+            User user = userRepository.findById(taskHistory.getModifiedBy())
+                    .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+            taskHistoryResponseDTO.setId(taskHistory.getId());
+            taskHistoryResponseDTO.setTaskId(taskHistory.getTaskId());
+            taskHistoryResponseDTO.setModifiedBy(taskHistory.getModifiedBy());
+            taskHistoryResponseDTO.setModifiedAt(taskHistory.getModifiedAt());
+            taskHistoryResponseDTO.setData(taskHistory.getData());
+            taskHistoryResponseDTO.setModifiedByName(user.getName());
+            taskHistoryResponseDTO.setModifiedByAvatar(user.getAvatar());
+
+
+            taskHistoryResponseDTOs.add(taskHistoryResponseDTO);
+        }
+        log.info("Found {} task histories", taskHistories.size());
+        return taskHistoryResponseDTOs;
+    }
+
+    public void saveHistory(Integer taskId, Integer currentUserId) {
+        try {
+            Task oldTask = taskRepository.findById(taskId);
+
+            String jsonData = objectMapper.writeValueAsString(oldTask);
+
+            TaskHistory history = new TaskHistory();
+            history.setTaskId(taskId);
+            history.setModifiedBy(currentUserId);
+            history.setModifiedAt(LocalDateTime.now());
+            history.setData(jsonData);
+
+            taskHistoryRepository.save(history);
+        } catch (Exception e) {
+            log.error("Error saving task history: {}", e.getMessage(), e);
+        }
+    }
+
+    public String rollbackTask(Integer taskHistoryId) {
+        try {
+            log.info("Rolling back task with history ID: {}", taskHistoryId);
+            // 1. Lấy bản ghi lịch sử mới nhất
+            TaskHistory taskHistory = taskHistoryRepository.findById(taskHistoryId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy lịch sử nhiệm vụ"));
+
+            if (taskHistory == null) {
+                log.warn("No history found for taskId {}", taskHistory);
+                throw new RuntimeException("Không tìm thấy lịch sử nhiệm vụ");
+            }
+
+            // 2. Convert JSON về lại object Task
+            Task oldTask = objectMapper.readValue(taskHistory.getData(), Task.class);
+
+            oldTask.setId(taskHistory.getTaskId());
+
+            // 4. Ghi đè lại vào database
+            taskRepository.save(oldTask);
+
+            log.info("Rollback task {} successfully", taskHistoryId);
+            return "Rollback task successfully";
+
+        } catch (Exception e) {
+            log.error("Error rolling back task: {}", e.getMessage(), e);
+            return "Error rolling back task: " + e.getMessage();
+        }
     }
 }

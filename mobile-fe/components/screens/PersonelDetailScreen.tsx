@@ -142,7 +142,7 @@ const PersonelDetailScreen = () => {
       console.log("checkEdit  ", checkEdit)
       console.log("ratingEditId ", ratingEditId)
 
-      if (checkEdit === false && ratingEditId) {
+      if (checkEdit === false && ratingEditId == null) {
         console.log("nhay vao tạo mới")
         response = await fetch(`${API_BASE_URL}/users/rating-user?userId=${userId}&star=${rating}&comment=${reviewText}&createdBy=${currentUser_id}`, {
           method: 'POST',
@@ -171,7 +171,7 @@ const PersonelDetailScreen = () => {
         setReviewText('');
         Alert.alert("Thông báo", "Thực hiện thành công");
       } else {
-        Alert.alert("Thông báo", "Thực hiện thất b");
+        Alert.alert("Thông báo", "Thực hiện thất bại");
       }
     } catch (error) {
       console.error('Lỗi khi gửi đánh giá:', error);

@@ -7,10 +7,7 @@ import mobile_be.mobile_be.Model.Document;
 import mobile_be.mobile_be.Model.Kpi;
 import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Model.User;
-import mobile_be.mobile_be.Repository.DocumentRepository;
-import mobile_be.mobile_be.Repository.KpiRepository;
-import mobile_be.mobile_be.Repository.TaskRepository;
-import mobile_be.mobile_be.Repository.UserRepository;
+import mobile_be.mobile_be.Repository.*;
 import mobile_be.mobile_be.Service.DepartmentService;
 import mobile_be.mobile_be.Service.ExcelGenerator;
 import mobile_be.mobile_be.Service.UserService;
@@ -30,6 +27,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/api/document")
@@ -56,6 +54,9 @@ public class DocumentController {
     @Autowired
     DepartmentService departmentService;
 
+    @Autowired
+    TaskHistoryRepository taskHistoryRepository;
+
 
     @GetMapping("/download-excel-user")
     public ResponseEntity<Resource> downloadExcelUser() throws IOException {
@@ -78,7 +79,7 @@ public class DocumentController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Nhân_sự.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=NhanSu.xlsx")
                 .body(resource);
     }
 
@@ -169,6 +170,47 @@ public class DocumentController {
                         )
                 }).toArray(String[][]::new)
         );
+
+        byte[] excelBytes = ExcelGenerator.generateExcel(data, headers);
+
+        ByteArrayResource resource = new ByteArrayResource(excelBytes);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=PhongBan.xlsx")
+                .body(resource);
+    }
+
+    @GetMapping("/download-excel-lich-su")
+    public ResponseEntity<Resource> downloadExcelHistory() throws IOException {
+        String[] headers = {"Tên công việc", "Người chỉnh sửa", "Thời gian chỉnh sửa", "Dữ liệu"};
+
+        var results = taskHistoryRepository.getTaskHistory(null, null);
+
+        List<String[]> data = results.stream().map(history -> {
+            String userName = "";
+            if (history.getModifiedBy() != null) {
+                userName = userRepository.findById(history.getModifiedBy())
+                        .map(User::getName)
+                        .orElse("Không rõ");
+            }
+
+            String taskName = "";
+            if(history.getTaskId() != null){
+                var task  = taskRepository.findById(history.getTaskId());
+                if(task != null){
+                    taskName = task.getTitle();
+                }
+
+            }
+
+            return new String[]{
+                    taskName,
+                    userName,
+                    String.valueOf(history.getModifiedAt()),
+                    history.getData()
+            };
+        }).collect(Collectors.toList());
 
         byte[] excelBytes = ExcelGenerator.generateExcel(data, headers);
 

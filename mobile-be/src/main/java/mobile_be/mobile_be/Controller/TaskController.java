@@ -4,11 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.DTO.request.TaskRequest;
 import mobile_be.mobile_be.Model.Task;
 import mobile_be.mobile_be.Model.User;
+import mobile_be.mobile_be.Repository.UserRepository;
 import mobile_be.mobile_be.Service.ProjectService;
 import mobile_be.mobile_be.Service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +31,9 @@ public class TaskController {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // xin chao cac ban
     //
@@ -155,9 +161,12 @@ public class TaskController {
     }
 
     @PutMapping("/update-task")
-    public ResponseEntity<?> updateTask(@RequestBody TaskRequest taskRequest) {
+    public ResponseEntity<?> updateTask(@RequestBody TaskRequest taskRequest,
+                                        @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Task updatedTask = taskService.updateTask(taskRequest);
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+            Task updatedTask = taskService.updateTask(taskRequest, user.getId());
             return ResponseEntity.ok("Cập nhật nhiệm vụ thành công");
         } catch (Exception e) {
             return ResponseEntity
@@ -166,6 +175,32 @@ public class TaskController {
         }
     }
 
+    @PostMapping("/rollback-task")
+    public ResponseEntity<?> rollBackTask(@RequestParam(value = "taskHistoryId", required = false) Integer taskHistoryId) {
+
+        try{
+            var rollbackTaskHistory = taskService.rollbackTask(taskHistoryId);
+            return ResponseEntity.ok(rollbackTaskHistory);
+        }catch (Exception e){
+            log.info("Error: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi phục hồi nhiệm vụ: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-task-history")
+    public ResponseEntity<?> getTaskHistory(@RequestParam(value = "taskHistoryId", required = false) Integer taskHistoryId,
+                                            @RequestParam(value = "textSearch", required = false) String textSearch) {
+        try {
+            var taskHistory = taskService.getTaskHistory(taskHistoryId , textSearch);
+            return ResponseEntity.ok(taskHistory);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi lấy lịch sử nhiệm vụ: " + e.getMessage());
+        }
+    }
     @PutMapping("/reject-task")
     public ResponseEntity<?> rejectTask(@RequestParam(value = "taskId", required = false) Integer taskId,
                                         @RequestParam(value = "reasonId", required = false) Integer reasonId) {

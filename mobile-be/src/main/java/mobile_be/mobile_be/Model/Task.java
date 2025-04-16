@@ -1,5 +1,6 @@
 package mobile_be.mobile_be.Model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,8 +41,10 @@ public class Task {
     private String description;
 
     // sua lai thanh from , to cho ro rang thay vi de minh deadline
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fromDate;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime toDate;
 
     private Integer status;

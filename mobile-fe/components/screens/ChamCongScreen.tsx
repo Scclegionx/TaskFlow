@@ -339,7 +339,7 @@ const ChamCongScreen = () => {
       const authToken = await AsyncStorage.getItem("token");
 
       const response = await fetch(`${API_BASE_URL}/tydstate/check-out?userId=${currentUser_id}`, {
-        method: "POST",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
@@ -350,7 +350,7 @@ const ChamCongScreen = () => {
         Alert.alert("Thành công", "Chấm công ra về thành công");
         fetchChamCong(searchText, startDate, endDate);
       } else {
-        Alert.alert("Thất bại", "Chấm công ra về thất bại. Bạn đã chấm công ra về trước đó rồi");
+        Alert.alert("Thất bại", "Chấm công ra về thất bại.");
       }
     } catch (error) {
       Alert.alert("Lỗi", "Có lỗi xảy ra khi chấm công");

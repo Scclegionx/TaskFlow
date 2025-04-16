@@ -109,7 +109,7 @@ const Profile = () => {
 
   return (
     <View style={styles.profileContainer}>
-      <Image 
+      <Image
         source={require('@/assets/images/project-background.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
@@ -124,17 +124,18 @@ const Profile = () => {
           )}
         </TouchableOpacity>
 
-        <ScrollView style={styles.profileInfo}>
-          <ProfileItem icon="👤" label="Thông tin cá nhân" onPress={() => router.push('/account-info')} />
-          <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
-          <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
-          <ProfileItem icon="🏢" label="Quản lý phòng ban"  onPress={() => router.push('/Department/allDepartment')}  />
-          <ProfileItem icon="🏆" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
-          <ProfileItem icon="📅" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
-          <ProfileItem icon="⏳" label="Công việc chờ duyệt"  onPress={() => router.push('/Task/taskPending')}  />
-          <ProfileItem icon="📋" label="Công việc của tôi"  onPress={() => router.push('/Task/myTask')}  />
-          {roles.includes("ADMIN") && <ProfileItem icon="👤" label="Quyền Admin" onPress={() => router.push('/Admin')}/>}
-        </ScrollView>
+            <ScrollView style={styles.profileInfo}>
+                <ProfileItem icon="👤" label="Thông tin cá nhân" onPress={() => router.push('/account-info')} />
+                <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
+                <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
+                <ProfileItem icon="📋" label="Quản lý lịch sử thay đổi"  onPress={() => router.push('/history')}  />
+                <ProfileItem icon="🏢" label="Quản lý phòng ban"  onPress={() => router.push('/Department/allDepartment')}  />
+                <ProfileItem icon="🏆" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
+                <ProfileItem icon="📅" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
+                <ProfileItem icon="⏳" label="Công việc chờ duyệt"  onPress={() => router.push('/Task/taskPending')}  />
+                <ProfileItem icon="📋" label="Công việc của tôi"  onPress={() => router.push('/Task/myTask')}  />
+                {roles.includes("ADMIN") && <ProfileItem icon="👤" label="Quyền Admin" onPress={() => router.push('/Admin')}/>}
+            </ScrollView>
 
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <Text style={styles.logoutText}>Đăng xuất</Text>
@@ -209,8 +210,8 @@ const styles = StyleSheet.create({
     },
     profileInfo: { 
         width: '100%', 
-        maxWidth: 400, 
-        borderRadius: 12, 
+        maxWidth: 400,
+        borderRadius: 12,
     },
     profileItem: { 
         flexDirection: 'row', 
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
         borderRadius: 12, 
         marginBottom: 8, 
         borderWidth: 2, 
-        borderColor: "#e5e7eb",  
+        borderColor: "#e5e7eb",
     },
     
     profileItemLabel: { 

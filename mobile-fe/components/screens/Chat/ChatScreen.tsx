@@ -240,7 +240,7 @@ const ChatScreen = () => {
       content: messageText,
       attachmentUrl: file ? data.fileUrl : null,
       attachmentType: file ? data.attachmentType : null,
-      timeStamp: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
     };
     stompClient.publish({
       destination: `/app/chat/send`,

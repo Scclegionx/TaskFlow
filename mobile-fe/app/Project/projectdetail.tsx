@@ -73,6 +73,7 @@ interface ITask {
     name: string;
     avatar: string;
   }[];
+  parentId: number;
 }
 
 interface RouteParams {
@@ -872,7 +873,7 @@ export default function ProjectDetail() {
 
           {ItemProject?.tasks && ItemProject.tasks.length > 0 ? (
             <FlatList
-              data={ItemProject.tasks}
+              data={ItemProject.tasks.filter(task => task.parentId === null)}
               keyExtractor={(task) => task.id.toString()}
               renderItem={({ item }) => (
                 <View
@@ -1082,7 +1083,7 @@ const styles = StyleSheet.create({
     color: "black",
     marginBottom: 20,
     lineHeight: 26,
-    fontWeight: "500",
+    fontWeight: "400",
     textShadowColor: "rgba(0, 0, 0, 0.1)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,

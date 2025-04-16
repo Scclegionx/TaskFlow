@@ -13,5 +13,6 @@ public class TaskDTO {
     private String description;
     private String status; // Trạng thái công việc
     private LocalDateTime toDate;
+    private Integer parentId;
     private List<UserDTO> assignees;
 }

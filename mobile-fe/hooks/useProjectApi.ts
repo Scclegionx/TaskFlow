@@ -205,3 +205,19 @@ export const searchProjectTasks = async (projectId: number, searchText: string) 
         throw error;
     }
 };
+
+export const getProjectMembers = async (projectId: number) => {
+    try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+            throw new Error("Token không tồn tại");
+        }
+        const response = await axios.get(`${API_URL_project}/${projectId}/members`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi lấy danh sách thành viên:', error);
+        throw error;
+    }
+};

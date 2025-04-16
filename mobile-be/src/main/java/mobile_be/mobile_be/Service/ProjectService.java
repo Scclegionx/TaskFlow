@@ -638,4 +638,19 @@ public class ProjectService {
                 })
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public List<UserResponseDTO> getProjectMembers(Integer projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án"));
+        
+        return project.getProjectMembers().stream()
+                .filter(member -> !"ADMIN".equals(member.getRole()))
+                .map(member -> {
+                    UserResponseDTO dto = userMapper.toDTO(member.getUser());
+                    dto.setRole(member.getRole());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
 }

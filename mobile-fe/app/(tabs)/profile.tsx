@@ -109,31 +109,37 @@ const Profile = () => {
 
   return (
     <View style={styles.profileContainer}>
-      <TouchableOpacity onPress={pickImage} style={styles.profileCard}>
-        {user.avatar=="" ? (
-          <Image source={{ uri: user.avatar }} style={styles.profileAvatar} />
-        ) : (
-          <Image
-            source={require("@/assets/images/default-avatar.jpg")} style={styles.profileAvatar}/>
-             // Đường dẫn đến ảnh mặc định>
-        )}
-      </TouchableOpacity>
+      <Image 
+        source={require('@/assets/images/project-background.jpg')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
+      <View style={styles.contentContainer}>
+        <TouchableOpacity onPress={pickImage} style={styles.profileCard}>
+          {user.avatar=="" ? (
+            <Image source={{ uri: user.avatar }} style={styles.profileAvatar} />
+          ) : (
+            <Image
+              source={require("@/assets/images/default-avatar.jpg")} style={styles.profileAvatar}/>
+          )}
+        </TouchableOpacity>
 
-            <ScrollView style={styles.profileInfo}>
-                <ProfileItem icon="👤" label="Thông tin cá nhân" onPress={() => router.push('/account-info')} />
-                <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
-                <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
-                <ProfileItem icon="🏢" label="Quản lý phòng ban"  onPress={() => router.push('/Department/allDepartment')}  />
-                <ProfileItem icon="🏆" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
-                <ProfileItem icon="📅" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
-                <ProfileItem icon="⏳" label="Công việc chờ duyệt"  onPress={() => router.push('/Task/taskPending')}  />
-                <ProfileItem icon="📋" label="Công việc của tôi"  onPress={() => router.push('/Task/myTask')}  />
-                {roles.includes("ADMIN") && <ProfileItem icon="👤" label="Quyền Admin" onPress={() => router.push('/Admin')}/>}
-            </ScrollView>
+        <ScrollView style={styles.profileInfo}>
+          <ProfileItem icon="👤" label="Thông tin cá nhân" onPress={() => router.push('/account-info')} />
+          <ProfileItem icon="📧" label={user.email} onPress={() => router.push('/email-screen')}/>
+          <ProfileItem icon="🔒" label="Mật khẩu" onPress={() => router.push('/password-screen')}/>
+          <ProfileItem icon="🏢" label="Quản lý phòng ban"  onPress={() => router.push('/Department/allDepartment')}  />
+          <ProfileItem icon="🏆" label="Quản lý KPI"  onPress={() => router.push('/kpiManager')}  />
+          <ProfileItem icon="📅" label="Quản lý chấm công"  onPress={() => router.push('/chamCong')}  />
+          <ProfileItem icon="⏳" label="Công việc chờ duyệt"  onPress={() => router.push('/Task/taskPending')}  />
+          <ProfileItem icon="📋" label="Công việc của tôi"  onPress={() => router.push('/Task/myTask')}  />
+          {roles.includes("ADMIN") && <ProfileItem icon="👤" label="Quyền Admin" onPress={() => router.push('/Admin')}/>}
+        </ScrollView>
 
-      <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -146,15 +152,23 @@ const ProfileItem = ({ icon, label, onPress }: { icon: string; label: string, on
 );
 
 const styles = StyleSheet.create({
-    // profileAvatar: { width: 96, height: 96, borderRadius: 48 },
-    profileAvatarPlaceholder: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' },
     profileContainer: { 
         flex: 1, 
-        alignItems: 'center', 
-        backgroundColor: "#F9FAFB", 
-        padding: 20, 
-        marginTop: 40 
+        position: 'relative',
     },
+    backgroundImage: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        opacity: 1,
+    },
+    contentContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        padding: 20,
+        marginTop: 40,
+    },
+    profileAvatarPlaceholder: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' },
     profileCard: {
         alignItems: 'center',
         backgroundColor: '#fff',
@@ -196,14 +210,7 @@ const styles = StyleSheet.create({
     profileInfo: { 
         width: '100%', 
         maxWidth: 400, 
-        // backgroundColor: '#fff', 
         borderRadius: 12, 
-        // padding: 10, 
-        // shadowColor: '#000',
-        // shadowOffset: { width: 0, height: 2 },
-        // shadowOpacity: 0.05,
-        // shadowRadius: 3,
-        // elevation: 2,
     },
     profileItem: { 
         flexDirection: 'row', 
@@ -214,11 +221,6 @@ const styles = StyleSheet.create({
         marginBottom: 8, 
         borderWidth: 2, 
         borderColor: "#e5e7eb",  
-        // shadowColor: "#000",  
-        // shadowOffset: { width: 0, height: 2 }, 
-        // shadowOpacity: 0.1, 
-        // shadowRadius: 4, 
-        // elevation: 3,
     },
     
     profileItemLabel: { 

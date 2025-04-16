@@ -206,7 +206,7 @@ const CalendarScreen = () => {
     return (
         <View style={styles.mainContainer}>
             <Image 
-                source={require('../../assets/images/calendar-background.jpg')}
+                source={require('../../assets/images/project-background.jpg')}
                 style={styles.backgroundImage}
                 resizeMode="cover"
             />

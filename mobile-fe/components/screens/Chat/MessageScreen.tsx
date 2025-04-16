@@ -56,8 +56,7 @@ const MessagesScreen = () => {
 
       setChats(formattedChats);
     } catch (error) {
-      console.error("Lỗi khi tải danh sách chat:", error);
-      Alert.alert("Lỗi", "Không thể tải danh sách chat");
+      
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -169,146 +168,166 @@ const MessagesScreen = () => {
   return (
     <Provider>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Tin nhắn</Text>
-          <TouchableOpacity
-            onPress={() =>
-              Alert.alert(
-                "Tùy chọn",
-                "Bạn muốn làm gì?",
-                [
-                  {
-                    text: "Đoạn chat mới",
-                    onPress: () => router.push("/chat/createsinglechat"),
-                  },
-                  {
-                    text: "Tạo nhóm",
-                    onPress: () => router.push("/chat/creategroupchat"),
-                  },
-                  {
-                    text: "Hủy",
-                    style: "cancel", // Đóng Alert
-                  },
-                ],
-                { cancelable: true }
-              )
-            }
-          >
-            <Ionicons name="add-circle-outline" size={28} color="#000" />
-          </TouchableOpacity>
-        </View>
+        <Image 
+          source={require('@/assets/images/project-background.jpg')}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        />
+        <View style={styles.contentContainer}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Tin nhắn</Text>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert(
+                  "Tùy chọn",
+                  "Bạn muốn làm gì?",
+                  [
+                    {
+                      text: "Đoạn chat mới",
+                      onPress: () => router.push("/chat/createsinglechat"),
+                    },
+                    {
+                      text: "Tạo nhóm",
+                      onPress: () => router.push("/chat/creategroupchat"),
+                    },
+                    {
+                      text: "Hủy",
+                      style: "cancel", // Đóng Alert
+                    },
+                  ],
+                  { cancelable: true }
+                )
+              }
+            >
+              <Ionicons name="add-circle-outline" size={28} color="#000" />
+            </TouchableOpacity>
+          </View>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#0000ff" />
-        ) : (
-          <FlatList
-            data={chats}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => {
-              const displayName = item.isGroup
-                ? item.chatName
-                : item.users && Array.isArray(item.users) // Kiểm tra nếu `item.users` tồn tại và là mảng
-                ? item.users
-                    .filter((user) => user.id !== parseInt(userId)) // Lấy người dùng khác dựa trên id
-                    .map((user) => user.name)
-                    .join(", ")
-                : "Người dùng";
+          {loading ? (
+            <ActivityIndicator size="large" color="#0000ff" />
+          ) : (
+            <FlatList
+              data={chats}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => {
+                const displayName = item.isGroup
+                  ? item.chatName
+                  : item.users && Array.isArray(item.users) // Kiểm tra nếu `item.users` tồn tại và là mảng
+                  ? item.users
+                      .filter((user) => user.id !== parseInt(userId)) // Lấy người dùng khác dựa trên id
+                      .map((user) => user.name)
+                      .join(", ")
+                  : "Người dùng";
 
-              const displayAvatar = item.isGroup
-                ? item.avatarUrl
-                : item.users && Array.isArray(item.users) // Kiểm tra nếu `item.users` tồn tại và là mảng
-                ? item.users.find((user) => user.id !== parseInt(userId))
-                    ?.avatar
-                : item.avatarUrl;
+                const displayAvatar = item.isGroup
+                  ? item.avatarUrl
+                  : item.users && Array.isArray(item.users) // Kiểm tra nếu `item.users` tồn tại và là mảng
+                  ? item.users.find((user) => user.id !== parseInt(userId))
+                      ?.avatar
+                  : item.avatarUrl;
 
-              console.log("Display Avatar:", displayAvatar);
+                console.log("Display Avatar:", displayAvatar);
 
-              return (
-                <TouchableOpacity
-                  style={styles.chatCard}
-                  onPress={() =>
-                    router.push({
-                      pathname: `/chat/${item.id}`,
-                      params: { chatName: displayName },
-                    })
-                  }
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Image
-                      source={
-                        displayAvatar
-                          ? { uri: displayAvatar } // Nếu `displayAvatar` tồn tại, sử dụng URL
-                          : require("../../../assets/images/default-avatar.jpg") // Ảnh mặc định
-                      }
-                      style={styles.avatar}
-                    />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.chatName}>{displayName}</Text>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Text style={styles.lastMessage}>
-                          {item.lastMessage || "Không có tin nhắn"}
-                        </Text>
-                        <Text style={styles.timeAgo}>
-                          {formatTimeAgo(item.lastMessageTime)}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
+                return (
                   <TouchableOpacity
-                    style={{
-                      position: "absolute",
-                      right: 10,
-                      top: "70%",
-                      transform: [{ translateY: -10 }],
-                    }}
+                    style={styles.chatCard}
                     onPress={() =>
-                      Alert.alert(
-                        "Tùy chọn",
-                        "Bạn muốn làm gì?",
-                        [
-                          {
-                            text: "Xóa cuộc trò chuyện",
-                            onPress: () => deleteChat(item.id),
-                            style: "destructive",
-                          },
-                          {
-                            text: "Hủy",
-                            style: "cancel",
-                          },
-                        ],
-                        { cancelable: true }
-                      )
+                      router.push({
+                        pathname: `/chat/${item.id}`,
+                        params: { chatName: displayName },
+                      })
                     }
                   >
-                    <Ionicons name="ellipsis-vertical" size={20} color="#000" />
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <Image
+                        source={
+                          displayAvatar
+                            ? { uri: displayAvatar } // Nếu `displayAvatar` tồn tại, sử dụng URL
+                            : require("../../../assets/images/default-avatar.jpg") // Ảnh mặc định
+                        }
+                        style={styles.avatar}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.chatName}>{displayName}</Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Text style={styles.lastMessage}>
+                            {item.lastMessage || "Không có tin nhắn"}
+                          </Text>
+                          <Text style={styles.timeAgo}>
+                            {formatTimeAgo(item.lastMessageTime)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={{
+                        position: "absolute",
+                        right: 10,
+                        top: "70%",
+                        transform: [{ translateY: -10 }],
+                      }}
+                      onPress={() =>
+                        Alert.alert(
+                          "Tùy chọn",
+                          "Bạn muốn làm gì?",
+                          [
+                            {
+                              text: "Xóa cuộc trò chuyện",
+                              onPress: () => deleteChat(item.id),
+                              style: "destructive",
+                            },
+                            {
+                              text: "Hủy",
+                              style: "cancel",
+                            },
+                          ],
+                          { cancelable: true }
+                        )
+                      }
+                    >
+                      <Ionicons name="ellipsis-vertical" size={20} color="#000" />
+                    </TouchableOpacity>
                   </TouchableOpacity>
-                </TouchableOpacity>
-              );
-            }}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={fetchChats} />
-            }
-          />
-        )}
+                );
+              }}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={fetchChats} />
+              }
+            />
+          )}
+        </View>
       </View>
     </Provider>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 10 },
+  container: { 
+    flex: 1, 
+    position: 'relative',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 1,
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

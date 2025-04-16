@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -178,191 +178,200 @@ const HomeScreen = () => {
     }
 
     return (
-        <ScrollView style={styles.container} >
-            {/* Task Summary */}
+        <View style={styles.container}>
+            <Image 
+                source={require('@/assets/images/project-background.jpg')}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+            />
+            <View style={styles.contentContainer}>
+                <ScrollView style={styles.scrollView}>
+                    {/* Task Summary */}
 
-            {/* Phần 3 task box cần scroll ngang */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.taskSummaryScroll}
-            >
-                <TouchableOpacity style={[styles.taskBox, styles.blueBox]} onPress={() => router.push("/project")}  >
-                    <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
-                    <Icon name="folder" size={24} color="#fff" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.taskBox, styles.grayBox]}
-                    onPress={() => router.push("/Task/allTask")}
-                >
-                    <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0})</Text>
-                    <Icon name="tasks" size={24} color="#fff" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.taskBox, styles.redBox]}
-                    onPress={() => router.push("/allPersonel")}
-                >
-                    <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
-                    <Icon name="users" size={24} color="#fff" />
-                </TouchableOpacity>
-            </ScrollView>
-
-
-
-            {/* Bar Chart */}
-            <Text style={styles.chartTitle}>Công việc</Text>
-
-            {/* Bộ lọc */}
-            <View style={styles.filterContainer}>
-                <TouchableOpacity
-                    style={styles.filterButton}
-                    onPress={() => setShowTaskCategoryFilter(!showTaskCategoryFilter)} // Sửa thành setShowTaskCategoryFilter
-                >
-                    <Text style={styles.filterText}>Phân loại</Text>
-                </TouchableOpacity>
-
-
-            </View>
-
-            {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
-            {showTaskCategoryFilter && (
-                <View style={styles.dropdown}>
-                    <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                            setTaskType(0); // Gọi API với type = 0
-                            fetchData(0, projectType);    // Gọi API ngay khi chọn
-                            setShowTaskCategoryFilter(false);
-                        }}
+                    {/* Phần 3 task box cần scroll ngang */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.taskSummaryScroll}
                     >
-                        <Text>Giao</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                            setTaskType(1); // Gọi API với type = 1
-                            fetchData(1, projectType);    // Gọi API ngay khi chọn
-                            setShowTaskCategoryFilter(false);
-                        }}
-                    >
-                        <Text>Được giao</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity style={[styles.taskBox, styles.blueBox]} onPress={() => router.push("/project")}  >
+                            <Text style={styles.taskText}> Dự án ({data?.projects ?? 0})</Text>
+                            <Icon name="folder" size={24} color="#fff" />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                            setTaskType(null);
-                            fetchData(null, projectType);    // Gọi API ngay khi chọn
-                            setShowTaskCategoryFilter(false);
-                        }}
-                    >
-                        <Text>Tất cả</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
+                        <TouchableOpacity
+                            style={[styles.taskBox, styles.grayBox]}
+                            onPress={() => router.push("/Task/allTask")}
+                        >
+                            <Text style={styles.taskText}>Công việc ({data?.tasks ?? 0})</Text>
+                            <Icon name="tasks" size={24} color="#fff" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.taskBox, styles.redBox]}
+                            onPress={() => router.push("/allPersonel")}
+                        >
+                            <Text style={styles.taskText}>Nhân sự ({data?.users ?? 0})</Text>
+                            <Icon name="users" size={24} color="#fff" />
+                        </TouchableOpacity>
+                    </ScrollView>
 
 
-            <ScrollView horizontal>
-                <BarChart
-                    data={{
-                        labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn", "Chờ nhận việc"],
-                        datasets: [{
-                            data: [
-                                taskData.IN_PROGRESS || 0,
-                                taskData.COMPLETED || 0,
-                                taskData.CANCELLED || 0,
-                                taskData.OVERDUE || 0,
-                                taskData.PENDING || 0
-                            ]
-                        }]
-                    }}
-                    width={430}
-                    height={220}
-                    yAxisLabel=""
-                    chartConfig={chartConfig}
-                    style={styles.chart}
-                    yAxisSuffix=""
-                    showValuesOnTopOfBars={true} // Hiển thị giá trị trên đầu cột
-                />
 
-            </ScrollView>
-            {/* Pie Chart (Donut) */}
-            <Text style={styles.chartTitle}>Dự án</Text>
-            {/* Bộ lọc */}
-            <View style={styles.filterContainer}>
-                <TouchableOpacity
-                    style={styles.filterButton}
-                    onPress={() => setShowProjectCategoryFilter(!showProjectCategoryFilter)} // Sửa thành setShowProjectCategoryFilter
-                >
-                    <Text style={styles.filterText}>Phân loại</Text>
-                </TouchableOpacity>
+                    {/* Bar Chart */}
+                    <Text style={styles.chartTitle}>Công việc</Text>
+
+                    {/* Bộ lọc */}
+                    <View style={styles.filterContainer}>
+                        <TouchableOpacity
+                            style={styles.filterButton}
+                            onPress={() => setShowTaskCategoryFilter(!showTaskCategoryFilter)} // Sửa thành setShowTaskCategoryFilter
+                        >
+                            <Text style={styles.filterText}>Phân loại</Text>
+                        </TouchableOpacity>
 
 
-            </View>
-
-            {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
-            {showProjectCategoryFilter && (
-                <View style={styles.dropdown}>
-                    <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                            setProjectType(0); // Gọi API với type = 0
-                            fetchData(taskType, 0);    // Gọi API ngay khi chọn
-                            setShowProjectCategoryFilter(false);
-                        }}
-                    >
-                        <Text>Giao</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                            setProjectType(1); // Gọi API với type = 1
-                            fetchData(taskType, 1);    // Gọi API ngay khi chọn
-                            setShowProjectCategoryFilter(false);
-                        }}
-                    >
-                        <Text>Được giao</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                            setProjectType(null);
-                            fetchData(taskType, null);    // Gọi API ngay khi chọn
-                            setShowProjectCategoryFilter(false);
-                        }}
-                    >
-                        <Text>Tất cả</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-            <View style={styles.pieWrapper}>
-                <View style={styles.pieContainer}>
-                    <PieChart
-                        data={[
-                            { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#F59E0B", legendFontColor: "#222", legendFontSize: 12 },
-                            { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
-                        ]}
-                        width={400}
-                        height={250}
-                        chartConfig={chartConfig}
-                        accessor="population"
-                        backgroundColor="transparent"
-                        paddingLeft="0"
-                        absolute
-                    />
-                    {/* Vòng tròn trắng ở giữa */}
-                    <View style={styles.innerCircle}>
-                        <Text style={styles.innerCircleText}>Tổng số</Text>
-                        <Text style={styles.innerCircleNumber}>{projectStatusData.total}</Text>
                     </View>
-                </View>
-            </View>
 
-        </ScrollView>
+                    {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
+                    {showTaskCategoryFilter && (
+                        <View style={styles.dropdown}>
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setTaskType(0); // Gọi API với type = 0
+                                    fetchData(0, projectType);    // Gọi API ngay khi chọn
+                                    setShowTaskCategoryFilter(false);
+                                }}
+                            >
+                                <Text>Giao</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setTaskType(1); // Gọi API với type = 1
+                                    fetchData(1, projectType);    // Gọi API ngay khi chọn
+                                    setShowTaskCategoryFilter(false);
+                                }}
+                            >
+                                <Text>Được giao</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setTaskType(null);
+                                    fetchData(null, projectType);    // Gọi API ngay khi chọn
+                                    setShowTaskCategoryFilter(false);
+                                }}
+                            >
+                                <Text>Tất cả</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+
+                    <ScrollView horizontal>
+                        <BarChart
+                            data={{
+                                labels: ["Đang xử lý", "Hoàn thành", "Từ chối", "Quá hạn", "Chờ nhận việc"],
+                                datasets: [{
+                                    data: [
+                                        taskData.IN_PROGRESS || 0,
+                                        taskData.COMPLETED || 0,
+                                        taskData.CANCELLED || 0,
+                                        taskData.OVERDUE || 0,
+                                        taskData.PENDING || 0
+                                    ]
+                                }]
+                            }}
+                            width={430}
+                            height={220}
+                            yAxisLabel=""
+                            chartConfig={chartConfig}
+                            style={styles.chart}
+                            yAxisSuffix=""
+                            showValuesOnTopOfBars={true} // Hiển thị giá trị trên đầu cột
+                        />
+
+                    </ScrollView>
+                    {/* Pie Chart (Donut) */}
+                    <Text style={styles.chartTitle}>Dự án</Text>
+                    {/* Bộ lọc */}
+                    <View style={styles.filterContainer}>
+                        <TouchableOpacity
+                            style={styles.filterButton}
+                            onPress={() => setShowProjectCategoryFilter(!showProjectCategoryFilter)} // Sửa thành setShowProjectCategoryFilter
+                        >
+                            <Text style={styles.filterText}>Phân loại</Text>
+                        </TouchableOpacity>
+
+
+                    </View>
+
+                    {/* Hiển thị danh sách khi bấm vào "Phân loại" */}
+                    {showProjectCategoryFilter && (
+                        <View style={styles.dropdown}>
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setProjectType(0); // Gọi API với type = 0
+                                    fetchData(taskType, 0);    // Gọi API ngay khi chọn
+                                    setShowProjectCategoryFilter(false);
+                                }}
+                            >
+                                <Text>Giao</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setProjectType(1); // Gọi API với type = 1
+                                    fetchData(taskType, 1);    // Gọi API ngay khi chọn
+                                    setShowProjectCategoryFilter(false);
+                                }}
+                            >
+                                <Text>Được giao</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setProjectType(null);
+                                    fetchData(taskType, null);    // Gọi API ngay khi chọn
+                                    setShowProjectCategoryFilter(false);
+                                }}
+                            >
+                                <Text>Tất cả</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    <View style={styles.pieWrapper}>
+                        <View style={styles.pieContainer}>
+                            <PieChart
+                                data={[
+                                    { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
+                                    { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#F59E0B", legendFontColor: "#222", legendFontSize: 12 },
+                                    { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
+                                ]}
+                                width={400}
+                                height={250}
+                                chartConfig={chartConfig}
+                                accessor="population"
+                                backgroundColor="transparent"
+                                paddingLeft="0"
+                                absolute
+                            />
+                            {/* Vòng tròn trắng ở giữa */}
+                            <View style={styles.innerCircle}>
+                                <Text style={styles.innerCircleText}>Tổng số</Text>
+                                <Text style={styles.innerCircleNumber}>{projectStatusData.total}</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                </ScrollView>
+            </View>
+        </View>
     );
 };
 
@@ -384,7 +393,24 @@ const chartConfig = {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff", padding: 20 },
+    container: { 
+        flex: 1, 
+        position: 'relative',
+    },
+    backgroundImage: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        opacity: 1,
+    },
+    contentContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    },
+    scrollView: {
+        flex: 1,
+        padding: 20,
+    },
     taskSummary: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
     // taskBox: { padding: 15, borderRadius: 10, flex: 1, marginRight: 10, alignItems: "center" },
     taskBox: {

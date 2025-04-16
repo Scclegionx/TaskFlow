@@ -71,7 +71,7 @@ const ScheduleDetailScreen = () => {
         try {
             const scheduleId = typeof id === 'string' ? parseInt(id) : 0;
             const data = await getScheduleById(scheduleId);
-            console.log(data);
+            console.log(data.participants);
             setSchedule(data);
             
             // Kiểm tra xem người dùng hiện tại có phải là người tạo lịch trình không
@@ -127,31 +127,25 @@ const ScheduleDetailScreen = () => {
             >
                 <View style={styles.participantsHeader}>
                     <Text style={styles.participantsTitle}>Thành viên tham gia</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#6B7280" />
-                </View>
-                <View style={styles.participantsList}>
-                    {schedule.participants.slice(0, 3).map((participant, index) => (
-                        <View key={participant.user.id} style={styles.participantItem}>
-                            {participant.user.avatar ? (
+                    <View style={styles.participantsAvatars}>
+                        {schedule.participants.slice(0, 2).map((participant, index) => (
+                            <View key={participant.user.id} style={[
+                                styles.participantAvatarContainer,
+                                index > 0 && { marginLeft: -10 }
+                            ]}>
                                 <Image 
-                                    source={{ uri: participant.user.avatar }} 
+                                    source={require('@/assets/images/default-avatar.jpg')} 
                                     style={styles.participantAvatar}
                                 />
-                            ) : (
-                                <View style={[styles.participantAvatar, styles.defaultAvatar]}>
-                                    <Text style={styles.avatarText}>
-                                        {participant.user.name.charAt(0)}
-                                    </Text>
-                                </View>
-                            )}
-                            <Text style={styles.participantName}>{participant.user.name}</Text>
-                        </View>
-                    ))}
-                    {schedule.participants.length > 3 && (
-                        <View style={styles.moreParticipants}>
-                            <Text style={styles.moreParticipantsText}>+{schedule.participants.length - 3}</Text>
-                        </View>
-                    )}
+                            </View>
+                        ))}
+                        {schedule.participants.length > 2 && (
+                            <View style={[styles.moreParticipants, { marginLeft: -10 }]}>
+                                <Text style={styles.moreParticipantsText}>+{schedule.participants.length - 2}</Text>
+                            </View>
+                        )}
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#6B7280" />
                 </View>
             </TouchableOpacity>
         );
@@ -183,18 +177,10 @@ const ScheduleDetailScreen = () => {
                             keyExtractor={(item) => item.user.id.toString()}
                             renderItem={({ item }) => (
                                 <View style={styles.modalParticipantItem}>
-                                    {item.user.avatar ? (
-                                        <Image 
-                                            source={{ uri: item.user.avatar }} 
-                                            style={styles.modalParticipantAvatar}
-                                        />
-                                    ) : (
-                                        <View style={[styles.modalParticipantAvatar, styles.defaultAvatar]}>
-                                            <Text style={styles.avatarText}>
-                                                {item.user.name.charAt(0)}
-                                            </Text>
-                                        </View>
-                                    )}
+                                    <Image 
+                                        source={require('@/assets/images/default-avatar.jpg')} 
+                                        style={styles.modalParticipantAvatar}
+                                    />
                                     <Text style={styles.modalParticipantName}>{item.user.name}</Text>
                                 </View>
                             )}
@@ -590,49 +576,48 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
     },
     participantsTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: '#1F2937',
     },
-    participantsList: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-    },
-    participantItem: {
+    participantsAvatars: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        padding: 8,
-        borderRadius: 20,
-        maxWidth: '48%',
+        marginLeft: 8,
+    },
+    participantAvatarContainer: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: 2,
+        borderColor: 'white',
+        overflow: 'hidden',
     },
     participantAvatar: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        marginRight: 8,
+        width: '100%',
+        height: '100%',
     },
     defaultAvatar: {
         backgroundColor: '#3B82F6',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    participantName: {
-        fontSize: 14,
-        color: '#4B5563',
-        fontWeight: '500',
+    participantAvatarText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: 'white',
     },
     moreParticipants: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
         backgroundColor: '#E5E7EB',
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'white',
     },
     moreParticipantsText: {
         fontSize: 12,
@@ -694,6 +679,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#1F2937',
         fontWeight: '500',
+        flex: 1,
     },
 });
 

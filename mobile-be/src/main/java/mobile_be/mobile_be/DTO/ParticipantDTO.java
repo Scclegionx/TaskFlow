@@ -7,6 +7,7 @@ import mobile_be.mobile_be.Model.ScheduleParticipants;
 public class ParticipantDTO {
     private Long id;
     private UserDTO user;
+    private String avatar;
 
     public static ParticipantDTO fromEntity(ScheduleParticipants participant) {
         ParticipantDTO dto = new ParticipantDTO();

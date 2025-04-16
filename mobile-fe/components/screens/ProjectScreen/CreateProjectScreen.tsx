@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { debounce } from "lodash";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from 'react-native-toast-message';
+import { useNavigation } from "expo-router";
 
 // Tách phần tìm kiếm thành component Modal riêng
 const UserSearchModal = ({ 
@@ -92,8 +93,10 @@ const CreateProjectScreen = () => {
     const [toDate, setToDate] = useState<Date | null>(null);
     const [showFromDatePicker, setShowFromDatePicker] = useState(false);
     const [showToDatePicker, setShowToDatePicker] = useState(false);
+    const navigation = useNavigation();
 
     useEffect(() => {
+        navigation.setOptions({ title: "Tạo dự án" });
         const fetchUserId = async () => {
             const userId = await AsyncStorage.getItem("userId");
             const userAvatar = await AsyncStorage.getItem("userAvatar");
@@ -209,7 +212,6 @@ const CreateProjectScreen = () => {
                 contentContainerStyle={styles.scrollContainer}
                 keyboardShouldPersistTaps="handled"
             >
-                <Text style={styles.header}>Tạo Dự Án</Text>
 
                 <View style={styles.formSection}>
                     <Text style={styles.label}>Tên dự án</Text>

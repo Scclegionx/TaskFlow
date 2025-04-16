@@ -135,12 +135,6 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onDelete, defaultAva
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.descriptionContainer}>
-                        <Text style={[styles.description, { color: '#4B5563' }]} numberOfLines={2}>
-                            {project.description}
-                        </Text>
-                    </View>
-
                     <View style={styles.infoContainer}>
                         <View style={styles.dateContainer}>
                             <MaterialCommunityIcons name="calendar-outline" size={20} color="#6B7280" />

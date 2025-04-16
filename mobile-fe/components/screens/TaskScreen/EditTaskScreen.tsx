@@ -10,7 +10,7 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import {
   getTaskDetail,
   updateTask,
@@ -40,6 +40,7 @@ interface SubTask {
 const EditTaskScreen = () => {
   const { taskId } = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation();
   const [task, setTask] = useState<any>(null);
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [title, setTitle] = useState("");
@@ -71,6 +72,7 @@ const EditTaskScreen = () => {
   };
 
   useEffect(() => {
+    navigation.setOptions({ title: "Chỉnh sửa công việc" });
     loadTaskDetail();
   }, [taskId]);
 

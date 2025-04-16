@@ -67,6 +67,7 @@ interface ITask {
   description: string;
   status: string;
   createdAt: string;
+  toDate: string;
   assignees: {
     id: number;
     name: string;
@@ -157,6 +158,7 @@ export default function ProjectDetail() {
   const [showMemberSearch, setShowMemberSearch] = useState(false);
   const [showTaskSearch, setShowTaskSearch] = useState(false);
   const [allTasks, setAllTasks] = useState<ITask[]>([]); // Lưu toàn bộ công việc
+  const navigation = useNavigation();
 
   useFocusEffect(
     useCallback(() => {
@@ -186,6 +188,7 @@ export default function ProjectDetail() {
   };
 
   useEffect(() => {
+    navigation.setOptions({ title: "Chi tiết dự án" });
     if (ItemProject && currentUserId) {
       const currentMember = ItemProject.members.find(
         (m) => m.id === currentUserId
@@ -200,6 +203,7 @@ export default function ProjectDetail() {
   const loadProjects = async () => {
     try {
       const data = await getProjectById(project.id, memberPage, 3, taskPage, 5);
+      console.log("data", data);
       setTotalMembers(data.totalMembers);
       setTotalTasks(data.totalTasks);
       setItemProject(data);
@@ -417,18 +421,20 @@ export default function ProjectDetail() {
         >
           <Text style={styles.title}>{ItemProject?.name}</Text>
           <Text style={styles.description}>{ItemProject?.description}</Text>
-          <Text style={styles.date}>
-            📅 Ngày tạo:{" "}
-            {ItemProject?.fromDate
-              ? formatDateTime(ItemProject.fromDate)
-              : "Chưa cập nhật"}
-          </Text>
-          <Text style={styles.date}>
-            🚀 Hạn chót:{" "}
-            {ItemProject?.toDate
-              ? formatDateTime(ItemProject.toDate)
-              : "Chưa cập nhật"}
-          </Text>
+          <View style={styles.dateContainer}>
+            <Text style={styles.date}>
+              📅 Ngày tạo:{" "}
+              {ItemProject?.fromDate
+                ? formatDateTime(ItemProject.fromDate)
+                : "Chưa cập nhật"}
+            </Text>
+            <Text style={styles.date}>
+              🚀 Hạn chót:{" "}
+              {ItemProject?.toDate
+                ? formatDateTime(ItemProject.toDate)
+                : "Chưa cập nhật"}
+            </Text>
+          </View>
           <Text
             style={[
               styles.status,
@@ -783,9 +789,9 @@ export default function ProjectDetail() {
                             </TouchableOpacity>
                           )}
                         </View>
-                        <Text style={styles.taskDescription}>
+                        {/* <Text style={styles.taskDescription}>
                           {item.description}
-                        </Text>
+                        </Text> */}
                         <Text style={styles.taskDate}>
                           {formatDateTime(item.createdAt)}
                         </Text>
@@ -893,11 +899,11 @@ export default function ProjectDetail() {
                         </TouchableOpacity>
                       )}
                     </View>
-                    <Text style={styles.taskDescription}>
+                    {/* <Text style={styles.taskDescription}>
                       {item.description}
-                    </Text>
+                    </Text> */}
                     <Text style={styles.taskDate}>
-                      {formatDateTime(item.createdAt)}
+                      Hạn chót: {formatDateTime(item.toDate)}
                     </Text>
                     <View style={styles.taskFooter}>
                       <Text
@@ -1063,30 +1069,41 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    marginBottom: 12,
+    marginBottom: 16,
     color: "black",
     letterSpacing: 0.5,
     textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+    textAlign: 'center',
   },
   description: {
-    fontSize: 16,
+    fontSize: 18,
     color: "black",
-    marginBottom: 15,
-    lineHeight: 24,
+    marginBottom: 20,
+    lineHeight: 26,
     fontWeight: "500",
     textShadowColor: "rgba(0, 0, 0, 0.1)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    padding: 12,
+    borderRadius: 8,
+    textAlign: 'justify',
+  },
+  dateContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
   },
   date: {
-    fontSize: 15,
+    fontSize: 14,
     color: "black",
-    marginBottom: 8,
+    marginBottom: 6,
     flexDirection: "row",
     alignItems: "center",
-    fontWeight: "500",
+    fontWeight: "400",
     textShadowColor: "rgba(0, 0, 0, 0.1)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,

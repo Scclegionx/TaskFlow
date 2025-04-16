@@ -9,7 +9,7 @@ import {
     Alert,
     ActivityIndicator
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { updateProject, getProjectById } from '@/hooks/useProjectApi';
@@ -29,8 +29,10 @@ const UpdateProjectScreen = () => {
 
     const [showFromDate, setShowFromDate] = useState(false);
     const [showToDate, setShowToDate] = useState(false);
+    const navigation = useNavigation();
 
     useEffect(() => {
+        navigation.setOptions({ title: "Cập nhật dự án" });
         loadProject();
     }, []);
 

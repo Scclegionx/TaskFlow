@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { getScheduleById, deleteSchedule } from '@/hooks/useScheduleApi';
 import moment from 'moment';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Schedule {
     id: number;
@@ -25,9 +26,21 @@ const PRIORITY_LABELS: Record<string, { label: string; icon: keyof typeof Ionico
 
 const ScheduleDetailScreen = () => {
     const router = useRouter();
+    const navigation = useNavigation();
     const { id } = useLocalSearchParams();
     const [schedule, setSchedule] = useState<Schedule | null>(null);
     const [loading, setLoading] = useState(true);
+    const [userAvatar, setUserAvatar] = useState<any>(null);
+
+    useEffect(() => {
+        const loadUserAvatar = async () => {
+            const avatar = await AsyncStorage.getItem('avatar');
+            const defaultAvatar = require('@/assets/images/default-avatar.jpg');
+            const userAvatar = avatar && avatar !== 'null' ? { uri: avatar } : defaultAvatar;
+            setUserAvatar(userAvatar);
+        };
+        loadUserAvatar();
+    }, []);
 
     const fetchSchedule = async () => {
         try {
@@ -46,6 +59,9 @@ const ScheduleDetailScreen = () => {
             fetchSchedule();
         }, [id])
     );
+    useEffect(() => {
+        navigation.setOptions({ title: "Chi tiết lịch trình" });
+    }, []);
 
     const handleDelete = async () => {
         Alert.alert(
@@ -99,7 +115,7 @@ const ScheduleDetailScreen = () => {
     return (
         <ScrollView 
             style={styles.container}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}
         >
             {/* <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -108,17 +124,21 @@ const ScheduleDetailScreen = () => {
             
             <View style={styles.header}>
                 <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{schedule.user.name?.charAt(0)}</Text>
+                    {userAvatar ? (
+                        <Image source={userAvatar} style={styles.avatarImage} />
+                    ) : (
+                        <Text style={styles.avatarText}>{schedule.user.name?.charAt(0)}</Text>
+                    )}
                 </View>
                 <View style={styles.headerContent}>
                     <Text style={styles.title}>{schedule.title}</Text>
-                    <View style={styles.creatorContainer}>
+                    {/* <View style={styles.creatorContainer}>
                         <Ionicons name="person" size={16} color="#6B7280" />
                         <Text style={styles.creator}>Người tạo: {schedule.user.name}</Text>
-                    </View>
+                    </View> */}
                 </View>
             </View>
-
+{/* 
             <View style={styles.imageContainer}>
                 <Image 
                     source={require('@/assets/images/react-logo.png')} 
@@ -131,7 +151,7 @@ const ScheduleDetailScreen = () => {
                         <Text style={styles.priorityText}>{priorityInfo.label}</Text>
                     </View>
                 </View>
-            </View>
+            </View> */}
 
             <View style={styles.infoContainer}>
                 <View style={styles.sectionHeader}>
@@ -140,31 +160,35 @@ const ScheduleDetailScreen = () => {
                 </View>
                 
                 <View style={styles.descriptionContainer}>
-                    <Ionicons name="document-text" size={20} color="#6B7280" style={styles.descriptionIcon} />
+                    <Text style={styles.descriptionLabel}>Mô tả</Text>
                     <Text style={styles.description}>{schedule.content}</Text>
                 </View>
 
                 <View style={styles.detailsContainer}>
-                    <View style={styles.detailItem}>
-                        <Ionicons name="calendar" size={20} color="#3B82F6" />
-                        <Text style={styles.detailText}>Ngày bắt đầu: {formattedDate}</Text>
+                    <View style={styles.detailRow}>
+                        <View style={styles.detailItem}>
+                            <Ionicons name="calendar" size={18} color="#6B7280" />
+                            <Text style={styles.detailText}>Ngày bắt đầu: {formattedDate}</Text>
+                        </View>
+                        
+                        <View style={styles.detailItem}>
+                            <Ionicons name="time" size={18} color="#6B7280" />
+                            <Text style={styles.detailText}>Giờ bắt đầu: {formattedTime}</Text>
+                        </View>
                     </View>
                     
-                    <View style={styles.detailItem}>
-                        <Ionicons name="time" size={20} color="#3B82F6" />
-                        <Text style={styles.detailText}>Giờ bắt đầu: {formattedTime}</Text>
-                    </View>
-                    
-                    <View style={styles.detailItem}>
-                        <Ionicons name="hourglass" size={20} color="#3B82F6" />
-                        <Text style={styles.detailText}>Thời lượng: {formattedDuration}</Text>
-                    </View>
-                    
-                    <View style={styles.detailItem}>
-                        <Ionicons name={priorityInfo.icon} size={20} color={priorityInfo.color} />
-                        <Text style={[styles.detailText, { color: priorityInfo.color }]}>
-                            Độ ưu tiên: {priorityInfo.label}
-                        </Text>
+                    <View style={styles.detailRow}>
+                        <View style={styles.detailItem}>
+                            <Ionicons name="hourglass" size={18} color="#6B7280" />
+                            <Text style={styles.detailText}>Thời lượng: {formattedDuration}</Text>
+                        </View>
+                        
+                        <View style={styles.detailItem}>
+                            <Ionicons name={priorityInfo.icon} size={18} color={priorityInfo.color} />
+                            <Text style={[styles.detailText, { color: priorityInfo.color }]} numberOfLines={1}>
+                                {priorityInfo.label}
+                            </Text>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -189,8 +213,15 @@ const ScheduleDetailScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
         backgroundColor: '#F8FAFC',
+    },
+    contentContainer: {
+        marginTop: 30,
+        padding: 20,
+        paddingBottom: 40,
+        maxWidth: 600,
+        alignSelf: 'center',
+        width: '100%',
     },
     loaderContainer: {
         flex: 1,
@@ -253,6 +284,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
     },
     avatarText: {
         fontSize: 20,
@@ -330,36 +366,46 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     descriptionContainer: {
-        flexDirection: 'row',
-        marginBottom: 20,
-        padding: 12,
-        backgroundColor: '#F3F4F6',
+        marginBottom: 24,
+        padding: 20,
+        backgroundColor: '#F8FAFC',
         borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
-    descriptionIcon: {
-        marginRight: 12,
-        marginTop: 2,
+    descriptionLabel: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1F2937',
+        marginBottom: 12,
     },
     description: {
-        flex: 1,
         fontSize: 16,
-        color: '#374151',
+        color: '#1F2937',
         lineHeight: 24,
+        fontWeight: '500',
     },
     detailsContainer: {
         gap: 12,
     },
+    detailRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
     detailItem: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
         backgroundColor: '#F3F4F6',
-        borderRadius: 12,
+        borderRadius: 8,
+        minWidth: 0,
     },
     detailText: {
-        fontSize: 16,
-        color: '#374151',
-        marginLeft: 12,
+        fontSize: 14,
+        color: '#6B7280',
+        marginLeft: 8,
+        flexShrink: 1,
     },
     buttonContainer: {
         flexDirection: 'row',

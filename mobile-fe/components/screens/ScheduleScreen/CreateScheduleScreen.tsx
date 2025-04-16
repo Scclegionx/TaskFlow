@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { createSchedule } from '@/hooks/useScheduleApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from "jwt-decode";
@@ -18,6 +18,7 @@ const CreateScheduleScreen = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const navigation = useNavigation();
 
     const priorityMapping = {
         LOW: 'Thấp',
@@ -82,13 +83,17 @@ const CreateScheduleScreen = () => {
         }
     };
 
+    useEffect(() => {
+        navigation.setOptions({ title: "Tạo lịch trình" });
+    }, []);
+
     return (
         <ScrollView 
             style={styles.container}
             contentContainerStyle={{ paddingBottom: 20 }}
             showsVerticalScrollIndicator={false}
         >
-            <Text style={styles.header}>📝 Tạo Lịch Trình Mới</Text>
+            {/* <Text style={styles.header}>📝 Tạo Lịch Trình Mới</Text> */}
             
             <View style={styles.formContainer}>
                 <Text style={styles.label}>Tiêu đề</Text>
@@ -159,7 +164,12 @@ const CreateScheduleScreen = () => {
                     {Object.entries(priorityMapping).map(([key, value]) => (
                         <TouchableOpacity
                             key={key}
-                            style={[styles.priorityButton, priority === key && styles.selectedPriority]}
+                            style={[
+                                styles.priorityButton,
+                                priority === key && key === 'LOW' && styles.selectedPriorityLow,
+                                priority === key && key === 'NORMAL' && styles.selectedPriorityNormal,
+                                priority === key && key === 'HIGH' && styles.selectedPriorityHigh,
+                            ]}
                             onPress={() => setPriority(key)}
                         >
                             <Text style={[styles.priorityText, priority === key && styles.selectedPriorityText]}>
@@ -270,6 +280,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#F3F4F6',
     },
     selectedPriority: {
+        borderColor: '#EF4444',
+    },
+    selectedPriorityLow: {
+        backgroundColor: '#22C55E',
+        borderColor: '#22C55E',
+    },
+    selectedPriorityNormal: {
+        backgroundColor: '#EAB308',
+        borderColor: '#EAB308',
+    },
+    selectedPriorityHigh: {
         backgroundColor: '#EF4444',
         borderColor: '#EF4444',
     },

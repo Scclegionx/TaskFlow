@@ -140,7 +140,8 @@ public class ProjectService {
             totals.put("finished", ((Number) row[0]).intValue());
             totals.put("processing", ((Number) row[1]).intValue());
             totals.put("overdue", ((Number) row[2]).intValue());
-            Integer total = ((Number) row[0]).intValue() + ((Number) row[1]).intValue() + ((Number) row[2]).intValue();
+            totals.put("pending", ((Number) row[3]).intValue());
+            Integer total = ((Number) row[0]).intValue() + ((Number) row[1]).intValue() + ((Number) row[2]).intValue() + ((Number) row[3]).intValue();
             totals.put("total", total);
             return totals;
         }

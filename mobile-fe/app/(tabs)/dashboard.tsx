@@ -36,6 +36,7 @@ type ProjectStatusData = {
     overdue: number;
     processing: number;
     finished: number;
+    pending : number;
 } | null;
 
 const HomeScreen = () => {
@@ -352,6 +353,7 @@ const HomeScreen = () => {
                                     { name: "Hoàn thành", population: projectStatusData.finished || 0, color: "#34A853", legendFontColor: "#222", legendFontSize: 12 },
                                     { name: "Đang xử lý", population: projectStatusData.processing || 0, color: "#F59E0B", legendFontColor: "#222", legendFontSize: 12 },
                                     { name: "Quá hạn", population: projectStatusData.overdue || 0, color: "#3B82F6", legendFontColor: "#222", legendFontSize: 12 },
+                                    { name: "Chờ xử lý", population: projectStatusData.pending || 0, color: "#7784EE", legendFontColor: "#222", legendFontSize: 12 },
                                 ]}
                                 width={400}
                                 height={250}

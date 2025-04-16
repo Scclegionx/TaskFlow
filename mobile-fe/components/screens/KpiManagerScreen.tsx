@@ -365,7 +365,7 @@ const AllPersonelScreen = () => {
         return;
       }
 
-      let kpiDeleteUrl = `${API_BASE_URL}/kpi/edit-kpi?kpiId=${kpiId}&pointKpi=${total_point}&time=${formattedDate}$userId=${userId}`;
+      let kpiDeleteUrl = `${API_BASE_URL}/kpi/edit-kpi?kpiId=${kpiId}&pointKpi=${total_point}&time=${formattedDate}&userId=${userId}`;
 
       const response = await fetch(
         kpiDeleteUrl,

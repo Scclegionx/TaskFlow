@@ -194,4 +194,9 @@ public class ProjectController {
         @RequestParam(required = false) String searchText) {
         return ResponseEntity.ok(projectService.searchTasksInProject(projectId, searchText));
     }
+
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<UserResponseDTO>> getProjectMembers(@PathVariable Integer projectId) {
+        return ResponseEntity.ok(projectService.getProjectMembers(projectId));
+    }
 }

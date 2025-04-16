@@ -1,5 +1,6 @@
 package mobile_be.mobile_be.Controller;
 
+import mobile_be.mobile_be.DTO.ScheduleDTO;
 import mobile_be.mobile_be.Model.Schedule;
 import mobile_be.mobile_be.Service.ScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/schedules")
@@ -21,8 +20,8 @@ public class ScheduleController {
     private ScheduleService scheduleService;
 
     @PostMapping
-    public Schedule createSchedule(@RequestBody Schedule schedule) {
-        return scheduleService.createSchedule(schedule);
+    public Schedule createSchedule(@RequestBody Map<String, Object> request) {
+        return scheduleService.createScheduleFromRequest(request);
     }
 
     @GetMapping
@@ -44,8 +43,8 @@ public class ScheduleController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateSchedule(@PathVariable Long id, @RequestBody Schedule updatedSchedule) {
-        Optional<Schedule> updated = scheduleService.updateSchedule(id, updatedSchedule);
+    public ResponseEntity<?> updateSchedule(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        Optional<Schedule> updated = scheduleService.updateScheduleFromRequest(id, request);
         return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -59,8 +58,8 @@ public class ScheduleController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Schedule> getScheduleById(@PathVariable Long id) {
-        Optional<Schedule> schedule = scheduleService.getScheduleById(id);
+    public ResponseEntity<ScheduleDTO> getScheduleById(@PathVariable Long id) {
+        Optional<ScheduleDTO> schedule = scheduleService.getScheduleById(id);
         return schedule.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -68,5 +67,4 @@ public class ScheduleController {
     public ResponseEntity<?> searchSchedules(@RequestParam String query, @RequestParam Integer userId) {
         return ResponseEntity.ok(scheduleService.searchSchedules(query, userId));
     }
-
 }

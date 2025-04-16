@@ -38,6 +38,8 @@ public interface ProjectMapper {
             dto.setTitle(t.getTitle());
             dto.setDescription(t.getDescription());
             dto.setStatus(t.getStatus().toString());
+            dto.setToDate(t.getToDate());
+            dto.setParentId(t.getParentId());
             
             // Map thông tin người được assign
             if (t.getAssignees() != null && !t.getAssignees().isEmpty()) {

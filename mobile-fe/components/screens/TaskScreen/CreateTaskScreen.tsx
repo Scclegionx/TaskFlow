@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -22,10 +22,11 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import { set } from "lodash";
+import { useNavigation } from "expo-router";
 const CreateTaskScreen = () => {
   const router = useRouter();
   const { projectId } = useLocalSearchParams();
-
+  const navigation = useNavigation();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [fromDate, setFromDate] = useState(new Date());
@@ -292,6 +293,9 @@ const CreateTaskScreen = () => {
       setToTimePickerVisible(false);
     }
   };
+  useEffect(() => {
+    navigation.setOptions({ title: "Tạo công việc" });
+  }, []);
 
   return (
     <ScrollView style={styles.container}>

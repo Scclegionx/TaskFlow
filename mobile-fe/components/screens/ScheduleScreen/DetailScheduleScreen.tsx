@@ -16,6 +16,13 @@ interface Schedule {
     user: {
         name: string;
     };
+    participants: Array<{
+        user: {
+            id: number;
+            name: string;
+            avatar: string;
+        }
+    }>;
 }
 
 const PRIORITY_LABELS: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
@@ -46,6 +53,7 @@ const ScheduleDetailScreen = () => {
         try {
             const scheduleId = typeof id === 'string' ? parseInt(id) : 0;
             const data = await getScheduleById(scheduleId);
+            console.log(data);
             setSchedule(data);
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể tải dữ liệu lịch trình');
@@ -83,6 +91,42 @@ const ScheduleDetailScreen = () => {
                     }
                 }
             ]
+        );
+    };
+
+    const renderParticipants = () => {
+        if (!schedule?.participants || schedule.participants.length === 0) return null;
+
+        const displayParticipants = schedule.participants.slice(0, 2);
+        const remainingCount = schedule.participants.length - 2;
+
+        return (
+            <View style={styles.participantsContainer}>
+                <Text style={styles.participantsTitle}>Thành viên tham gia</Text>
+                <View style={styles.participantsList}>
+                    {displayParticipants.map((participant, index) => (
+                        <View key={participant.user.id} style={styles.participantItem}>
+                            {participant.user.avatar ? (
+                                <Image 
+                                    source={{ uri: participant.user.avatar }} 
+                                    style={styles.participantAvatar}
+                                />
+                            ) : (
+                                <View style={[styles.participantAvatar, styles.defaultAvatar]}>
+                                    <Text style={styles.avatarText}>
+                                        {participant.user.name.charAt(0)}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    ))}
+                    {remainingCount > 0 && (
+                        <View style={[styles.participantItem, styles.remainingCount]}>
+                            <Text style={styles.remainingCountText}>+{remainingCount}</Text>
+                        </View>
+                    )}
+                </View>
+            </View>
         );
     };
 
@@ -159,6 +203,8 @@ const ScheduleDetailScreen = () => {
                     <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
                 </View>
                 
+                {renderParticipants()}
+
                 <View style={styles.descriptionContainer}>
                     <Text style={styles.descriptionLabel}>Mô tả</Text>
                     <Text style={styles.description}>{schedule.content}</Text>
@@ -447,6 +493,54 @@ const styles = StyleSheet.create({
     buttonText: {
         color: 'white',
         fontSize: 16,
+        fontWeight: '600',
+    },
+    participantsContainer: {
+        marginBottom: 24,
+        padding: 20,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    participantsTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1F2937',
+        marginBottom: 12,
+    },
+    participantsList: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    participantItem: {
+        marginRight: -8,
+    },
+    participantAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: 'white',
+    },
+    defaultAvatar: {
+        backgroundColor: '#3B82F6',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    remainingCount: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'white',
+    },
+    remainingCountText: {
+        color: '#6B7280',
+        fontSize: 12,
         fontWeight: '600',
     },
 });

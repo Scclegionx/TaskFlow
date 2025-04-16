@@ -1,10 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Modal, FlatList, Image } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, useRouter } from "expo-router";
 import { createSchedule } from '@/hooks/useScheduleApi';
+import { searchUserByEmail } from '@/hooks/useProjectApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from "jwt-decode";
+import { debounce } from "lodash";
+import Toast from 'react-native-toast-message';
+
+// Component Modal tìm kiếm người dùng
+const UserSearchModal = ({ 
+    visible, 
+    searchResults, 
+    onSelectUser, 
+    searchInput, 
+    onChangeSearch, 
+    onClose 
+}: {
+    visible: boolean;
+    searchResults: any[];
+    onSelectUser: (user: any) => void;
+    searchInput: string;
+    onChangeSearch: (text: string) => void;
+    onClose: () => void;
+}) => {
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Nhập email để tìm kiếm"
+                            value={searchInput}
+                            onChangeText={onChangeSearch}
+                            autoFocus={true}
+                        />
+                        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                            <Text style={styles.closeButtonText}>×</Text>
+                        </TouchableOpacity>
+                    </View>
+                    
+                    <FlatList
+                        data={searchResults}
+                        keyExtractor={(item) => item.id.toString()}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => onSelectUser(item)}
+                            >
+                                <Image 
+                                    source={item.avatar ? { uri: item.avatar } : getDefaultAvatar()}
+                                    style={styles.avatar}
+                                />
+                                <View style={styles.userInfo}>
+                                    <Text style={styles.userName}>{item.name}</Text>
+                                    <Text style={styles.userEmail}>{item.email}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        ListEmptyComponent={() => (
+                            <Text style={styles.noResultText}>Không tìm thấy người dùng</Text>
+                        )}
+                    />
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
+const getDefaultAvatar = () => {
+    return require('../../../assets/images/default-avatar.jpg');
+};
 
 const CreateScheduleScreen = () => {
     const [title, setTitle] = useState('');
@@ -17,6 +90,13 @@ const CreateScheduleScreen = () => {
     const [showEndPicker, setShowEndPicker] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [searchEmail, setSearchEmail] = useState("");
+    const [searchResults, setSearchResults] = useState<{ id: number, name: string, email: string, avatar: string }[]>([]);
+    const [selectedUsers, setSelectedUsers] = useState<{ id: number, name: string, avatar: string }[]>([]);
+    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [currentUserName, setCurrentUserName] = useState<string>("");
+    const [currentUserAvatar, setCurrentUserAvatar] = useState<string>("");
     const router = useRouter();
     const navigation = useNavigation();
 
@@ -37,6 +117,118 @@ const CreateScheduleScreen = () => {
         return new Date(dateObj.getTime() - tzOffset).toISOString();
     };
 
+    // Lấy thông tin người dùng hiện tại
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const token = await AsyncStorage.getItem('token');
+                if (token) {
+                    const decodedToken: any = jwtDecode(token);
+                    const userId = decodedToken.id;
+                    const userName = decodedToken.name || "Bạn";
+                    const userAvatar = await AsyncStorage.getItem('userAvatar') || "";
+                    
+                    setCurrentUserId(userId);
+                    setCurrentUserName(userName);
+                    setCurrentUserAvatar(userAvatar);
+                    
+                    // Tự động thêm người dùng hiện tại vào danh sách thành viên
+                    setSelectedUsers([{
+                        id: userId,
+                        name: userName,
+                        avatar: userAvatar || getDefaultAvatar()
+                    }]);
+                }
+            } catch (error) {
+                console.error("Lỗi khi lấy thông tin người dùng:", error);
+            }
+        };
+        
+        fetchCurrentUser();
+    }, []);
+
+    // Hàm tìm kiếm người dùng với debounce
+    const debouncedSearch = useCallback(
+        debounce(async (email: string) => {
+            if (email.length > 0) {
+                setLoading(true);
+                try {
+                    const users = await searchUserByEmail(email);
+                    setSearchResults(users || []);
+                } catch (error) {
+                    setSearchResults([]);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setSearchResults([]);
+            }
+        }, 1000),
+        []
+    );
+
+    const handleSearch = (email: string) => {
+        setSearchEmail(email);
+        setIsDropdownVisible(true);
+        debouncedSearch(email);
+    };
+
+    const handleAddUser = (user: { id: number, name: string, avatar: string }) => {
+        if (!selectedUsers.some(u => u.id === user.id)) {
+            setSelectedUsers([...selectedUsers, {
+                id: user.id,
+                name: user.name,
+                avatar: user.avatar || getDefaultAvatar()
+            }]);
+            Toast.show({
+                type: 'success',
+                position: 'top',
+                text1: 'Thêm thành công',
+                text2: `Đã thêm ${user.name} vào lịch trình`,
+                visibilityTime: 2000,
+                autoHide: true,
+                topOffset: 30,
+            });
+            setSearchEmail("");
+            setSearchResults([]);
+            setIsDropdownVisible(false);
+        } else {
+            Toast.show({
+                type: 'info',
+                position: 'top',
+                text1: 'Thông báo',
+                text2: 'Thành viên này đã được thêm vào lịch trình',
+                visibilityTime: 2000,
+                autoHide: true,
+                topOffset: 30,
+            });
+        }
+    };
+
+    const handleRemoveUser = (userId: number) => {
+        // Không cho phép xóa người dùng hiện tại
+        if (userId === currentUserId) {
+            Toast.show({
+                type: 'info',
+                position: 'top',
+                text1: 'Thông báo',
+                text2: 'Bạn không thể xóa chính mình khỏi lịch trình',
+                visibilityTime: 2000,
+                autoHide: true,
+                topOffset: 30,
+            });
+            return;
+        }
+        
+        setSelectedUsers(selectedUsers.filter(user => user.id !== userId));
+    };
+
+    // Hàm đóng modal tìm kiếm
+    const handleCloseModal = () => {
+        setIsDropdownVisible(false);
+        setSearchEmail("");
+        setSearchResults([]);
+    };
 
     const handleCreateSchedule = async () => {
         if (!title.trim()) {
@@ -70,6 +262,7 @@ const CreateScheduleScreen = () => {
                 priority,
                 content,
                 user: { id: userId },
+                participants: selectedUsers.map(user => user.id),
             };
             console.log("Đang gửi dữ liệu:", scheduleData);
             await createSchedule(scheduleData);
@@ -190,6 +383,46 @@ const CreateScheduleScreen = () => {
                     textAlignVertical="top"
                 />
 
+                <Text style={styles.label}>Thêm thành viên (Email)</Text>
+                <TouchableOpacity 
+                    style={styles.addMemberButton}
+                    onPress={() => setIsDropdownVisible(true)}
+                >
+                    <Text style={styles.addMemberButtonText}>+ Thêm thành viên</Text>
+                </TouchableOpacity>
+
+                <UserSearchModal
+                    visible={isDropdownVisible}
+                    searchResults={searchResults}
+                    onSelectUser={handleAddUser}
+                    searchInput={searchEmail}
+                    onChangeSearch={handleSearch}
+                    onClose={handleCloseModal}
+                />
+
+                <Text style={styles.label}>Thành viên đã thêm:</Text>
+                <View style={styles.membersList}>
+                    {selectedUsers.map((item) => (
+                        <View key={item.id} style={styles.memberCard}>
+                            <View style={styles.memberInfo}>
+                                <Image 
+                                    source={typeof item.avatar === 'string' ? { uri: item.avatar } : item.avatar} 
+                                    style={styles.avatar} 
+                                />
+                                <Text style={styles.userName}>{item.name}</Text>
+                                {item.id !== currentUserId && (
+                                    <TouchableOpacity 
+                                        style={styles.removeButton}
+                                        onPress={() => handleRemoveUser(item.id)}
+                                    >
+                                        <Text style={styles.removeText}>×</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </View>
+                    ))}
+                </View>
+
                 <TouchableOpacity
                     style={[styles.createButton, loading && styles.disabledButton]}
                     onPress={handleCreateSchedule}
@@ -205,6 +438,7 @@ const CreateScheduleScreen = () => {
                     )}
                 </TouchableOpacity>
             </View>
+            <Toast />
         </ScrollView>
     );
 };
@@ -337,6 +571,114 @@ const styles = StyleSheet.create({
     contentInput: {
         height: 100,
         textAlignVertical: 'top',
+    },
+    // Styles cho phần tìm kiếm và thêm thành viên
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        width: '90%',
+        maxHeight: '80%',
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    searchInput: {
+        flex: 1,
+        backgroundColor: '#F3F4F6',
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    closeButton: {
+        marginLeft: 10,
+        padding: 8,
+    },
+    closeButtonText: {
+        fontSize: 24,
+        color: '#6B7280',
+    },
+    dropdownItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    userInfo: {
+        flex: 1,
+    },
+    userName: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#1F2937',
+    },
+    userEmail: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    noResultText: {
+        textAlign: 'center',
+        padding: 16,
+        color: '#6B7280',
+    },
+    addMemberButton: {
+        backgroundColor: '#F3F4F6',
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        alignItems: 'center',
+    },
+    addMemberButtonText: {
+        color: '#3B82F6',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    membersList: {
+        marginTop: 12,
+    },
+    memberCard: {
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    memberInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    removeButton: {
+        marginLeft: 'auto',
+        padding: 4,
+    },
+    removeText: {
+        fontSize: 18,
+        color: '#EF4444',
+        fontWeight: 'bold',
     },
 });
 

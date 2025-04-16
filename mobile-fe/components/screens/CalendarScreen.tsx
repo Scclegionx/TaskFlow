@@ -65,10 +65,18 @@ const CalendarScreen = () => {
         setLoading(true);
         try {
             const data = await getSchedulesByDate(date, page, 5);
-            setSchedules(data.content);
-            setTotalPages(data.totalPages);
+            console.log(data);
+            if (data && data.content) {
+                setSchedules(data.content);
+                setTotalPages(data.totalPages);
+            } else {
+                setSchedules([]);
+                setTotalPages(0);
+            }
         } catch (error) {
             console.error('Lỗi khi lấy lịch trình:', error);
+            setSchedules([]);
+            setTotalPages(0);
         } finally {
             setLoading(false);
         }
@@ -251,7 +259,7 @@ const CalendarScreen = () => {
                             <View style={styles.loadingContainer}>
                                 <ActivityIndicator size="large" color="#EF4444" />
                             </View>
-                        ) : schedules.length > 0 ? (
+                        ) : schedules && schedules.length > 0 ? (
                             <>
                                 {schedules.map((item) => (
                                     <TouchableOpacity 

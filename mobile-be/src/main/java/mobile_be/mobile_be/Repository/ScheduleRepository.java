@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
@@ -43,6 +44,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     @Query("SELECT s FROM Schedule s WHERE s.user.id = ?2 AND LOWER(s.title) LIKE LOWER(CONCAT('%', ?1, '%'))")
     List<Schedule> searchSchedules(String query, Integer userId);
+
+    @Query("SELECT s FROM Schedule s LEFT JOIN FETCH s.participants LEFT JOIN FETCH s.user WHERE s.id = :id")
+    Optional<Schedule> findByIdWithParticipants(@Param("id") Long id);
 
     Optional<Schedule> findById(Long id);
     void deleteById(@NonNull Long id);

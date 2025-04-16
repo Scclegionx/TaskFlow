@@ -33,4 +33,15 @@ public class UserDTO {
 
     public UserDTO() {
     }
+
+    public static UserDTO fromEntity(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setGender(user.getGender());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setAvatar(user.getAvatar());
+        return dto;
+    }
 }

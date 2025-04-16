@@ -30,6 +30,21 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     Page<Schedule> findSchedulesByDateAndUserId(LocalDate date, Integer userId, Pageable pageable);
 
     @Query("""
+        SELECT s FROM Schedule s 
+        JOIN s.participants sp
+        WHERE DATE(s.startTime) = :date 
+        AND sp.user.id = :userId 
+        ORDER BY
+            CASE
+            WHEN s.priority = 'HIGH' THEN 2
+            WHEN s.priority = 'NORMAL' THEN 1
+            WHEN s.priority = 'LOW' THEN 0
+        END DESC,
+        s.startTime ASC
+    """)
+    Page<Schedule> findSchedulesByDateAndParticipantId(LocalDate date, Integer userId, Pageable pageable);
+
+    @Query("""
     SELECT DATE(s.startTime),
            MAX(CASE
                WHEN s.priority = 'HIGH' THEN 2
@@ -41,6 +56,20 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     GROUP BY DATE(s.startTime)
     """)
     List<Object[]> findHighlightedDatesByUserId(Integer userId);
+
+    @Query("""
+    SELECT DATE(s.startTime),
+           MAX(CASE
+               WHEN s.priority = 'HIGH' THEN 2
+               WHEN s.priority = 'NORMAL' THEN 1
+               WHEN s.priority = 'LOW' THEN 0
+           END)
+    FROM Schedule s
+    JOIN s.participants sp
+    WHERE sp.user.id = :userId
+    GROUP BY DATE(s.startTime)
+    """)
+    List<Object[]> findHighlightedDatesByParticipantId(Integer userId);
 
     @Query("SELECT s FROM Schedule s WHERE s.user.id = ?2 AND LOWER(s.title) LIKE LOWER(CONCAT('%', ?1, '%'))")
     List<Schedule> searchSchedules(String query, Integer userId);

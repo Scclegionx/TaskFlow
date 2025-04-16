@@ -137,11 +137,11 @@ public class ScheduleService {
             Sort.Order.desc("priority"),
             Sort.Order.asc("startTime")
         ));
-        return scheduleRepository.findSchedulesByDateAndUserId(date, userId, pageable);
+        return scheduleRepository.findSchedulesByDateAndParticipantId(date, userId, pageable);
     }
 
     public Map<String, String> getHighlightedDates(Integer userId) {
-        List<Object[]> result = scheduleRepository.findHighlightedDatesByUserId(userId);
+        List<Object[]> result = scheduleRepository.findHighlightedDatesByParticipantId(userId);
         Map<String, String> highlightedDates = new HashMap<>();
 
         for (Object[] row : result) {

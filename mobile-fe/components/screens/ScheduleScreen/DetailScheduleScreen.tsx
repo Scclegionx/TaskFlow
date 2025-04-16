@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView, Modal, FlatList } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { getScheduleById, deleteSchedule } from '@/hooks/useScheduleApi';
@@ -14,6 +14,7 @@ interface Schedule {
     endTime: string;
     priority: 'HIGH' | 'NORMAL' | 'LOW';
     user: {
+        id: number;
         name: string;
     };
     participants: Array<{
@@ -38,6 +39,9 @@ const ScheduleDetailScreen = () => {
     const [schedule, setSchedule] = useState<Schedule | null>(null);
     const [loading, setLoading] = useState(true);
     const [userAvatar, setUserAvatar] = useState<any>(null);
+    const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [isCreator, setIsCreator] = useState(false);
 
     useEffect(() => {
         const loadUserAvatar = async () => {
@@ -49,12 +53,31 @@ const ScheduleDetailScreen = () => {
         loadUserAvatar();
     }, []);
 
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const userIdStr = await AsyncStorage.getItem('userId');
+                if (userIdStr) {
+                    setCurrentUserId(parseInt(userIdStr));
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy thông tin người dùng:', error);
+            }
+        };
+        fetchCurrentUser();
+    }, []);
+
     const fetchSchedule = async () => {
         try {
             const scheduleId = typeof id === 'string' ? parseInt(id) : 0;
             const data = await getScheduleById(scheduleId);
             console.log(data);
             setSchedule(data);
+            
+            // Kiểm tra xem người dùng hiện tại có phải là người tạo lịch trình không
+            if (data && currentUserId) {
+                setIsCreator(data.user.id === currentUserId);
+            }
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể tải dữ liệu lịch trình');
         } finally {
@@ -65,7 +88,7 @@ const ScheduleDetailScreen = () => {
     useFocusEffect(
         useCallback(() => {
             fetchSchedule();
-        }, [id])
+        }, [id, currentUserId])
     );
     useEffect(() => {
         navigation.setOptions({ title: "Chi tiết lịch trình" });
@@ -97,14 +120,17 @@ const ScheduleDetailScreen = () => {
     const renderParticipants = () => {
         if (!schedule?.participants || schedule.participants.length === 0) return null;
 
-        const displayParticipants = schedule.participants.slice(0, 2);
-        const remainingCount = schedule.participants.length - 2;
-
         return (
-            <View style={styles.participantsContainer}>
-                <Text style={styles.participantsTitle}>Thành viên tham gia</Text>
+            <TouchableOpacity 
+                style={styles.participantsContainer}
+                onPress={() => setShowParticipantsModal(true)}
+            >
+                <View style={styles.participantsHeader}>
+                    <Text style={styles.participantsTitle}>Thành viên tham gia</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+                </View>
                 <View style={styles.participantsList}>
-                    {displayParticipants.map((participant, index) => (
+                    {schedule.participants.slice(0, 3).map((participant, index) => (
                         <View key={participant.user.id} style={styles.participantItem}>
                             {participant.user.avatar ? (
                                 <Image 
@@ -118,15 +144,65 @@ const ScheduleDetailScreen = () => {
                                     </Text>
                                 </View>
                             )}
+                            <Text style={styles.participantName}>{participant.user.name}</Text>
                         </View>
                     ))}
-                    {remainingCount > 0 && (
-                        <View style={[styles.participantItem, styles.remainingCount]}>
-                            <Text style={styles.remainingCountText}>+{remainingCount}</Text>
+                    {schedule.participants.length > 3 && (
+                        <View style={styles.moreParticipants}>
+                            <Text style={styles.moreParticipantsText}>+{schedule.participants.length - 3}</Text>
                         </View>
                     )}
                 </View>
-            </View>
+            </TouchableOpacity>
+        );
+    };
+
+    const renderParticipantsModal = () => {
+        if (!schedule?.participants) return null;
+
+        return (
+            <Modal
+                visible={showParticipantsModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowParticipantsModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Danh sách thành viên tham gia</Text>
+                            <TouchableOpacity 
+                                style={styles.closeButton}
+                                onPress={() => setShowParticipantsModal(false)}
+                            >
+                                <Ionicons name="close" size={24} color="#1F2937" />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={schedule.participants}
+                            keyExtractor={(item) => item.user.id.toString()}
+                            renderItem={({ item }) => (
+                                <View style={styles.modalParticipantItem}>
+                                    {item.user.avatar ? (
+                                        <Image 
+                                            source={{ uri: item.user.avatar }} 
+                                            style={styles.modalParticipantAvatar}
+                                        />
+                                    ) : (
+                                        <View style={[styles.modalParticipantAvatar, styles.defaultAvatar]}>
+                                            <Text style={styles.avatarText}>
+                                                {item.user.name.charAt(0)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    <Text style={styles.modalParticipantName}>{item.user.name}</Text>
+                                </View>
+                            )}
+                            contentContainerStyle={styles.modalListContent}
+                        />
+                    </View>
+                </View>
+            </Modal>
         );
     };
 
@@ -203,8 +279,6 @@ const ScheduleDetailScreen = () => {
                     <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
                 </View>
                 
-                {renderParticipants()}
-
                 <View style={styles.descriptionContainer}>
                     <Text style={styles.descriptionLabel}>Mô tả</Text>
                     <Text style={styles.description}>{schedule.content}</Text>
@@ -239,19 +313,24 @@ const ScheduleDetailScreen = () => {
                 </View>
             </View>
 
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity 
-                    style={styles.editButton} 
-                    onPress={() => router.push(`/Schedule/editSchedule?id=${schedule.id}`)}
-                >
-                    <Ionicons name="create" size={20} color="white" style={styles.buttonIcon} />
-                    <Text style={styles.buttonText}>Sửa</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                    <Ionicons name="trash" size={20} color="white" style={styles.buttonIcon} />
-                    <Text style={styles.buttonText}>Xóa</Text>
-                </TouchableOpacity>
-            </View>
+            {renderParticipants()}
+            {renderParticipantsModal()}
+
+            {isCreator && (
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity 
+                        style={styles.editButton} 
+                        onPress={() => router.push(`/Schedule/editSchedule?id=${schedule?.id}`)}
+                    >
+                        <Ionicons name="create" size={20} color="white" style={styles.buttonIcon} />
+                        <Text style={styles.buttonText}>Sửa</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                        <Ionicons name="trash" size={20} color="white" style={styles.buttonIcon} />
+                        <Text style={styles.buttonText}>Xóa</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </ScrollView>
     );
 };
@@ -496,52 +575,125 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     participantsContainer: {
-        marginBottom: 24,
-        padding: 20,
-        backgroundColor: '#F8FAFC',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        marginTop: 16,
+        marginBottom: 16,
+        padding: 16,
+        backgroundColor: 'white',
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    participantsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
     },
     participantsTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
         color: '#1F2937',
-        marginBottom: 12,
     },
     participantsList: {
         flexDirection: 'row',
-        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 12,
     },
     participantItem: {
-        marginRight: -8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        padding: 8,
+        borderRadius: 20,
+        maxWidth: '48%',
     },
     participantAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: 'white',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        marginRight: 8,
     },
     defaultAvatar: {
         backgroundColor: '#3B82F6',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    remainingCount: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+    participantName: {
+        fontSize: 14,
+        color: '#4B5563',
+        fontWeight: '500',
+    },
+    moreParticipants: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
         backgroundColor: '#E5E7EB',
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'white',
     },
-    remainingCountText: {
-        color: '#6B7280',
+    moreParticipantsText: {
         fontSize: 12,
+        color: '#6B7280',
         fontWeight: '600',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '90%',
+        maxHeight: '80%',
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 10,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#1F2937',
+    },
+    closeButton: {
+        padding: 4,
+    },
+    modalListContent: {
+        paddingBottom: 16,
+    },
+    modalParticipantItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6',
+    },
+    modalParticipantAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    modalParticipantName: {
+        fontSize: 16,
+        color: '#1F2937',
+        fontWeight: '500',
     },
 });
 

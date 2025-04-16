@@ -5,6 +5,7 @@ import {getSchedulesByDate, getHighlightedDates, deleteSchedule} from '@/hooks/u
 import { useRouter} from "expo-router";
 import {Ionicons, MaterialIcons, FontAwesome, AntDesign} from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Schedule {
     id: number;
@@ -12,6 +13,10 @@ interface Schedule {
     startTime: string;
     endTime: string;
     priority: 'HIGH' | 'NORMAL' | 'LOW';
+    user: {
+        id: number;
+        name: string;
+    };
 }
 
 // Cấu hình lịch tiếng Việt
@@ -35,7 +40,22 @@ const CalendarScreen = () => {
     const today = new Date().toISOString().split('T')[0];
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const userIdStr = await AsyncStorage.getItem('userId');
+                if (userIdStr) {
+                    setCurrentUserId(parseInt(userIdStr));
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy thông tin người dùng:', error);
+            }
+        };
+        fetchCurrentUser();
+    }, []);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -121,8 +141,10 @@ const CalendarScreen = () => {
     };
 
     const handleLongPress = (schedule: Schedule) => {
-        setSelectedSchedule(schedule);
-        setModalVisible(true);
+        if (currentUserId === schedule.user.id) {
+            setSelectedSchedule(schedule);
+            setModalVisible(true);
+        }
     };
 
     const handleDelete = async () => {
@@ -283,6 +305,11 @@ const CalendarScreen = () => {
                                                 {getPriorityLabel(item.priority)}
                                             </Text>
                                         </View>
+                                        {currentUserId === item.user.id && (
+                                            <View style={styles.creatorBadge}>
+                                                <Text style={styles.creatorText}>Người tạo</Text>
+                                            </View>
+                                        )}
                                     </TouchableOpacity>
                                 ))}
                                 {totalPages > 1 && (
@@ -593,6 +620,20 @@ const styles = StyleSheet.create({
     },
     paginationTextDisabled: {
         color: '#9CA3AF',
+    },
+    creatorBadge: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    creatorText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: '600',
     },
 });
 

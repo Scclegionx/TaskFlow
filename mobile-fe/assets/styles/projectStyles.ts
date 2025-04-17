@@ -33,6 +33,7 @@ export const styles = StyleSheet.create({
     },
     listContainer: {
         paddingBottom: 80,
+        zIndex: 0,
     },
     emptyContainer: {
         flex: 1,
@@ -411,7 +412,6 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
     },
     filterButton: {
         flex: 1,

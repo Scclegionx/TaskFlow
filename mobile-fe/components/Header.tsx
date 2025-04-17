@@ -11,9 +11,21 @@ import { searchSchedules } from "@/hooks/useScheduleApi";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/api";
 
+interface Chat {
+    id: number;
+    isGroup: boolean;
+    users: Array<{
+        id: number;
+        name: string;
+        avatar: string | null;
+    }>;
+    chatName?: string;
+    avatarUrl?: string | null;
+}
+
 interface User {
+    id: number;
     name: string;
-    email: string;
     avatar: any;
 }
 
@@ -26,7 +38,7 @@ interface SearchResult {
 const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const [user, setUser] = useState<User>({ name: '', email: '', avatar: null });
+    const [user, setUser] = useState<User>({ id: 0, name: '', avatar: null });
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -45,9 +57,9 @@ const Header = () => {
                         headers: { Authorization: `Bearer ${token}` },
                     });
 
-                    const formattedChats = response.data.map((chat) => {
+                    const formattedChats = response.data.map((chat: Chat) => {
                         const otherUser = !chat.isGroup
-                            ? chat.users.find((user) => user.id !== parseInt(userId))
+                            ? chat.users.find((user: User) => user.id !== parseInt(userId || "0"))
                             : null;
 
                         return {
@@ -111,7 +123,7 @@ const Header = () => {
             router.push(`/Schedule/detailSchedule?id=${result.id}`);
         } else if (pathname === '/message') {
             router.push({
-                pathname: `/chat/${result.id}`,
+                pathname: `/chat/${result.id}` as any,
                 params: { chatName: result.name },
             });
         }
@@ -132,8 +144,8 @@ const Header = () => {
                 const userAvatar = avatar && avatar !== 'null' ? { uri: avatar } : defaultAvatar;
 
                 setUser({ 
+                    id: 0,
                     name, 
-                    email, 
                     avatar: userAvatar
                 });
             };
@@ -149,7 +161,7 @@ const Header = () => {
     };
 
     const renderSearchResult = (item: SearchResult) => {
-        let icon = 'folder-outline';
+        let icon: any = 'folder-outline';
         let subtitle = 'Dự án';
       
         if (pathname === '/calendar') {
@@ -344,7 +356,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        zIndex: 1000,
     },
     resultsList: {
         maxHeight: 300,

@@ -253,68 +253,76 @@ public class TaskService {
     }
 
     public Task taskApproveFinish(Integer taskId) {
-        Task task = taskRepository.findById(taskId);
-        if (task != null) {
-            task.setStatus(enum_taskStatus.COMPLETED.getValue());
-            task.setWaitFinish(0);
-            task.setProgress(100);
+        try {
+            log.info("bat dau phe duyet Task ID: {}", taskId);
+            Task task = taskRepository.findById(taskId);
+            if (task != null) {
+                task.setStatus(enum_taskStatus.COMPLETED.getValue());
+                task.setWaitFinish(0);
+                task.setProgress(100);
 
-            LocalDateTime localDateTime = task.getCreatedAt();
+                LocalDateTime localDateTime = task.getCreatedAt();
 
-            String time = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+                String time = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
-            Integer plusPoint = 0;
-            if(task.getLevel() == null){
-                plusPoint = 0;
-            }else if (task.getLevel() == enum_levelTask.De.getValue()){
-                plusPoint = 1;
-            }else if (task.getLevel() == enum_levelTask.TrungBinh.getValue()){
-                plusPoint = 2;
-            }else if (task.getLevel() == enum_levelTask.Kho.getValue()){
-                plusPoint = 3;
-            }
+                Integer plusPoint = 0;
+                if (task.getLevel() == null) {
+                    plusPoint = 0;
+                } else if (task.getLevel() == enum_levelTask.De.getValue()) {
+                    plusPoint = 1;
+                } else if (task.getLevel() == enum_levelTask.TrungBinh.getValue()) {
+                    plusPoint = 2;
+                } else if (task.getLevel() == enum_levelTask.Kho.getValue()) {
+                    plusPoint = 3;
+                }
 
-            List<User> listUser = task.getAssignees();
-            if(listUser != null){
-                for (User user : listUser) {
-                    Kpi kpi =  kpiRepository.getByUserIdAndTime(user.getId(), time);
+                List<User> listUser = task.getAssignees();
+                if (listUser != null) {
+                    for (User user : listUser) {
+                        Kpi kpi = kpiRepository.getByUserIdAndTime(user.getId(), time);
 
-                    if (kpi != null){
-                        // diem hien tai + diem task
-                        kpi.setPlusPoint(kpi.getPlusPoint() + plusPoint);
+                        if (kpi != null) {
+                            // diem hien tai + diem task
+                            kpi.setPlusPoint(kpi.getPlusPoint() + plusPoint);
 
-                        // diem cong - diem tru
-                        // lay gia tri vua set vào
-                        kpi.setTotalPoint(kpi.getPlusPoint() - kpi.getMinusPoint());
-                        if(kpi.getTotalPoint() >= kpi.getKpiRegistry()){
-                            kpi.setStatus(enum_status_kpi.Du.getValue());
+                            // diem cong - diem tru
+                            // lay gia tri vua set vào
+                            kpi.setTotalPoint(kpi.getPlusPoint() - kpi.getMinusPoint());
+                            if (kpi.getTotalPoint() >= kpi.getKpiRegistry()) {
+                                kpi.setStatus(enum_status_kpi.Du.getValue());
+                            }
+                            kpiRepository.save(kpi);
                         }
-                        kpiRepository.save(kpi);
+                        // Gửi thông báo
+                        String slug = "/tasks/" + task.getId();
+                        notificationService.sendNotification(user.getId(), "Công việc của bạn đã được phê duyệt hoàn thành: " + task.getTitle(), slug);
+                        mailService.sendNoticeEmail(user.getEmail(), "Thông báo công việc", "Công việc của bạn đã được phê duyệt hoàn thành: " + task.getTitle());
                     }
-                    // Gửi thông báo
-                    String slug = "/tasks/" + task.getId();
-                    notificationService.sendNotification(user.getId(), "Công việc của bạn đã được phê duyệt hoàn thành: " + task.getTitle(), slug);
-                    mailService.sendNoticeEmail(user.getEmail(), "Thông báo công việc", "Công việc của bạn đã được phê duyệt hoàn thành: " + task.getTitle());
                 }
-            }
-            taskRepository.save(task);
+                taskRepository.save(task);
 
-            Project project = task.getProject();
-            Set<Task> listTask = project.getTasks();
-            boolean checkFinish = true;
-            for (Task t : listTask) {
-                if (t.getStatus() != enum_taskStatus.IN_PROGRESS.getValue()) {
-                    checkFinish = false;
-                    break;
+                Project project = task.getProject();
+
+                List<Task> listTask = taskRepository.getAllByProject(project.getId());
+                boolean checkFinish = true;
+                for (Task t : listTask) {
+                    log.info("phamtu hahaha Task ID: {}, Status: {}", t.getId(), t.getStatus());
+                    if (t.getStatus() != enum_taskStatus.IN_PROGRESS.getValue()) {
+                        checkFinish = false;
+                        break;
+                    }
+                }
+                if (checkFinish) {
+                    project.setStatus(enum_projectStatus.COMPLETED.getValue());
+                    projectRepository.save(project);
                 }
             }
-            if (checkFinish) {
-                project.setStatus(enum_projectStatus.COMPLETED.getValue());
-                projectRepository.save(project);
-            }
+
+            return task;
+        }catch (Exception e){
+            log.error("Error when approve task: {}", e.getMessage());
+            throw new RuntimeException("Có lỗi xảy ra khi phê duyệt hoàn thành nhiệm vụ: " + e.getMessage());
         }
-
-        return task;
     }
 
     @Transactional

@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
+
+    @Query(value = "SELECT DISTINCT  t.* FROM tasks t WHERE t.status = 1 AND t.to_date BETWEEN :start AND :end"
+            , nativeQuery = true)
     List<Task> findByToDateBetween(LocalDateTime start, LocalDateTime end);
 
 
@@ -66,6 +69,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query(value = "SELECT  * from tasks t where t.id = :taskId", nativeQuery = true)
     Task findById(Integer taskId);
+
+
+    @Query(value = "SELECT DISTINCT t.* FROM tasks t WHERE t.project_id = :projectId"
+            , nativeQuery = true)
+    List<Task> getAllByProject(Integer projectId);
 
     List<Task> findByProjectIdAndParentIdIsNull(Integer projectId);
 

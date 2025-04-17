@@ -85,7 +85,15 @@ public class TaskController {
     // api cho pm duyet cong viec hoan thanh
     @PutMapping("/task-approve-finish")
     public ResponseEntity<?> taskApproveFinish(@RequestParam(value = "taskId", required = false) Integer taskId) {
-        return ResponseEntity.ok(taskService.taskApproveFinish(taskId));
+
+        try{
+            return ResponseEntity.ok(taskService.taskApproveFinish(taskId));
+        }catch (Exception e){
+            log.info("Error: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi duyệt hoàn thành nhiệm vụ: " + e.getMessage());
+        }
     }
 
 

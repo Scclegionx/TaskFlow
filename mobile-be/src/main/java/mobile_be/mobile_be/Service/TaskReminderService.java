@@ -1,5 +1,6 @@
 package mobile_be.mobile_be.Service;
 
+import lombok.extern.slf4j.Slf4j;
 import mobile_be.mobile_be.Model.*;
 import mobile_be.mobile_be.Repository.NoticeRepository;
 import mobile_be.mobile_be.Repository.TaskRepository;
@@ -9,10 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TaskReminderService {
 
@@ -20,17 +23,22 @@ public class TaskReminderService {
     private final NoticeRepository noticeRepository;
     private final UserNoticeRepository userNoticeRepository;
 
-    @Scheduled(fixedRate = 3600000) // Chạy mỗi 1 giờ
+//    @Scheduled(cron = "0 0 0 * * *") // chạy vào 12:00:00 đêm mỗi ngày
+    @Scheduled(fixedRate = 60 * 1000) // Chạy mỗi 1 giờ
     @Transactional
     public void sendTaskReminders() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime sixHoursLater = now.plusHours(6);
-
-        // Lấy danh sách các task có deadline trong vòng 6 giờ
-        List<Task> tasks = taskRepository.findByToDateBetween(now, sixHoursLater);
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfToday = today.atStartOfDay();
+        LocalDateTime endOfTomorrow = today.plusDays(1).atTime(23, 59, 59);
+        log.info("Start of today: " + startOfToday);
+        log.info("End of tomorrow: " + endOfTomorrow);
+        // Lấy danh sách các nhiệm vụ có thời gian đến hạn trong khoảng thời gian từ đầu hôm nay đến cuối ngày mai
+        List<Task> tasks = taskRepository.findByToDateBetween(startOfToday, endOfTomorrow);
 
         for (Task task : tasks) {
-            if (task.getAssignees() != null) {
+            if (task.getAssignees() != null && !task.getAssignees().isEmpty()) {
+                log.info("Task ID nhay vao day : " + task.getId());
+
                 String title = "Task Reminder: " + task.getTitle();
                 String message = "Nhiệm vụ của bạn '" + task.getTitle() + "' sẽ đến hạn vào lúc " + task.getToDate();
                 String slug = "/tasks"+"/"+task.getId();

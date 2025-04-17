@@ -70,6 +70,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             // qua han
 
             "(SELECT COUNT(*) FROM projects p WHERE status = 0 " +
+            " AND p.created_by = :userId " +
             " AND (p.id = :projectId OR :projectId IS NULL)) AS total4 " ,
             nativeQuery = true)
     List<Object[]> getNumberProjectByStatusGiao(Integer projectId, Integer userId);
@@ -102,7 +103,8 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "FROM projects p " +
             "JOIN project_members pm ON p.id = pm.project_id " +
             "WHERE pm.user_id = :userId " +
-            "AND (:projectId IS NULL OR p.id = :projectId)",
+            " and p.created_by != :userId " +
+            " AND (:projectId IS NULL OR p.id = :projectId) ",
             nativeQuery = true)
     List<Object[]> getNumberProjectByStatusDuocGiao(Integer projectId, Integer userId);
 

@@ -23,8 +23,8 @@ public class TaskReminderService {
     private final NoticeRepository noticeRepository;
     private final UserNoticeRepository userNoticeRepository;
 
-//    @Scheduled(cron = "0 0 0 * * *") // chạy vào 12:00:00 đêm mỗi ngày
-    @Scheduled(fixedRate = 60 * 1000) // Chạy mỗi 1 giờ
+    @Scheduled(cron = "0 0 0 * * *") // chạy vào 12:00:00 đêm mỗi ngày
+//    @Scheduled(fixedRate = 60 * 1000) // Chạy mỗi 1 giờ
     @Transactional
     public void sendTaskReminders() {
         LocalDate today = LocalDate.now();

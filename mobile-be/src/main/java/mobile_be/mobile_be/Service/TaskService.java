@@ -377,9 +377,9 @@ public class TaskService {
         task.getAssignees().add(user);
         
         // Cập nhật trạng thái task
-        if (task.getStatus() == 0) { // Nếu task đang ở trạng thái chưa được giao
-            task.setStatus(1); // Chuyển sang trạng thái đang xử lý
-        }
+//        if (task.getStatus() == 0) { // Nếu task đang ở trạng thái chưa được giao
+//            task.setStatus(1); // Chuyển sang trạng thái đang xử lý
+//        }
 
         Task updatedTask = taskRepository.save(task);
 

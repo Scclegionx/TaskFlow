@@ -100,10 +100,8 @@ const UpdateProjectScreen = () => {
                             onValueChange={(value) => setProject({ ...project, status: value })}
                             style={{ marginTop: -8, marginBottom: -8 }}
                         >
-                            <Picker.Item label="Chưa bắt đầu" value={0} />
-                            <Picker.Item label="Đang thực hiện" value={1} />
                             <Picker.Item label="Hoàn thành" value={2} />
-                            <Picker.Item label="Quá hạn" value={3} />
+                            <Picker.Item label="Hủy" value={3} />
                         </Picker>
                     </View>
 

@@ -95,6 +95,18 @@ const getStatusColor = (status: number): string => {
   }
 };
 
+// Hàm chuyển đổi role từ tiếng Anh sang tiếng Việt
+const getRoleDisplayName = (role: string): string => {
+  switch (role) {
+    case "ADMIN":
+      return "Quản trị viên";
+    case "MEMBER":
+      return "Thành viên";
+    default:
+      return role;
+  }
+};
+
 const getTaskStatusText = (status: string | number): string => {
   // Chuyển status về dạng số để so sánh
   const statusNumber = Number(status);
@@ -514,7 +526,7 @@ export default function ProjectDetail() {
                                 },
                               ]}
                             >
-                              {item.role}
+                              {getRoleDisplayName(item.role)}
                             </Text>
                           </View>
                         </View>
@@ -558,7 +570,7 @@ export default function ProjectDetail() {
                           { color: item.role === "ADMIN" ? "#007BFF" : "#666" },
                         ]}
                       >
-                        {item.role}
+                        {getRoleDisplayName(item.role)}
                       </Text>
                     </View>
                   </View>

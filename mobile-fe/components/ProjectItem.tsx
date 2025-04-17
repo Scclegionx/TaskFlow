@@ -33,7 +33,9 @@ const getStatusColor = (status: number): readonly [string, string] => {
             return ['#00AEEF', '#4ECDC4'] as const;
         case 2: // Hoàn thành
             return ['#4CAF50', '#96C93D'] as const;
-        case 3: // Quá hạn
+        case 3: // Bị hủy
+            return ['#9E9E9E', '#757575'] as const;
+        case 4: // Quá hạn
             return ['#FF4D67', '#FF6B6B'] as const;
         default:
             return ['#A0A0A0', '#C0C0C0'] as const;
@@ -45,7 +47,8 @@ const getStatusIcon = (status: number): keyof typeof MaterialCommunityIcons.glyp
         case 0: return "rocket-launch";
         case 1: return "progress-clock";
         case 2: return "check-circle";
-        case 3: return "alert-circle";
+        case 3: return "cancel";
+        case 4: return "alert-circle";
         default: return "help-circle";
     }
 };

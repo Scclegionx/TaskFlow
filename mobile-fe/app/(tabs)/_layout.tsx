@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Platform, Animated, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -14,6 +14,7 @@ type TabName = 'dashboard' | 'project' | 'calendar' | 'message' | 'profile';
 
 export default function TabLayout() {
     const colorScheme = useColorScheme();
+    const animationRefs = useRef<{[key: string]: Animated.CompositeAnimation | null}>({}).current;
     const tabAnimations = useRef({
         dashboard: new Animated.Value(1),
         project: new Animated.Value(1),
@@ -22,34 +23,84 @@ export default function TabLayout() {
         profile: new Animated.Value(1),
     }).current;
 
-    const animateTab = (tabName: TabName) => {
-        // Reset all animations
-        Object.keys(tabAnimations).forEach(key => {
-            if (key !== tabName) {
-                Animated.spring(tabAnimations[key as TabName], {
-                    toValue: 1,
-                    useNativeDriver: true,
-                    friction: 5,
-                    tension: 40,
-                }).start();
-            }
-        });
+    useEffect(() => {
+        return () => {
+            // Cleanup animations when component unmounts
+            Object.entries(animationRefs).forEach(([key, anim]) => {
+                if (anim && typeof anim.stop === 'function') {
+                    try {
+                        anim.stop();
+                        animationRefs[key] = null;
+                    } catch (error) {
+                        // Ignore errors during cleanup
+                    }
+                }
+            });
+        };
+    }, []);
 
-        // Animate the selected tab
-        Animated.sequence([
-            Animated.spring(tabAnimations[tabName], {
-                toValue: 1.2,
-                useNativeDriver: true,
-                friction: 3,
-                tension: 40,
-            }),
-            Animated.spring(tabAnimations[tabName], {
-                toValue: 1,
-                useNativeDriver: true,
-                friction: 5,
-                tension: 40,
-            })
-        ]).start();
+    const animateTab = (tabName: TabName) => {
+        try {
+            // Stop any existing animations safely
+            Object.entries(animationRefs).forEach(([key, anim]) => {
+                if (anim && typeof anim.stop === 'function') {
+                    try {
+                        anim.stop();
+                        animationRefs[key] = null;
+                    } catch (error) {
+                        // Ignore errors when stopping animations
+                    }
+                }
+            });
+
+            // Reset all animations
+            Object.keys(tabAnimations).forEach(key => {
+                if (key !== tabName) {
+                    const resetAnim = Animated.loop(
+                        Animated.sequence([
+                            Animated.timing(tabAnimations[key as TabName], {
+                                toValue: 1,
+                                duration: 200,
+                                useNativeDriver: true,
+                            })
+                        ]),
+                        { iterations: 1 }
+                    );
+                    animationRefs[key] = resetAnim;
+                    resetAnim.start(({ finished }) => {
+                        if (finished) {
+                            animationRefs[key] = null;
+                        }
+                    });
+                }
+            });
+
+            // Animate the selected tab
+            const sequence = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(tabAnimations[tabName], {
+                        toValue: 1.2,
+                        duration: 150,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(tabAnimations[tabName], {
+                        toValue: 1,
+                        duration: 150,
+                        useNativeDriver: true,
+                    })
+                ]),
+                { iterations: 1 }
+            );
+
+            animationRefs[tabName] = sequence;
+            sequence.start(({ finished }) => {
+                if (finished) {
+                    animationRefs[tabName] = null;
+                }
+            });
+        } catch (error) {
+            // Ignore errors in animateTab
+        }
     };
 
     const getTabIcon = (name: string, color: string, focused: boolean) => {

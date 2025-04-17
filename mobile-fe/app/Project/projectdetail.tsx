@@ -27,6 +27,7 @@ import {
   formatDateTime,
   searchProjectMembers,
   searchProjectTasks,
+  getProjectMembers,
 } from "@/hooks/useProjectApi";
 import { AntDesign } from "@expo/vector-icons";
 import { debounce } from "lodash";
@@ -171,6 +172,7 @@ export default function ProjectDetail() {
   const [showMemberSearch, setShowMemberSearch] = useState(false);
   const [showTaskSearch, setShowTaskSearch] = useState(false);
   const [allTasks, setAllTasks] = useState<ITask[]>([]); // Lưu toàn bộ công việc
+  const [allMembers, setAllMembers] = useState<any[]>([]);
   const navigation = useNavigation();
 
   useFocusEffect(
@@ -220,6 +222,10 @@ export default function ProjectDetail() {
       setTotalMembers(data.totalMembers);
       setTotalTasks(data.totalTasks);
       setItemProject(data);
+
+      // Lấy tất cả thành viên cho modal assign task
+      const allMembersData = await getProjectMembers(project.id);
+      setAllMembers(allMembersData);
 
       // Nếu đây là lần đầu tiên, tải toàn bộ công việc
       if (allTasks.length === 0) {
@@ -1029,7 +1035,7 @@ export default function ProjectDetail() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chọn thành viên</Text>
             <FlatList
-              data={ItemProject?.members.filter(
+              data={allMembers.filter(
                 (member) => member.role !== "ADMIN"
               )}
               keyExtractor={(member) => member.id.toString()}

@@ -44,9 +44,9 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             " AND (p.id = :projectId OR :projectId IS NULL) " +
             " AND (CURRENT_DATE <= p.to_date OR p.to_date IS NULL)) AS total2, " +  // dang xu ly
 
-            "(SELECT COUNT(*) FROM projects p WHERE status = 1 " +
-            " AND (p.id = :projectId OR :projectId IS NULL) " +
-            " AND (CURRENT_DATE > p.to_date)) AS total3 ," +   // qua  han
+            "(SELECT COUNT(*) FROM projects p WHERE status = 4 " +
+            " AND (p.id = :projectId OR :projectId IS NULL) ) AS total3 ," +
+             // qua  han
 
             "(SELECT COUNT(*) FROM projects p WHERE status = 0 " +
             " AND (p.id = :projectId OR :projectId IS NULL)) AS total4 " ,
@@ -64,10 +64,10 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             " AND (p.id = :projectId OR :projectId IS NULL) " +
             " AND (CURRENT_DATE <= p.to_date OR p.to_date IS NULL)) AS total2, " +   // dang xu ly
 
-            "(SELECT COUNT(*) FROM projects p WHERE status = 1 " +
+            "(SELECT COUNT(*) FROM projects p WHERE status = 4 " +
             " AND p.created_by = :userId " +
-            " AND (p.id = :projectId OR :projectId IS NULL) " +
-            " AND (CURRENT_DATE > p.to_date)) AS total3 , " + // qua han
+            " AND (p.id = :projectId OR :projectId IS NULL) )  AS total3 , " +
+            // qua han
 
             "(SELECT COUNT(*) FROM projects p WHERE status = 0 " +
             " AND (p.id = :projectId OR :projectId IS NULL)) AS total4 " ,
@@ -97,7 +97,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     @Query(value = "SELECT " +
             "COUNT(CASE WHEN p.status = 2 THEN 1 END) AS total1, " +
             "COUNT(CASE WHEN p.status = 1 AND (CURRENT_DATE <= p.to_date OR p.to_date IS NULL) THEN 1 END) AS total2, " +
-            "COUNT(CASE WHEN p.status = 1 AND CURRENT_DATE > p.to_date THEN 1 END) AS total3 , " +
+            "COUNT(CASE WHEN p.status = 4 THEN 1 END) AS total3 , " +
             "COUNT(CASE WHEN p.status = 0  THEN 1 END) AS total4 " +
             "FROM projects p " +
             "JOIN project_members pm ON p.id = pm.project_id " +

@@ -74,6 +74,8 @@ export const getStatusText = (status: number): string => {
         case 2:
             return "Hoàn thành";
         case 3:
+            return "Bị hủy";
+        case 4:
             return "Quá hạn";
         default:
             return "Không xác định";

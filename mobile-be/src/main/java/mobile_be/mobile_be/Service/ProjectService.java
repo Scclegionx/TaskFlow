@@ -78,7 +78,7 @@ public class ProjectService {
         creatorMember.setId(new ProjectMemberId(creator.getId(), savedProject.getId()));
         creatorMember.setUser(creator);
         creatorMember.setProject(savedProject);
-        creatorMember.setRole("ADMIN");
+        creatorMember.setRole("QUẢN TRỊ VIÊN");
         members.add(creatorMember);
 
         // Thêm các thành viên khác với role MEMBER
@@ -91,7 +91,7 @@ public class ProjectService {
                     member.setId(new ProjectMemberId(user.getId(), savedProject.getId()));
                     member.setUser(user);
                     member.setProject(savedProject);
-                    member.setRole("MEMBER");
+                    member.setRole("THÀNH VIÊN");
                     members.add(member);
                 });
 
@@ -372,6 +372,42 @@ public class ProjectService {
             projects = projectRepository.findByProjectMembersUserId(userId, pageable);
         } else {
             projects = projectRepository.findAll(pageable);
+        }
+        
+        // Lấy ngày hiện tại để so sánh
+        Date currentDate = new Date();
+        
+        // Cập nhật trạng thái dự án dựa trên ngày bắt đầu và ngày kết thúc
+        List<Project> updatedProjects = new ArrayList<>();
+        for (Project project : projects.getContent()) {
+            // Bỏ qua việc kiểm tra nếu dự án đã hoàn thành (2) hoặc bị hủy (3)
+            if (project.getStatus() == 2 || project.getStatus() == 3) {
+                continue;
+            }
+            
+            boolean isUpdated = false;
+            
+            // Nếu đã đến ngày bắt đầu, chuyển trạng thái từ 0 (chưa bắt đầu) sang 1 (đang thực hiện)
+            if (project.getFromDate() != null && project.getFromDate().before(currentDate) && project.getStatus() == 0) {
+                project.setStatus(1);
+                isUpdated = true;
+            }
+            
+            // Nếu đã quá ngày kết thúc, chuyển trạng thái sang 4 (quá hạn)
+            if (project.getToDate() != null && currentDate.after(project.getToDate()) && project.getStatus() != 2) {
+                project.setStatus(4);
+                isUpdated = true;
+            }
+            
+            // Lưu dự án đã cập nhật
+            if (isUpdated) {
+                updatedProjects.add(project);
+            }
+        }
+        
+        // Lưu các dự án đã cập nhật vào database
+        if (!updatedProjects.isEmpty()) {
+            projectRepository.saveAll(updatedProjects);
         }
         
         return projects.map(project -> {

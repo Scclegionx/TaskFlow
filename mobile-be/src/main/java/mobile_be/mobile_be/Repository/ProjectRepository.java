@@ -152,7 +152,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     List<Task> getAllTaskPending(Integer projectId, Integer userId,  String textSearch);
 
 
-    @Query(value = "SELECT * FROM tasks t " +
+    @Query(value = "SELECT DISTINCT t.* FROM tasks t " +
             " left join task_assignees ta on ta.task_id = t.id" +
             " WHERE " +
             " ta.user_id = :userId and " +

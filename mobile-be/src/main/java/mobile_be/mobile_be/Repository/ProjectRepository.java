@@ -141,7 +141,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             nativeQuery = true)
     List<Task> getAllTaskInProjectGiao(Integer projectId, Integer userId, String textSearch);
 
-    @Query(value = "SELECT * FROM tasks t " +
+    @Query(value = "SELECT DISTINCT t.* FROM tasks t " +
             " left join task_assignees ta on ta.task_id = t.id" +
             " WHERE " +
             " ( (ta.user_id = :userId and t.status = 0) or ( t.created_by = :userId and t.wait_finish = 1) ) and " +
@@ -164,7 +164,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     List<Task> getMyTask(Integer projectId, Integer userId,  String textSearch);
 
 
-    @Query(value = "SELECT * FROM tasks t" +
+    @Query(value = "SELECT DISTINCT t.* FROM tasks t" +
             " join task_assignees ta on ta.task_id = t.id " +
             " WHERE ta.user_id = :userId and  " +
             "(:projectId  is null or t.project_id = :projectId)  and  " +
@@ -175,7 +175,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             nativeQuery = true)
     List<Task> getAllTaskPendingNhan(Integer projectId, Integer userId, String textSearch);
 
-    @Query(value = "SELECT * FROM tasks t" +
+    @Query(value = "SELECT DISTINCT t.* FROM tasks t" +
             " WHERE t.created_by = :userId and " +
             "(:projectId  is null or t.project_id = :projectId)  and  " +
             " t.created_by = :userId " +

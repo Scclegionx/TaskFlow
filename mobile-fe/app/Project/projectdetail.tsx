@@ -187,14 +187,18 @@ export default function ProjectDetail() {
       const userId = await AsyncStorage.getItem("userId");
       if (userId) {
         setCurrentUserId(Number(userId));
-        if (ItemProject?.members) {
-          const currentMember = ItemProject.members.find(
-            (m) => m.id === Number(userId)
-          );
-          if (currentMember) {
-            console.log("Current user role:", currentMember.role);
-            setUserRole(currentMember.role);
-          }
+        
+        // Lấy tất cả thành viên để kiểm tra role
+        const allMembersData = await getProjectMembers(project.id);
+        setAllMembers(allMembersData);
+        
+        // Kiểm tra role trong tất cả thành viên
+        const currentMember = allMembersData.find(
+          (m: IMember) => m.id === Number(userId)
+        );
+        if (currentMember) {
+          console.log("Current user role:", currentMember.role);
+          setUserRole(currentMember.role);
         }
       }
     } catch (error) {
@@ -204,16 +208,16 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     navigation.setOptions({ title: "Chi tiết dự án" });
-    if (ItemProject && currentUserId) {
-      const currentMember = ItemProject.members.find(
-        (m) => m.id === currentUserId
+    if (allMembers.length > 0 && currentUserId) {
+      const currentMember = allMembers.find(
+        (m: IMember) => m.id === currentUserId
       );
       if (currentMember) {
         console.log("Current user role:", currentMember.role);
         setUserRole(currentMember.role);
       }
     }
-  }, [ItemProject, currentUserId]);
+  }, [allMembers, currentUserId]);
 
   const loadProjects = async () => {
     try {
@@ -222,10 +226,6 @@ export default function ProjectDetail() {
       setTotalMembers(data.totalMembers);
       setTotalTasks(data.totalTasks);
       setItemProject(data);
-
-      // Lấy tất cả thành viên cho modal assign task
-      const allMembersData = await getProjectMembers(project.id);
-      setAllMembers(allMembersData);
 
       // Nếu đây là lần đầu tiên, tải toàn bộ công việc
       if (allTasks.length === 0) {

@@ -46,11 +46,17 @@ public class ScheduleReminderService {
                 if (schedule.getParticipants() != null && !schedule.getParticipants().isEmpty()) {
                     log.info("Schedule ID: " + schedule.getId() + " sẽ diễn ra từ " + schedule.getStartTime() + " đến " + schedule.getEndTime());
 
-                    // Tính số giờ còn lại đến khi bắt đầu
+                    // Tính số giờ và phút còn lại đến khi bắt đầu
                     long hoursUntilStart = ChronoUnit.HOURS.between(now, schedule.getStartTime());
+                    long minutesUntilStart = ChronoUnit.MINUTES.between(now, schedule.getStartTime()) % 60;
                     
                     String title = "Thông báo lịch trình";
-                    String message = "Lịch của bạn '" + schedule.getTitle() + "' sẽ bắt đầu trong " + hoursUntilStart + " giờ nữa";
+                    String message;
+                    if (hoursUntilStart > 0) {
+                        message = "Lịch của bạn '" + schedule.getTitle() + "' sẽ bắt đầu trong " + hoursUntilStart + " giờ " + minutesUntilStart + " phút nữa";
+                    } else {
+                        message = "Lịch của bạn '" + schedule.getTitle() + "' sẽ bắt đầu trong " + minutesUntilStart + " phút nữa";
+                    }
                     String slug = "/schedules"+"/"+schedule.getId();
                     Notice notice = new Notice(title, message, slug);
                     noticeRepository.save(notice);

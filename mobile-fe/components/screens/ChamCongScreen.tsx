@@ -253,7 +253,7 @@ const ChamCongScreen = () => {
     setShowEndPicker(false);
     if (selectedDate) {
       setEndDate(selectedDate);
-      fetchChamCong(searchText, selectedDate, endDate);
+      fetchChamCong(searchText, startDate, selectedDate);
     }
   };
 

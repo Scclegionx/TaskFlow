@@ -198,6 +198,7 @@ const AllPersonelScreen = () => {
         isFirstParam = false;
       }
 
+      console.log("URL KPI:", kpiMonthUrl);
 
       const response = await fetch(
         kpiMonthUrl,

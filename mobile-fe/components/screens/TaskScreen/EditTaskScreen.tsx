@@ -597,8 +597,13 @@ const EditTaskScreen = () => {
                     {subTask.description}
                   </Text>
                   <Text style={styles.subTaskDate}>
-                    {new Date(subTask.fromDate).toLocaleDateString("vi-VN")} -
-                    {new Date(subTask.toDate).toLocaleDateString("vi-VN")}
+                    Hạn chót: {new Date(subTask.toDate).toLocaleString("vi-VN", {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </Text>
                   <Text style={[
                     styles.subTaskLevel,
@@ -607,7 +612,7 @@ const EditTaskScreen = () => {
                     Mức độ: {getLevelLabel(subTask.level)}
                   </Text>
                   <Text style={[
-                    styles.statusText,
+                    styles.subTaskStatus,
                     { color: getTaskStatusColor(subTask.status || 0) }
                   ]}>
                     {getTaskStatusText(subTask.status || 0)}
@@ -1083,11 +1088,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   subTaskItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
     padding: 15,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     marginBottom: 8,
     marginHorizontal: 8,
@@ -1104,7 +1106,6 @@ const styles = StyleSheet.create({
   },
   subTaskInfo: {
     flex: 1,
-    marginRight: 10,
   },
   subTaskTitle: {
     fontSize: 16,
@@ -1132,34 +1133,73 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
   },
-  subTaskActions: {
+  subTaskStatus: {
+    fontSize: 12,
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 8,
+  },
+  assigneeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    paddingTop: 10,
+  },
+  assignedMembers: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  assigneeAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 8,
+    borderWidth: 2,
+    borderColor: "#FFF",
+  },
+  assigneeCount: {
     position: "absolute",
-    top: 10,
-    right: 10,
+    right: -8,
+    bottom: -8,
+    backgroundColor: "#3B82F6",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+  },
+  assigneeCountText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "bold",
   },
   assignButton: {
-    backgroundColor: '#E8F4FF',
+    backgroundColor: "#EFF6FF",
     padding: 8,
     borderRadius: 20,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
   },
   deleteButton: {
-    padding: 5,
-    backgroundColor: "#FFF0F0",
-    borderRadius: 20,
-    shadowColor: "#FF4444",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    position: "absolute",
+    right: 5,
+    top: 5,
+    backgroundColor: "#FEE2E2",
+    padding: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+  noAssigneeText: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontStyle: "italic",
   },
   documentsSection: {
     marginTop: 25,
@@ -1210,16 +1250,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
-  deleteButtonn: {
-    padding: 8,
-    backgroundColor: "#FFF0F0",
-    borderRadius: 20,
-    shadowColor: "#FF4444",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
   addDocumentButton: {
     backgroundColor: "#E8F4FF",
     padding: 12,
@@ -1254,69 +1284,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  assigneeContainer: {
-    marginTop: 8,
-    position: 'relative',
-    minHeight: 40,
-  },
-  assignedMembers: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  assigneeAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 6,
-  },
-  assigneeName: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  noAssigneeText: {
-    fontSize: 12,
-    color: '#888',
-    fontStyle: 'italic',
-  },
-  membersList: {
-    maxHeight: 300,
-  },
-  memberOption: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  memberOptionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  memberEmail: {
-    fontSize: 14,
-    color: '#666',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
   searchContainer: {
     marginBottom: 10,
   },
@@ -1336,17 +1303,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 12,
-  },
-  assigneeCount: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 12,
-    padding: 2,
-    marginLeft: 4,
-  },
-  assigneeCountText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
   },
 });
 

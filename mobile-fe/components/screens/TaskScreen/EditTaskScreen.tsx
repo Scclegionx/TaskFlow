@@ -296,7 +296,7 @@ const EditTaskScreen = () => {
           uri: fileUri,
           type: doc.mimeType || "application/octet-stream",
           name: doc.name || fileInfo.uri.split("/").pop(),
-        });
+        } as any);
       }
 
       const token = await AsyncStorage.getItem("token");
@@ -1292,11 +1292,30 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
+  memberOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  memberOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  memberOptionText: {
+    fontSize: 16,
+    color: "#1F2937",
+    flex: 1,
+  },
   memberOptionSelected: {
-    backgroundColor: "#E8F4FF",
+    backgroundColor: '#E8F5E9',
   },
   memberOptionTextSelected: {
-    fontWeight: "bold",
+    color: "#4CAF50",
+    fontWeight: "600",
   },
   memberOptionAvatar: {
     width: 40,

@@ -251,4 +251,33 @@ public class TaskController {
                     .body("Lỗi khi lấy danh sách công việc con: " + e.getMessage());
         }
     }
+
+    @PutMapping("/unassign")
+    public ResponseEntity<?> unassignTask(
+            @RequestParam Integer taskId,
+            @RequestParam Integer userId) {
+        try {
+            Task updatedTask = taskService.unassignTask(taskId, userId);
+            // Tạo response object với thông tin cần thiết
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Gỡ gán nhiệm vụ thành công");
+            
+            // Lấy thông tin tất cả người được assign
+            List<Map<String, Object>> assignees = new ArrayList<>();
+            for (User assignee : updatedTask.getAssignees()) {
+                Map<String, Object> assigneeInfo = new HashMap<>();
+                assigneeInfo.put("id", assignee.getId());
+                assigneeInfo.put("name", assignee.getName());
+                assigneeInfo.put("avatar", assignee.getAvatar());
+                assignees.add(assigneeInfo);
+            }
+            response.put("assignees", assignees);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Lỗi khi gỡ gán nhiệm vụ: " + e.getMessage());
+        }
+    }
 }

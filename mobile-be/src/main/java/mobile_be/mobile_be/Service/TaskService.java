@@ -616,4 +616,55 @@ public class TaskService {
             return "Error rolling back task: " + e.getMessage();
         }
     }
+
+    @Transactional
+    public Task unassignTask(Integer taskId, Integer userId) {
+        Task task = taskRepository.findById(taskId);
+        if (task == null) {
+            throw new RuntimeException("Không tìm thấy nhiệm vụ");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        // Kiểm tra quyền (chỉ ADMIN của project mới được gỡ gán nhiệm vụ)
+        Project project = task.getProject();
+        ProjectMemberId memberId = new ProjectMemberId(task.getCreatedBy(), project.getId());
+        ProjectMember member = projectMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người tạo"));
+
+        if (!"ADMIN".equals(member.getRole())) {
+            throw new RuntimeException("Bạn không có quyền gỡ gán nhiệm vụ này");
+        }
+
+        // Kiểm tra xem người dùng có được gán nhiệm vụ này không
+        if (task.getAssignees() == null || task.getAssignees().isEmpty()) {
+            throw new RuntimeException("Người dùng chưa được gán nhiệm vụ này");
+        }
+
+        // Kiểm tra xem người dùng có trong danh sách assignees không
+        boolean isAssigned = task.getAssignees().stream()
+                .anyMatch(assignee -> assignee.getId().equals(userId));
+        
+        if (!isAssigned) {
+            throw new RuntimeException("Người dùng chưa được gán nhiệm vụ này");
+        }
+
+        // Xóa người dùng khỏi danh sách assignees
+        task.getAssignees().removeIf(assignee -> assignee.getId().equals(userId));
+        
+        // Nếu không còn ai được gán, chuyển trạng thái về chưa được giao
+        if (task.getAssignees().isEmpty()) {
+            task.setStatus(enum_taskStatus.PENDING.getValue());
+        }
+
+        Task updatedTask = taskRepository.save(task);
+
+        // Gửi thông báo
+        String slug = "/tasks/" + task.getId();
+        notificationService.sendNotification(userId, "Bạn đã bị gỡ gán khỏi nhiệm vụ: " + task.getTitle(), slug);
+        mailService.sendNoticeEmail(user.getEmail(), "Thông báo công việc", "Bạn đã bị gỡ gán khỏi nhiệm vụ: " + task.getTitle());
+        
+        return updatedTask;
+    }
 }

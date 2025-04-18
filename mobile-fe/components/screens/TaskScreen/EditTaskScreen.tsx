@@ -78,14 +78,14 @@ const EditTaskScreen = () => {
   const [selectedSubTaskForView, setSelectedSubTaskForView] = useState<number | null>(null);
   const [userRole, setUserRole] = useState<string>("");
   const levelOptions = [
-    { label: "Thấp", value: 0 },
+    { label: "Dễ", value: 0 },
     { label: "Trung bình", value: 1 },
-    { label: "Cao", value: 2 },
+    { label: "Khó", value: 2 },
   ];
 
   const getLevelLabel = (value: number) => {
     return (
-      levelOptions.find((option) => option.value === value)?.label || "Thấp"
+      levelOptions.find((option) => option.value === value)?.label || "Dễ"
     );
   };
 
@@ -340,7 +340,11 @@ const EditTaskScreen = () => {
       // Cập nhật subtask hiện có
       setSubTasks((prevTasks) =>
         prevTasks.map((task) =>
-          task.id === updatedSubTask.id ? updatedSubTask : task
+          task.id === updatedSubTask.id ? {
+            ...updatedSubTask,
+            status: task.status, // Giữ lại trạng thái cũ
+            assignees: task.assignees // Giữ lại danh sách assignee cũ
+          } : task
         )
       );
     } else {

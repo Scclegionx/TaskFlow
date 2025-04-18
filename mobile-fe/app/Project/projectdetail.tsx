@@ -231,11 +231,13 @@ export default function ProjectDetail() {
 
   const loadProjects = async () => {
     try {
+      console.log("Loading page:", taskPage);
       const data = await getProjectById(project.id, memberPage, 3, taskPage, 5);
-      console.log("data", data);
+      console.log("Received tasks:", data.tasks?.length);
       setTotalMembers(data.totalMembers);
       setTotalTasks(data.totalTasks);
       setItemProject(data);
+      console.log("Item Project: ", data)
 
       // Nếu đây là lần đầu tiên, tải toàn bộ công việc
       if (allTasks.length === 0) {
@@ -923,7 +925,7 @@ export default function ProjectDetail() {
 
           {ItemProject?.tasks && ItemProject.tasks.length > 0 ? (
             <FlatList
-              data={ItemProject.tasks.filter(task => task.parentId === null)}
+              data={ItemProject.tasks}
               keyExtractor={(task) => task.id.toString()}
               renderItem={({ item }) => (
                 <View

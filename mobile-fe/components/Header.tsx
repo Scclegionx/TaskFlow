@@ -71,7 +71,7 @@ const Header = () => {
 
                     setChats(formattedChats);
                 } catch (error) {
-                    console.error("Lỗi khi tải danh sách chat:", error);
+                    
                 }
             };
 

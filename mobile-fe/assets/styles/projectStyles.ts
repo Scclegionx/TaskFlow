@@ -21,15 +21,19 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
-        marginBottom: 8,
+        marginBottom: 20,
     },
-    header: { 
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIcon: {
+        marginRight: 10,
+    },
+    header: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#2C3E50',
-        marginLeft: 8,
-        marginBottom: 24,
-        textAlign: 'center',
+        color: '#1F2937',
     },
     listContainer: {
         paddingBottom: 80,
@@ -412,6 +416,7 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
+        justifyContent: 'center',
     },
     filterButton: {
         flex: 1,
@@ -419,9 +424,13 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 4,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        marginHorizontal: 4,
     },
     filterButtonActive: {
         backgroundColor: '#8B5CF6',
+        borderColor: '#8B5CF6',
     },
     filterText: {
         color: '#374151',

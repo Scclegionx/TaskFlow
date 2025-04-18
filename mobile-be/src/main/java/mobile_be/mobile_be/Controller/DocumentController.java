@@ -166,7 +166,7 @@ public class DocumentController {
                                         .filter(member -> member.getStatus() == 1)
                                         .map(member -> member.getUser().getId())
                                         .distinct()
-                                        .count()
+                                        .count() + 1 // +1 for the leader
                         )
                 }).toArray(String[][]::new)
         );

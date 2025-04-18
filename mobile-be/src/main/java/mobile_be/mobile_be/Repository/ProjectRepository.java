@@ -171,7 +171,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             " join task_assignees ta on ta.task_id = t.id " +
             " WHERE ta.user_id = :userId and  " +
             "(:projectId  is null or t.project_id = :projectId)  and  " +
-            " t.created_by = :userId " +
+            " t.created_by != :userId " +
             "AND (:textSearch IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :textSearch, '%')))  " +
             " and ( t.status = 0 ) " +
             " order by t.created_at desc ",

@@ -239,4 +239,8 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "WHERE p.to_date BETWEEN :startDate AND :endDate", nativeQuery = true)
     List<Project> findByToDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 
+    @Query(value = "SELECT p.* FROM projects p " +
+            "WHERE p.from_date BETWEEN :startDate AND :endDate", nativeQuery = true)
+    List<Project> findByFromDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+
 }

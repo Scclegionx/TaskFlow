@@ -1,6 +1,6 @@
 
 
-export const API_BASE_URL= "http://172.11.168.54:8080/api"
+export const API_BASE_URL= "http://100.80.26.174:8080/api"
 
 
 export const API_URL = `${API_BASE_URL}/auth`;

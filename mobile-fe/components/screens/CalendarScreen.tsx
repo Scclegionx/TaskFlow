@@ -205,11 +205,11 @@ const CalendarScreen = () => {
 
     return (
         <View style={styles.mainContainer}>
-            <Image 
+            {/* <Image 
                 source={require('../../assets/images/project-background.jpg')}
                 style={styles.backgroundImage}
                 resizeMode="cover"
-            />
+            /> */}
             <View style={styles.contentContainer}>
                 <ScrollView
                     style={styles.scrollView}

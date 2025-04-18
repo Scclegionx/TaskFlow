@@ -126,11 +126,11 @@ const ProjectScreen = () => {
 
     return (
         <View style={projectStyles.container}>
-            <Image 
+            {/* <Image 
                 source={require('../../../assets/images/project-background.jpg')}
                 style={projectStyles.backgroundImage}
                 resizeMode="cover"
-            />
+            /> */}
             <View style={projectStyles.contentContainer}>
                 <View style={projectStyles.headerContainer}>
                     <Ionicons name="folder" size={24} color="#1F2937" />

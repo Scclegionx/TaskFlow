@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, FlatList, Animated, Dimensions } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, FlatList, Animated, Dimensions, ScrollView, Modal, TouchableWithoutFeedback } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { Avatar } from "react-native-paper";
@@ -243,30 +243,50 @@ const Header = () => {
                         
                         {/* Search Results */}
                         {(searchResults.length > 0 || filteredChats.length > 0) && (
-                            <View style={styles.resultsContainer}>
-                                <FlatList
-                                    data={pathname === '/message' ? filteredChats : searchResults}
-                                    keyExtractor={(item) => item.id.toString()}
-                                    renderItem={({ item }) => renderSearchResult(item)}
-                                    style={styles.resultsList}
-                                    ListHeaderComponent={() => (
-                                        <View style={styles.resultsHeader}>
-                                            <Text style={styles.resultsHeaderText}>
-                                                {pathname === '/project'
-                                                    ? 'Dự án tìm thấy'
-                                                    : pathname === '/calendar'
-                                                    ? 'Lịch trình tìm thấy'
-                                                    : 'Chat tìm thấy'}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    ListFooterComponent={() => (
-                                        <View style={styles.resultsFooter}>
-                                            <Text style={styles.resultsFooterText}>Nhấn để xem chi tiết</Text>
-                                        </View>
-                                    )}
-                                />
-                            </View>
+                            <Modal
+                                visible={true}
+                                transparent={true}
+                                animationType="none"
+                                onRequestClose={() => {
+                                    setSearchResults([]);
+                                    setFilteredChats([]);
+                                }}
+                            >
+                                <TouchableWithoutFeedback onPress={() => {
+                                    setSearchResults([]);
+                                    setFilteredChats([]);
+                                }}>
+                                    <View style={styles.modalContainer}>
+                                        <TouchableWithoutFeedback onPress={() => {}}>
+                                            <View style={styles.searchResultsContainer}>
+                                                <FlatList
+                                                    data={pathname === '/message' ? filteredChats : searchResults}
+                                                    keyExtractor={(item) => item.id.toString()}
+                                                    renderItem={({ item }) => renderSearchResult(item)}
+                                                    style={styles.resultsList}
+                                                    nestedScrollEnabled={true}
+                                                    ListHeaderComponent={() => (
+                                                        <View style={styles.resultsHeader}>
+                                                            <Text style={styles.resultsHeaderText}>
+                                                                {pathname === '/project'
+                                                                    ? 'Dự án tìm thấy'
+                                                                    : pathname === '/calendar'
+                                                                    ? 'Lịch trình tìm thấy'
+                                                                    : 'Chat tìm thấy'}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                    ListFooterComponent={() => (
+                                                        <View style={styles.resultsFooter}>
+                                                            <Text style={styles.resultsFooterText}>Nhấn để xem chi tiết</Text>
+                                                        </View>
+                                                    )}
+                                                />
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            </Modal>
                         )}
                     </View>
                 )}
@@ -356,6 +376,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        zIndex: 1000,
     },
     resultsList: {
         maxHeight: 300,
@@ -413,6 +434,25 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6B7280',
         fontStyle: 'italic',
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        marginTop: 120,
+    },
+    searchResultsContainer: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        marginHorizontal: 20,
+        maxHeight: 300,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
 });
 

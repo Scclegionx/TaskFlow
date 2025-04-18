@@ -156,7 +156,7 @@ const AllPersonelScreen = () => {
       );
 
       if (response.ok) {
-        Alert.alert("Thành công", "Rollback thành công!");
+        Alert.alert("Thành công", "Thực hiện quay lại lịch sử thành công!");
         setModalVisible(false);
         fetchTaskHistory(searchText); // Refresh lại danh sách
       } else {

@@ -89,8 +89,10 @@ const getStatusColor = (status: number): string => {
       return "#00AEEF";
     case 2: // Hoàn thành
       return "#4CAF50";
-    case 3: // Quá hạn
+    case 3: // Từ chối
       return "#FF4D67";
+    case 4: // Quá hạn
+      return "#FF9800";
     default:
       return "#A0A0A0";
   }
@@ -119,6 +121,8 @@ const getTaskStatusText = (status: string | number): string => {
     case 2:
       return "Hoàn thành";
     case 3:
+      return "Từ chối";
+    case 4:
       return "Quá hạn";
     default:
       return "Không xác định";
@@ -135,7 +139,9 @@ const getTaskStatusColor = (status: string | number): string => {
     case 2:
       return "#4CAF50"; // Màu xanh lá cho hoàn thành
     case 3:
-      return "#FF4D67"; // Màu đỏ cho quá hạn
+      return "#FF4D67"; // Màu đỏ cho từ chối
+    case 4:
+      return "#FF9800"; // Màu cam cho quá hạn
     default:
       return "#A0A0A0";
   }
@@ -784,6 +790,7 @@ export default function ProjectDetail() {
                       style={[
                         styles.taskItem,
                         userRole === "ADMIN" && styles.taskItemClickable,
+                        { borderLeftWidth: 15, borderColor: getTaskStatusColor(item.status) }
                       ]}
                     >
                       <TouchableOpacity
@@ -812,7 +819,7 @@ export default function ProjectDetail() {
                           {item.description}
                         </Text> */}
                         <Text style={styles.taskDate}>
-                          {formatDateTime(item.createdAt)}
+                          Hạn chót: {formatDateTime(item.toDate)}
                         </Text>
                         <View style={styles.taskFooter}>
                           <Text
@@ -898,6 +905,7 @@ export default function ProjectDetail() {
                   style={[
                     styles.taskItem,
                     userRole === "ADMIN" && styles.taskItemClickable,
+                    { borderLeftWidth: 15, borderColor: getTaskStatusColor(item.status) }
                   ]}
                 >
                   <TouchableOpacity
@@ -1226,7 +1234,7 @@ const styles = StyleSheet.create({
   },
   taskItem: {
     padding: 15,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     marginBottom: 8,
     marginHorizontal: 8,
@@ -1238,6 +1246,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    overflow: 'hidden',
+    borderLeftWidth: 15,
   },
   taskHeader: {
     flexDirection: "row",

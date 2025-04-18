@@ -321,11 +321,12 @@ export const styles = StyleSheet.create({
         marginBottom: 8,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
     },
     memberInfo: {
-        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
     },
     avatar: {
         width: 40,
@@ -340,6 +341,7 @@ export const styles = StyleSheet.create({
     },
     removeButton: {
         padding: 8,
+        marginLeft: 'auto',
     },
     removeText: {
         fontSize: 20,

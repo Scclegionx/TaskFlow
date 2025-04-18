@@ -74,7 +74,7 @@ const UpdateProjectScreen = () => {
                 contentContainerStyle={styles.scrollContainer}
                 keyboardShouldPersistTaps="handled"
             >
-                <Text style={styles.header}>Cập nhật dự án</Text>
+                {/* <Text style={styles.header}>Cập nhật dự án</Text> */}
 
                 <View style={styles.formSection}>
                     <Text style={styles.label}>Tên dự án</Text>
@@ -100,6 +100,8 @@ const UpdateProjectScreen = () => {
                             onValueChange={(value) => setProject({ ...project, status: value })}
                             style={{ marginTop: -8, marginBottom: -8 }}
                         >
+                            <Picker.Item label="Chưa bắt đầu" value={0} />
+                            <Picker.Item label="Đang thực hiện" value={1} />
                             <Picker.Item label="Hoàn thành" value={2} />
                             <Picker.Item label="Hủy" value={3} />
                         </Picker>

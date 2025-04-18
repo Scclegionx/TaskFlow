@@ -68,6 +68,8 @@ const UserSearchModal = ({
                         ListEmptyComponent={() => (
                             <Text style={styles.noResultText}>Không tìm thấy người dùng</Text>
                         )}
+                        style={{ maxHeight: 300 }}
+                        showsVerticalScrollIndicator={true}
                     />
                 </View>
             </View>

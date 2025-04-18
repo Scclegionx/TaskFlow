@@ -78,7 +78,7 @@ public class ProjectService {
         creatorMember.setId(new ProjectMemberId(creator.getId(), savedProject.getId()));
         creatorMember.setUser(creator);
         creatorMember.setProject(savedProject);
-        creatorMember.setRole("QUẢN TRỊ VIÊN");
+        creatorMember.setRole("ADMIN");
         members.add(creatorMember);
 
         // Thêm các thành viên khác với role MEMBER
@@ -91,7 +91,7 @@ public class ProjectService {
                     member.setId(new ProjectMemberId(user.getId(), savedProject.getId()));
                     member.setUser(user);
                     member.setProject(savedProject);
-                    member.setRole("THÀNH VIÊN");
+                    member.setRole("MEMBER");
                     members.add(member);
                 });
 

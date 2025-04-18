@@ -290,7 +290,8 @@ public class DepartmentService {
                     .filter(member -> member.getStatus() == 1)
                     .map(TeamMember::getUser)
                     .distinct()
-                    .sorted(Comparator.comparing(User::getName))
+//                    .sorted(Comparator.comparing(User::getName))
+                    .sorted(Comparator.comparing(user -> user.getName().toLowerCase()))
                     .toList();
 
             TeamResponseDTO teamResponseDTO = new TeamResponseDTO();

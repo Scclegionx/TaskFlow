@@ -55,9 +55,9 @@ const CreateTaskScreen = () => {
   >([]);
 
   const levelOptions = [
-    { label: "Thấp", value: 0 },
+    { label: "Dễ", value: 0 },
     { label: "Trung bình", value: 1 },
-    { label: "Cao", value: 2 },
+    { label: "Khó", value: 2 },
   ];
   const handlePickDocument = async () => {
     try {
@@ -133,7 +133,7 @@ const CreateTaskScreen = () => {
 
   const getLevelLabel = (value: number) => {
     return (
-      levelOptions.find((option) => option.value === value)?.label || "Thấp"
+      levelOptions.find((option) => option.value === value)?.label || "Dễ"
     );
   };
 
@@ -567,14 +567,14 @@ const SubTaskForm = ({ onSave, onClose }: SubTaskFormProps) => {
   const [showLevelPicker, setShowLevelPicker] = useState(false);
 
   const levelOptions = [
-    { label: "Thấp", value: 0 },
+    { label: "Dễ", value: 0 },
     { label: "Trung bình", value: 1 },
-    { label: "Cao", value: 2 },
+    { label: "Khó", value: 2 },
   ];
 
   const getLevelLabel = (value: number) => {
     return (
-      levelOptions.find((option) => option.value === value)?.label || "Thấp"
+      levelOptions.find((option) => option.value === value)?.label || "Dễ"
     );
   };
 

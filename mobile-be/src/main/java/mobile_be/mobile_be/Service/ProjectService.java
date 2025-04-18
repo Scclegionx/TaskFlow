@@ -483,6 +483,7 @@ public class ProjectService {
 
         // Lấy danh sách công việc với phân trang và sắp xếp theo createdAt
         List<Task> tasks = project.getTasks().stream()
+                .filter(task -> task.getParentId() == null)
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .skip(taskPage * taskSize)
                 .limit(taskSize)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Modal,
   ActivityIndicator,
   Image,
+  FlatList,
 } from "react-native";
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import {
@@ -19,6 +20,7 @@ import {
   getDocumentsByTaskId,
   deleteDocument,
   assignTask,
+  unassignTask,
 } from "@/hooks/useTaskApi";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AntDesign } from "@expo/vector-icons";
@@ -71,6 +73,10 @@ const EditTaskScreen = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedSubTaskId, setSelectedSubTaskId] = useState<number | null>(null);
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
+  const [assigneeSearchText, setAssigneeSearchText] = useState("");
+  const [showViewAssigneesModal, setShowViewAssigneesModal] = useState(false);
+  const [selectedSubTaskForView, setSelectedSubTaskForView] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
   const levelOptions = [
     { label: "Thấp", value: 0 },
     { label: "Trung bình", value: 1 },
@@ -106,11 +112,22 @@ const EditTaskScreen = () => {
       const documentsData = await getDocumentsByTaskId(Number(taskId));
       setDocuments(documentsData);
       
-      // Load project members
+      // Load project members and get user role
       if (data.project && data.project.id) {
         try {
           const members = await getProjectMembers(data.project.id);
           setProjectMembers(members);
+          
+          // Get current user role after loading members
+          const userId = await AsyncStorage.getItem("userId");
+          if (userId) {
+            const currentMember = members.find(
+              (m: any) => m.id === Number(userId)
+            );
+            if (currentMember) {
+              setUserRole(currentMember.role);
+            }
+          }
         } catch (error) {
           console.error("Lỗi khi tải danh sách thành viên:", error);
         }
@@ -344,11 +361,25 @@ const EditTaskScreen = () => {
     setShowAssignModal(true);
   };
 
+  const handleShowViewAssigneesModal = (subTaskId: number) => {
+    setSelectedSubTaskForView(subTaskId);
+    setShowViewAssigneesModal(true);
+  };
+
   const handleAssignSubTask = async (userId: number) => {
     if (!selectedSubTaskId) return;
 
     try {
-      await assignTask(selectedSubTaskId, userId);
+      const subTask = subTasks.find(t => t.id === selectedSubTaskId);
+      const isAssigned = subTask?.assignees?.some(a => a.id === userId);
+
+      if (isAssigned) {
+        // Nếu đã được gán thì gỡ gán
+        await unassignTask(selectedSubTaskId, userId);
+      } else {
+        // Nếu chưa được gán thì gán mới
+        await assignTask(selectedSubTaskId, userId);
+      }
       
       // Cập nhật lại danh sách subtasks
       const subTasksData = await getSubTasks(Number(taskId));
@@ -356,11 +387,23 @@ const EditTaskScreen = () => {
       
       setShowAssignModal(false);
       setSelectedSubTaskId(null);
-      Alert.alert("Thành công", "Đã gán nhiệm vụ con cho thành viên");
+      Alert.alert("Thành công", isAssigned ? "Đã gỡ gán nhiệm vụ con" : "Đã gán nhiệm vụ con cho thành viên");
     } catch (error: any) {
-      Alert.alert("Lỗi", error.message || "Không thể gán nhiệm vụ con");
+      Alert.alert("Lỗi", error.message || "Không thể thực hiện thao tác");
     }
   };
+
+  const filteredAssignees = useMemo(() => {
+    if (!assigneeSearchText.trim()) {
+      return projectMembers.filter(member => member.role !== "ADMIN");
+    }
+    return projectMembers.filter(
+      member => 
+        member.role !== "ADMIN" && 
+        (member.name.toLowerCase().includes(assigneeSearchText.toLowerCase()) || 
+         member.email.toLowerCase().includes(assigneeSearchText.toLowerCase()))
+    );
+  }, [projectMembers, assigneeSearchText]);
 
   const getTaskStatusText = (status: string | number): string => {
     // Chuyển status về dạng số để so sánh
@@ -574,22 +617,45 @@ const EditTaskScreen = () => {
                   <View style={styles.assigneeContainer}>
                     {subTask.assignees && subTask.assignees.length > 0 ? (
                       <View style={styles.assignedMembers}>
-                        {subTask.assignees.map((assignee) => (
-                          <View key={assignee.id} style={styles.assignedMember}>
-                            <Image
-                              source={
-                                assignee.avatar
-                                  ? { uri: assignee.avatar }
-                                  : require("../../../assets/images/default-avatar.jpg")
-                              }
-                              style={styles.assigneeAvatar}
-                            />
-                            <Text style={styles.assigneeName}>{assignee.name}</Text>
-                          </View>
-                        ))}
+                        <TouchableOpacity 
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            if (userRole === "ADMIN") {
+                              handleShowAssignModal(subTask.id!);
+                            } else {
+                              handleShowViewAssigneesModal(subTask.id!);
+                            }
+                          }}
+                        >
+                          <Image
+                            source={
+                              subTask.assignees[0].avatar
+                                ? { uri: subTask.assignees[0].avatar }
+                                : require("../../../assets/images/default-avatar.jpg")
+                            }
+                            style={styles.assigneeAvatar}
+                          />
+                          {subTask.assignees.length > 1 && (
+                            <View style={styles.assigneeCount}>
+                              <Text style={styles.assigneeCountText}>+{subTask.assignees.length - 1}</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
                       </View>
+                    ) : userRole === "ADMIN" ? (
+                      <TouchableOpacity
+                        style={[styles.assignButton, { position: 'absolute', right: 10, bottom: 10 }]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleShowAssignModal(subTask.id!);
+                        }}
+                      >
+                        <AntDesign name="adduser" size={20} color="#007AFF" />
+                      </TouchableOpacity>
                     ) : (
-                      <Text style={styles.noAssigneeText}>Chưa có người được gán</Text>
+                      <Text style={styles.noAssigneeText}>
+                        Chưa có người được gán
+                      </Text>
                     )}
                   </View>
                 </View>
@@ -606,17 +672,6 @@ const EditTaskScreen = () => {
                   }}
                 >
                   <AntDesign name="close" size={20} color="#FF4444" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.assignButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    if (subTask.id) {
-                      handleShowAssignModal(subTask.id);
-                    }
-                  }}
-                >
-                  <AntDesign name="adduser" size={20} color="#007AFF" />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -740,35 +795,101 @@ const EditTaskScreen = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chọn thành viên</Text>
-            <ScrollView style={styles.membersList}>
-              {projectMembers.map((member) => (
-                <TouchableOpacity
-                  key={member.id}
-                  style={styles.memberOption}
-                  onPress={() => handleAssignSubTask(member.id)}
-                >
-                  <View style={styles.memberOptionContent}>
-                    <Image
-                      source={
-                        member.avatar
-                          ? { uri: member.avatar }
-                          : require("../../../assets/images/default-avatar.jpg")
-                      }
-                      style={styles.memberAvatar}
-                    />
-                    <View style={styles.memberInfo}>
-                      <Text style={styles.memberName}>{member.name}</Text>
-                      <Text style={styles.memberEmail}>{member.email}</Text>
+            
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Tìm kiếm thành viên..."
+                value={assigneeSearchText}
+                onChangeText={setAssigneeSearchText}
+              />
+            </View>
+            
+            <FlatList
+              data={filteredAssignees}
+              keyExtractor={(member) => member.id.toString()}
+              renderItem={({ item }) => {
+                const subTask = subTasks.find(t => t.id === selectedSubTaskId);
+                const isAssigned = subTask?.assignees?.some(a => a.id === item.id);
+                
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.memberOption,
+                      isAssigned && styles.memberOptionSelected
+                    ]}
+                    onPress={() => handleAssignSubTask(item.id)}
+                  >
+                    <View style={styles.memberOptionContent}>
+                      <Image
+                        source={
+                          item.avatar
+                            ? { uri: item.avatar }
+                            : require("../../../assets/images/default-avatar.jpg")
+                        }
+                        style={styles.memberOptionAvatar}
+                      />
+                      <Text style={[
+                        styles.memberOptionText,
+                        isAssigned && styles.memberOptionTextSelected
+                      ]}>
+                        {item.name}
+                      </Text>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                    {isAssigned && (
+                      <AntDesign name="checkcircle" size={20} color="#4CAF50" />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => {
                 setShowAssignModal(false);
                 setSelectedSubTaskId(null);
+                setAssigneeSearchText("");
+              }}
+            >
+              <Text style={styles.closeButtonText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal View Assignees */}
+      <Modal
+        visible={showViewAssigneesModal}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Danh sách người được gán</Text>
+            <FlatList
+              data={subTasks.find(t => t.id === selectedSubTaskForView)?.assignees || []}
+              keyExtractor={(assignee) => assignee.id.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.memberOption}>
+                  <View style={styles.memberOptionContent}>
+                    <Image
+                      source={
+                        item.avatar
+                          ? { uri: item.avatar }
+                          : require("../../../assets/images/default-avatar.jpg")
+                      }
+                      style={styles.memberOptionAvatar}
+                    />
+                    <Text style={styles.memberOptionText}>{item.name}</Text>
+                  </View>
+                </View>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                setShowViewAssigneesModal(false);
+                setSelectedSubTaskForView(null);
               }}
             >
               <Text style={styles.closeButtonText}>Đóng</Text>
@@ -1021,13 +1142,10 @@ const styles = StyleSheet.create({
     right: 10,
   },
   assignButton: {
-    position: "absolute",
-    bottom: 10,
-    right: 10,
+    backgroundColor: '#E8F4FF',
     padding: 8,
-    backgroundColor: "#E8F4FF",
     borderRadius: 20,
-    shadowColor: "#007AFF",
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -1138,20 +1256,13 @@ const styles = StyleSheet.create({
   },
   assigneeContainer: {
     marginTop: 8,
+    position: 'relative',
+    minHeight: 40,
   },
   assignedMembers: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  assignedMember: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F4FF',
-    padding: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#D1E5FF',
   },
   assigneeAvatar: {
     width: 20,
@@ -1205,6 +1316,37 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingVertical: 4,
     paddingHorizontal: 8,
+  },
+  searchContainer: {
+    marginBottom: 10,
+  },
+  searchInput: {
+    backgroundColor: "#F3F4F6",
+    padding: 10,
+    borderRadius: 8,
+  },
+  memberOptionSelected: {
+    backgroundColor: "#E8F4FF",
+  },
+  memberOptionTextSelected: {
+    fontWeight: "bold",
+  },
+  memberOptionAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  assigneeCount: {
+    backgroundColor: "#4CAF50",
+    borderRadius: 12,
+    padding: 2,
+    marginLeft: 4,
+  },
+  assigneeCountText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
 

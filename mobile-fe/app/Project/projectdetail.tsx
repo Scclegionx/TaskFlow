@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -36,6 +36,7 @@ import {
   createTask,
   deleteTask,
   assignTask,
+  unassignTask,
   getMainTasks,
 } from "@/hooks/useTaskApi";
 import { LinearGradient } from "expo-linear-gradient";
@@ -167,6 +168,9 @@ export default function ProjectDetail() {
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [showViewAssigneesModal, setShowViewAssigneesModal] = useState(false);
+  const [selectedTaskForView, setSelectedTaskForView] = useState<number | null>(null);
+  const [assigneeSearchText, setAssigneeSearchText] = useState("");
   const [memberPage, setMemberPage] = useState(0);
   const [taskPage, setTaskPage] = useState(0);
   const [totalMembers, setTotalMembers] = useState(0);
@@ -344,17 +348,32 @@ export default function ProjectDetail() {
     setShowAssignModal(true);
   };
 
+  const handleShowViewAssigneesModal = (taskId: number) => {
+    setSelectedTaskForView(taskId);
+    setShowViewAssigneesModal(true);
+  };
+
   const handleAssignTask = async (userId: number) => {
     if (!selectedTaskId) return;
 
     try {
-      await assignTask(selectedTaskId, userId);
-      await loadProjects();
-      setShowAssignModal(false);
-      setSelectedTaskId(null);
-      Alert.alert("Thành công", "Đã gán nhiệm vụ cho thành viên");
+        const task = ItemProject?.tasks.find(t => t.id === selectedTaskId);
+        const isAssigned = task?.assignees.some(a => a.id === userId);
+
+        if (isAssigned) {
+            // Nếu đã được gán thì gỡ gán
+            await unassignTask(selectedTaskId, userId);
+        } else {
+            // Nếu chưa được gán thì gán mới
+            await assignTask(selectedTaskId, userId);
+        }
+        
+        await loadProjects();
+        setShowAssignModal(false);
+        setSelectedTaskId(null);
+        Alert.alert("Thành công", isAssigned ? "Đã gỡ gán nhiệm vụ" : "Đã gán nhiệm vụ cho thành viên");
     } catch (error: any) {
-      Alert.alert("Lỗi", error.message || "Không thể gán nhiệm vụ");
+        Alert.alert("Lỗi", error.message || "Không thể thực hiện thao tác");
     }
   };
 
@@ -428,6 +447,19 @@ export default function ProjectDetail() {
     setTaskSearchText(task.title);
     setShowTaskSearch(false);
   };
+
+  const filteredAssignees = useMemo(() => {
+    if (!assigneeSearchText.trim()) {
+      return allMembers.filter(member => member.role !== "ADMIN");
+    }
+    return allMembers.filter(
+      member => 
+        member.role !== "ADMIN" && 
+        (member.name.toLowerCase().includes(assigneeSearchText.toLowerCase()) || 
+         member.email.toLowerCase().includes(assigneeSearchText.toLowerCase()))
+    );
+  }, [allMembers, assigneeSearchText]);
+
   const taskStatusData = {
     pending: allTasks.filter((task) => task.status === "0").length || 0,
     inProgress: allTasks.filter((task) => task.status === "1").length || 0,
@@ -832,7 +864,17 @@ export default function ProjectDetail() {
                           </Text>
                           {item.assignees && item.assignees.length > 0 ? (
                             <View style={styles.assigneeContainer}>
-                              <View style={styles.assignedAvatar}>
+                              <TouchableOpacity 
+                                style={styles.assignedAvatar}
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  if (userRole === "ADMIN") {
+                                    handleShowAssignModal(item.id);
+                                  } else {
+                                    handleShowViewAssigneesModal(item.id);
+                                  }
+                                }}
+                              >
                                 <Image
                                   source={
                                     item.assignees[0].avatar
@@ -841,29 +883,12 @@ export default function ProjectDetail() {
                                   }
                                   style={styles.avatarImage}
                                 />
-                                {userRole === "ADMIN" && (
-                                  <TouchableOpacity
-                                    style={styles.changeAssignBadge}
-                                    onPress={(e) => {
-                                      e.stopPropagation();
-                                      handleShowAssignModal(item.id);
-                                    }}
-                                  >
-                                    <AntDesign
-                                      name="edit"
-                                      size={8}
-                                      color="#FFF"
-                                    />
-                                  </TouchableOpacity>
+                                {item.assignees.length > 1 && (
+                                  <View style={styles.assigneeCount}>
+                                    <Text style={styles.assigneeCountText}>+{item.assignees.length - 1}</Text>
+                                  </View>
                                 )}
-                              </View>
-                              {item.assignees.length > 1 && (
-                                <View style={styles.assigneeCount}>
-                                  <Text style={styles.assigneeCountText}>
-                                    +{item.assignees.length - 1}
-                                  </Text>
-                                </View>
-                              )}
+                              </TouchableOpacity>
                             </View>
                           ) : userRole === "ADMIN" ? (
                             <TouchableOpacity
@@ -943,7 +968,17 @@ export default function ProjectDetail() {
                       </Text>
                       {item.assignees && item.assignees.length > 0 ? (
                         <View style={styles.assigneeContainer}>
-                          <View style={styles.assignedAvatar}>
+                          <TouchableOpacity 
+                            style={styles.assignedAvatar}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              if (userRole === "ADMIN") {
+                                handleShowAssignModal(item.id);
+                              } else {
+                                handleShowViewAssigneesModal(item.id);
+                              }
+                            }}
+                          >
                             <Image
                               source={
                                 item.assignees[0].avatar
@@ -952,25 +987,12 @@ export default function ProjectDetail() {
                               }
                               style={styles.avatarImage}
                             />
-                            {userRole === "ADMIN" && (
-                              <TouchableOpacity
-                                style={styles.changeAssignBadge}
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  handleShowAssignModal(item.id);
-                                }}
-                              >
-                                <AntDesign name="edit" size={8} color="#FFF" />
-                              </TouchableOpacity>
+                            {item.assignees.length > 1 && (
+                              <View style={styles.assigneeCount}>
+                                <Text style={styles.assigneeCountText}>+{item.assignees.length - 1}</Text>
+                              </View>
                             )}
-                          </View>
-                          {item.assignees.length > 1 && (
-                            <View style={styles.assigneeCount}>
-                              <Text style={styles.assigneeCountText}>
-                                +{item.assignees.length - 1}
-                              </Text>
-                            </View>
-                          )}
+                          </TouchableOpacity>
                         </View>
                       ) : userRole === "ADMIN" ? (
                         <TouchableOpacity
@@ -1042,27 +1064,96 @@ export default function ProjectDetail() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chọn thành viên</Text>
+            
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Tìm kiếm thành viên..."
+                value={assigneeSearchText}
+                onChangeText={setAssigneeSearchText}
+              />
+            </View>
+            
             <FlatList
-              data={allMembers.filter(
-                (member) => member.role !== "ADMIN"
-              )}
+              data={filteredAssignees}
               keyExtractor={(member) => member.id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.memberOption}
-                  onPress={() => handleAssignTask(item.id)}
-                >
-                  <Text style={styles.memberOptionText}>
-                    {item.name} ({item.email})
-                  </Text>
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => {
+                const task = ItemProject?.tasks.find(t => t.id === selectedTaskId);
+                const isAssigned = task?.assignees.some(a => a.id === item.id);
+                
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.memberOption,
+                      isAssigned && styles.memberOptionSelected
+                    ]}
+                    onPress={() => handleAssignTask(item.id)}
+                  >
+                    <View style={styles.memberOptionContent}>
+                      <Image
+                        source={
+                          item.avatar
+                            ? { uri: item.avatar }
+                            : getDefaultAvatar()
+                        }
+                        style={styles.memberOptionAvatar}
+                      />
+                      <Text style={[
+                        styles.memberOptionText,
+                        isAssigned && styles.memberOptionTextSelected
+                      ]}>
+                        {item.name} ({item.email})
+                      </Text>
+                    </View>
+                    {isAssigned && (
+                      <AntDesign name="checkcircle" size={20} color="#4CAF50" />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
             />
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => {
                 setShowAssignModal(false);
                 setSelectedTaskId(null);
+              }}
+            >
+              <Text style={styles.closeButtonText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal View Assignees */}
+      <Modal visible={showViewAssigneesModal} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Danh sách người được gán</Text>
+            <FlatList
+              data={ItemProject?.tasks.find(t => t.id === selectedTaskForView)?.assignees || []}
+              keyExtractor={(assignee) => assignee.id.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.memberOption}>
+                  <View style={styles.memberOptionContent}>
+                    <Image
+                      source={
+                        item.avatar
+                          ? { uri: item.avatar }
+                          : getDefaultAvatar()
+                      }
+                      style={styles.memberOptionAvatar}
+                    />
+                    <Text style={styles.memberOptionText}>{item.name}</Text>
+                  </View>
+                </View>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                setShowViewAssigneesModal(false);
+                setSelectedTaskForView(null);
               }}
             >
               <Text style={styles.closeButtonText}>Đóng</Text>
@@ -1303,16 +1394,22 @@ const styles = StyleSheet.create({
     borderColor: "#FFF",
   },
   assigneeCount: {
+    position: "absolute",
+    right: -8,
+    bottom: -8,
     backgroundColor: "#3B82F6",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
     borderRadius: 10,
-    marginLeft: 8,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
   },
   assigneeCountText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "bold",
   },
   modalContainer: {
     flex: 1,
@@ -1412,10 +1509,32 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  memberOptionSelected: {
+    backgroundColor: '#E8F5E9',
+  },
+  memberOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  memberOptionAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
   },
   memberOptionText: {
     fontSize: 16,
     color: "#1F2937",
+    flex: 1,
+  },
+  memberOptionTextSelected: {
+    color: "#4CAF50",
+    fontWeight: "600",
   },
   noAssigneeText: {
     fontSize: 14,

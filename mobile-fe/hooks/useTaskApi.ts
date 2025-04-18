@@ -63,6 +63,30 @@ export const assignTask = async (taskId: number, userId: number) => {
     }
 };
 
+export const unassignTask = async (taskId: number, userId: number) => {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        const response = await axios.put(
+            `${API_URL_TASK}/unassign`,
+            null,
+            {
+                params: {
+                    taskId: taskId,
+                    userId: userId
+                },
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        return response.data;
+    } catch (error: any) {
+        console.error('API Error:', error.response?.data);
+        throw new Error(error.response?.data || 'Lỗi khi gỡ gán nhiệm vụ');
+    }
+};
+
 export const getTaskDetail = async (taskId: number) => {
     try {
         const token = await AsyncStorage.getItem('token');

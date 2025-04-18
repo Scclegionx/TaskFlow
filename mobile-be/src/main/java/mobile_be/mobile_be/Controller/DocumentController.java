@@ -68,8 +68,8 @@ public class DocumentController {
                         String.valueOf(user.getId()),
                         user.getName(),
                         user.getEmail(),
-                        String.valueOf(user.getGender()),
-                        String.valueOf(user.getDateOfBirth())
+                        user.getGender() != null ? String.valueOf(user.getGender()) : "Không xác định",
+                        user.getDateOfBirth() != null ? String.valueOf(user.getDateOfBirth()) : "Không xác định"
                 }).toArray(String[][]::new)
         );
 

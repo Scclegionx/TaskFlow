@@ -682,7 +682,7 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án"));
         
         return project.getProjectMembers().stream()
-                .filter(member -> !"ADMIN".equals(member.getRole()))
+//                .filter(member -> !"ADMIN".equals(member.getRole()))
                 .map(member -> {
                     UserResponseDTO dto = userMapper.toDTO(member.getUser());
                     dto.setRole(member.getRole());

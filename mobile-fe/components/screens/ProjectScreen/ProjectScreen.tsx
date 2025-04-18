@@ -126,15 +126,17 @@ const ProjectScreen = () => {
 
     return (
         <View style={projectStyles.container}>
-            <Image 
+            {/* <Image 
                 source={require('../../../assets/images/project-background.jpg')}
                 style={projectStyles.backgroundImage}
                 resizeMode="cover"
-            />
+            /> */}
             <View style={projectStyles.contentContainer}>
                 <View style={projectStyles.headerContainer}>
-                    <Ionicons name="folder" size={24} color="#1F2937" />
-                    <Text style={projectStyles.header}>Danh sách dự án</Text>
+                    <View style={projectStyles.headerContent}>
+                        <Ionicons name="folder" size={24} color="#1F2937" style={projectStyles.headerIcon} />
+                        <Text style={projectStyles.header}>Danh sách dự án</Text>
+                    </View>
                 </View>
 
                 <View style={projectStyles.filterContainer}>
@@ -245,3 +247,46 @@ const ProjectScreen = () => {
 };
 
 export default ProjectScreen;
+
+const styles = StyleSheet.create({
+    headerContainer: {
+        marginBottom: 20,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIcon: {
+        marginRight: 10,
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1F2937',
+    },
+    filterContainer: {
+        flexDirection: 'row',
+        marginBottom: 20,
+        gap: 10,
+    },
+    filterButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        backgroundColor: 'white',
+    },
+    filterButtonActive: {
+        backgroundColor: '#8B5CF6',
+        borderColor: '#8B5CF6',
+    },
+    filterText: {
+        color: '#6B7280',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    filterTextActive: {
+        color: 'white',
+    },
+});

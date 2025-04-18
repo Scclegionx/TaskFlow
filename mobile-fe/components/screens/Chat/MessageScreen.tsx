@@ -168,11 +168,11 @@ const MessagesScreen = () => {
   return (
     <Provider>
       <View style={styles.container}>
-        <Image 
+        {/* <Image 
           source={require('@/assets/images/project-background.jpg')}
           style={styles.backgroundImage}
           resizeMode="cover"
-        />
+        /> */}
         <View style={styles.contentContainer}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Tin nhắn</Text>

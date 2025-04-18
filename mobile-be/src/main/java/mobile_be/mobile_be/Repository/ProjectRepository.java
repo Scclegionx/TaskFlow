@@ -111,7 +111,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
 
 
 
-    @Query(value = "SELECT COUNT(*) FROM tasks WHERE project_id = :projectId", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM tasks WHERE project_id = :projectId AND parent_id IS NULL", nativeQuery = true)
     Integer findAllTaskInProject(int projectId);
 
 

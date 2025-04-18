@@ -113,11 +113,11 @@ console.log("Decoded username:", decodedUsername);
                     <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>
+                {/* <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>
                 <View style={styles.socialIcons}>
                     <Text>🔵</Text>
                     <Text>🔴</Text>
-                </View>
+                </View> */}
                 <TouchableOpacity onPress={() => router.push('/register')}>
                     <Text style={styles.linkText}>Đăng ký</Text>
                 </TouchableOpacity>

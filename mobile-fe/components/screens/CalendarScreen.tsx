@@ -205,11 +205,11 @@ const CalendarScreen = () => {
 
     return (
         <View style={styles.mainContainer}>
-            <Image 
+            {/* <Image 
                 source={require('../../assets/images/project-background.jpg')}
                 style={styles.backgroundImage}
                 resizeMode="cover"
-            />
+            /> */}
             <View style={styles.contentContainer}>
                 <ScrollView
                     style={styles.scrollView}
@@ -235,8 +235,8 @@ const CalendarScreen = () => {
                                 textDayFontSize: 16,
                                 textMonthFontSize: 18,
                                 textDayHeaderFontSize: 14,
-                                backgroundColor: 'white',
-                                calendarBackground: 'white',
+                                backgroundColor: '#FFF5F5',
+                                calendarBackground: '#FFF5F5',
                                 textSectionTitleColor: '#374151',
                                 dayTextColor: '#1F2937',
                                 textDisabledColor: '#9CA3AF',
@@ -288,7 +288,12 @@ const CalendarScreen = () => {
                                         key={item.id}
                                         onPress={() => router.push(`/Schedule/detailSchedule?id=${item.id}`)}
                                         onLongPress={() => handleLongPress(item)}
-                                        style={styles.itemCard}
+                                        style={[
+                                            styles.itemCard,
+                                            item.priority === 'HIGH' && styles.highPriorityCard,
+                                            item.priority === 'NORMAL' && styles.normalPriorityCard,
+                                            item.priority === 'LOW' && styles.lowPriorityCard
+                                        ]}
                                     >
                                         <View style={styles.itemHeader}>
                                             <MaterialIcons name="event" size={20} color="#EF4444" />
@@ -419,7 +424,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
     },
     calendarContainer: {
-        backgroundColor: 'white',
+        backgroundColor: '#FFF5F5',
         borderRadius: 16,
         padding: 16,
         marginBottom: 20,
@@ -472,6 +477,22 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 4,
         position: 'relative',
+        overflow: 'hidden',
+    },
+    highPriorityCard: {
+        backgroundColor: 'white',
+        borderLeftWidth: 4,
+        borderLeftColor: '#EF4444',
+    },
+    normalPriorityCard: {
+        backgroundColor: 'white',
+        borderLeftWidth: 4,
+        borderLeftColor: '#F59E0B',
+    },
+    lowPriorityCard: {
+        backgroundColor: 'white',
+        borderLeftWidth: 4,
+        borderLeftColor: '#10B981',
     },
     itemHeader: {
         flexDirection: 'row',

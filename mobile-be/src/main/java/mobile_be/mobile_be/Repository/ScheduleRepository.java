@@ -71,7 +71,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     """)
     List<Object[]> findHighlightedDatesByParticipantId(Integer userId);
 
-    @Query("SELECT s FROM Schedule s WHERE s.user.id = ?2 AND LOWER(s.title) LIKE LOWER(CONCAT('%', ?1, '%'))")
+    @Query("SELECT s FROM Schedule s JOIN s.participants sp WHERE sp.user.id = ?2 AND LOWER(s.title) LIKE LOWER(CONCAT('%', ?1, '%'))")
     List<Schedule> searchSchedules(String query, Integer userId);
 
     @Query("SELECT s FROM Schedule s LEFT JOIN FETCH s.participants LEFT JOIN FETCH s.user WHERE s.id = :id")

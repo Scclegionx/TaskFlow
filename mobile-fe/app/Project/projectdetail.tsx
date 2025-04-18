@@ -27,6 +27,7 @@ import {
   formatDateTime,
   searchProjectMembers,
   searchProjectTasks,
+  getProjectMembers,
 } from "@/hooks/useProjectApi";
 import { AntDesign } from "@expo/vector-icons";
 import { debounce } from "lodash";
@@ -171,6 +172,7 @@ export default function ProjectDetail() {
   const [showMemberSearch, setShowMemberSearch] = useState(false);
   const [showTaskSearch, setShowTaskSearch] = useState(false);
   const [allTasks, setAllTasks] = useState<ITask[]>([]); // Lưu toàn bộ công việc
+  const [allMembers, setAllMembers] = useState<any[]>([]);
   const navigation = useNavigation();
 
   useFocusEffect(
@@ -185,14 +187,18 @@ export default function ProjectDetail() {
       const userId = await AsyncStorage.getItem("userId");
       if (userId) {
         setCurrentUserId(Number(userId));
-        if (ItemProject?.members) {
-          const currentMember = ItemProject.members.find(
-            (m) => m.id === Number(userId)
-          );
-          if (currentMember) {
-            console.log("Current user role:", currentMember.role);
-            setUserRole(currentMember.role);
-          }
+        
+        // Lấy tất cả thành viên để kiểm tra role
+        const allMembersData = await getProjectMembers(project.id);
+        setAllMembers(allMembersData);
+        
+        // Kiểm tra role trong tất cả thành viên
+        const currentMember = allMembersData.find(
+          (m: IMember) => m.id === Number(userId)
+        );
+        if (currentMember) {
+          console.log("Current user role:", currentMember.role);
+          setUserRole(currentMember.role);
         }
       }
     } catch (error) {
@@ -202,16 +208,16 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     navigation.setOptions({ title: "Chi tiết dự án" });
-    if (ItemProject && currentUserId) {
-      const currentMember = ItemProject.members.find(
-        (m) => m.id === currentUserId
+    if (allMembers.length > 0 && currentUserId) {
+      const currentMember = allMembers.find(
+        (m: IMember) => m.id === currentUserId
       );
       if (currentMember) {
         console.log("Current user role:", currentMember.role);
         setUserRole(currentMember.role);
       }
     }
-  }, [ItemProject, currentUserId]);
+  }, [allMembers, currentUserId]);
 
   const loadProjects = async () => {
     try {
@@ -1029,7 +1035,7 @@ export default function ProjectDetail() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chọn thành viên</Text>
             <FlatList
-              data={ItemProject?.members.filter(
+              data={allMembers.filter(
                 (member) => member.role !== "ADMIN"
               )}
               keyExtractor={(member) => member.id.toString()}

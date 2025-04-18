@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, FlatList, Animated, Dimensions } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, FlatList, Animated, Dimensions, ScrollView, Modal, TouchableWithoutFeedback } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { Avatar } from "react-native-paper";
@@ -11,9 +11,21 @@ import { searchSchedules } from "@/hooks/useScheduleApi";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/api";
 
+interface Chat {
+    id: number;
+    isGroup: boolean;
+    users: Array<{
+        id: number;
+        name: string;
+        avatar: string | null;
+    }>;
+    chatName?: string;
+    avatarUrl?: string | null;
+}
+
 interface User {
+    id: number;
     name: string;
-    email: string;
     avatar: any;
 }
 
@@ -26,7 +38,7 @@ interface SearchResult {
 const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const [user, setUser] = useState<User>({ name: '', email: '', avatar: null });
+    const [user, setUser] = useState<User>({ id: 0, name: '', avatar: null });
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -45,9 +57,9 @@ const Header = () => {
                         headers: { Authorization: `Bearer ${token}` },
                     });
 
-                    const formattedChats = response.data.map((chat) => {
+                    const formattedChats = response.data.map((chat: Chat) => {
                         const otherUser = !chat.isGroup
-                            ? chat.users.find((user) => user.id !== parseInt(userId))
+                            ? chat.users.find((user: User) => user.id !== parseInt(userId || "0"))
                             : null;
 
                         return {
@@ -111,7 +123,7 @@ const Header = () => {
             router.push(`/Schedule/detailSchedule?id=${result.id}`);
         } else if (pathname === '/message') {
             router.push({
-                pathname: `/chat/${result.id}`,
+                pathname: `/chat/${result.id}` as any,
                 params: { chatName: result.name },
             });
         }
@@ -132,8 +144,8 @@ const Header = () => {
                 const userAvatar = avatar && avatar !== 'null' ? { uri: avatar } : defaultAvatar;
 
                 setUser({ 
+                    id: 0,
                     name, 
-                    email, 
                     avatar: userAvatar
                 });
             };
@@ -149,7 +161,7 @@ const Header = () => {
     };
 
     const renderSearchResult = (item: SearchResult) => {
-        let icon = 'folder-outline';
+        let icon: any = 'folder-outline';
         let subtitle = 'Dự án';
       
         if (pathname === '/calendar') {
@@ -231,30 +243,50 @@ const Header = () => {
                         
                         {/* Search Results */}
                         {(searchResults.length > 0 || filteredChats.length > 0) && (
-                            <View style={styles.resultsContainer}>
-                                <FlatList
-                                    data={pathname === '/message' ? filteredChats : searchResults}
-                                    keyExtractor={(item) => item.id.toString()}
-                                    renderItem={({ item }) => renderSearchResult(item)}
-                                    style={styles.resultsList}
-                                    ListHeaderComponent={() => (
-                                        <View style={styles.resultsHeader}>
-                                            <Text style={styles.resultsHeaderText}>
-                                                {pathname === '/project'
-                                                    ? 'Dự án tìm thấy'
-                                                    : pathname === '/calendar'
-                                                    ? 'Lịch trình tìm thấy'
-                                                    : 'Chat tìm thấy'}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    ListFooterComponent={() => (
-                                        <View style={styles.resultsFooter}>
-                                            <Text style={styles.resultsFooterText}>Nhấn để xem chi tiết</Text>
-                                        </View>
-                                    )}
-                                />
-                            </View>
+                            <Modal
+                                visible={true}
+                                transparent={true}
+                                animationType="none"
+                                onRequestClose={() => {
+                                    setSearchResults([]);
+                                    setFilteredChats([]);
+                                }}
+                            >
+                                <TouchableWithoutFeedback onPress={() => {
+                                    setSearchResults([]);
+                                    setFilteredChats([]);
+                                }}>
+                                    <View style={styles.modalContainer}>
+                                        <TouchableWithoutFeedback onPress={() => {}}>
+                                            <View style={styles.searchResultsContainer}>
+                                                <FlatList
+                                                    data={pathname === '/message' ? filteredChats : searchResults}
+                                                    keyExtractor={(item) => item.id.toString()}
+                                                    renderItem={({ item }) => renderSearchResult(item)}
+                                                    style={styles.resultsList}
+                                                    nestedScrollEnabled={true}
+                                                    ListHeaderComponent={() => (
+                                                        <View style={styles.resultsHeader}>
+                                                            <Text style={styles.resultsHeaderText}>
+                                                                {pathname === '/project'
+                                                                    ? 'Dự án tìm thấy'
+                                                                    : pathname === '/calendar'
+                                                                    ? 'Lịch trình tìm thấy'
+                                                                    : 'Chat tìm thấy'}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                    ListFooterComponent={() => (
+                                                        <View style={styles.resultsFooter}>
+                                                            <Text style={styles.resultsFooterText}>Nhấn để xem chi tiết</Text>
+                                                        </View>
+                                                    )}
+                                                />
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            </Modal>
                         )}
                     </View>
                 )}
@@ -402,6 +434,25 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6B7280',
         fontStyle: 'italic',
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        marginTop: 120,
+    },
+    searchResultsContainer: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        marginHorizontal: 20,
+        maxHeight: 300,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
 });
 

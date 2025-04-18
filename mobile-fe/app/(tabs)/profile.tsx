@@ -145,11 +145,11 @@ const Profile = () => {
 
   return (
     <View style={styles.profileContainer}>
-      <Image
+      {/* <Image
         source={require('@/assets/images/project-background.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
-      />
+      /> */}
       <View style={styles.contentContainer}>
 
         <TouchableOpacity onPress={pickImage} style={styles.profileCard}>

@@ -43,6 +43,7 @@ interface SubTask {
     name: string;
     avatar: string;
   }[];
+  status?: string | number;
 }
 
 const EditTaskScreen = () => {
@@ -361,6 +362,56 @@ const EditTaskScreen = () => {
     }
   };
 
+  const getTaskStatusText = (status: string | number): string => {
+    // Chuyển status về dạng số để so sánh
+    const statusNumber = Number(status);
+    switch (statusNumber) {
+      case 0:
+        return "Chưa được giao";
+      case 1:
+        return "Đang xử lý";
+      case 2:
+        return "Hoàn thành";
+      case 3:
+        return "Từ chối";
+      case 4:
+        return "Quá hạn";
+      default:
+        return "Không xác định";
+    }
+  };
+
+  const getTaskStatusColor = (status: string | number): string => {
+    const statusNumber = Number(status);
+    switch (statusNumber) {
+      case 0:
+        return "#A0A0A0"; // Màu xám cho chưa được giao
+      case 1:
+        return "#00AEEF"; // Màu xanh dương cho đang xử lý
+      case 2:
+        return "#4CAF50"; // Màu xanh lá cho hoàn thành
+      case 3:
+        return "#FF4D67"; // Màu đỏ cho từ chối
+      case 4:
+        return "#FF9800"; // Màu cam cho quá hạn
+      default:
+        return "#A0A0A0";
+    }
+  };
+
+  const getLevelColor = (level: number): string => {
+    switch (level) {
+      case 0:
+        return "#4CAF50"; // Màu xanh lá cho mức độ thấp
+      case 1:
+        return "#FFC107"; // Màu vàng cho mức độ trung bình
+      case 2:
+        return "#FF4D67"; // Màu đỏ cho mức độ cao
+      default:
+        return "#4CAF50";
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -491,7 +542,10 @@ const EditTaskScreen = () => {
             {subTasks.map((subTask) => (
               <TouchableOpacity
                 key={subTask.tempId || subTask.id}
-                style={styles.subTaskItem}
+                style={[
+                  styles.subTaskItem,
+                  { borderColor: getTaskStatusColor(subTask.status || 0) }
+                ]}
                 onPress={() => handleEditSubTask(subTask)}
               >
                 <View style={styles.subTaskInfo}>
@@ -503,8 +557,17 @@ const EditTaskScreen = () => {
                     {new Date(subTask.fromDate).toLocaleDateString("vi-VN")} -
                     {new Date(subTask.toDate).toLocaleDateString("vi-VN")}
                   </Text>
-                  <Text style={styles.subTaskLevel}>
+                  <Text style={[
+                    styles.subTaskLevel,
+                    { color: getLevelColor(subTask.level) }
+                  ]}>
                     Mức độ: {getLevelLabel(subTask.level)}
+                  </Text>
+                  <Text style={[
+                    styles.statusText,
+                    { color: getTaskStatusColor(subTask.status || 0) }
+                  ]}>
+                    {getTaskStatusText(subTask.status || 0)}
                   </Text>
                   
                   {/* Hiển thị người được gán */}
@@ -902,10 +965,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
     padding: 15,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    marginHorizontal: 8,
+    marginTop: 8,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     shadowColor: "#000",
@@ -913,8 +978,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    position: "relative",
-    minHeight: 150,
+    overflow: 'hidden',
+    borderLeftWidth: 15,
   },
   subTaskInfo: {
     flex: 1,
@@ -923,22 +988,32 @@ const styles = StyleSheet.create({
   subTaskTitle: {
     fontSize: 16,
     color: "#1F2937",
+    fontWeight: "600",
     flex: 1,
+    paddingRight: 24,
   },
   subTaskDescription: {
     fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
+    color: "#4B5563",
+    marginBottom: 12,
+    lineHeight: 20,
   },
   subTaskDate: {
     fontSize: 12,
-    color: "#888",
-    marginBottom: 5,
+    color: "#6B7280",
+    marginTop: 4,
   },
   subTaskLevel: {
     fontSize: 12,
-    color: "#007AFF",
-    fontWeight: "500",
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
   },
   subTaskActions: {
     position: "absolute",
@@ -1123,6 +1198,13 @@ const styles = StyleSheet.create({
   memberEmail: {
     fontSize: 14,
     color: '#666',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
 });
 

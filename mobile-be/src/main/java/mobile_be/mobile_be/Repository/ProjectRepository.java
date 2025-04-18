@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import java.util.Optional;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 public interface ProjectRepository extends JpaRepository<Project, Integer> {
 
@@ -233,5 +234,13 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%'))) " +
             "ORDER BY t.created_at DESC", nativeQuery = true)
     List<Task> searchTasksInProject(Integer projectId, String searchText);
+
+    @Query(value = "SELECT p.* FROM projects p " +
+            "WHERE p.to_date BETWEEN :startDate AND :endDate", nativeQuery = true)
+    List<Project> findByToDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    @Query(value = "SELECT p.* FROM projects p " +
+            "WHERE p.from_date BETWEEN :startDate AND :endDate", nativeQuery = true)
+    List<Project> findByFromDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 
 }

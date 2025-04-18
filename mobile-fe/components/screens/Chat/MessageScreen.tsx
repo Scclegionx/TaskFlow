@@ -348,6 +348,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
     justifyContent: "space-between", // Make sure there's space for the menu
+    borderBlockColor: "#000",
   },
   avatar: {
     width: 50,
